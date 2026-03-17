@@ -100,6 +100,10 @@ def draw_routes(app: "FastAPI") -> None:
     """
     from app.controllers.auth_controller import AuthController
     from app.controllers.profile_controller import ProfileController
+    from app.controllers.jobs_controller import JobsController
+    from app.controllers.job_boards_controller import JobBoardsController
+    from app.controllers.job_postings_controller import JobPostingsController
+    from app.controllers.applications_controller import ApplicationsController
 
     router = APIRouter(prefix="/api/v1")
 
@@ -107,11 +111,42 @@ def draw_routes(app: "FastAPI") -> None:
     router.add_api_route("/auth/login", _wrap(AuthController, "login", lambda c: c.login()), methods=["POST"])
     router.add_api_route("/auth/refresh", _wrap(AuthController, "refresh", lambda c: c.refresh()), methods=["POST"])
 
-    # Profile (protected) — GET /api/v1/profile (current user, no ID)
+    # Profile (protected)
     router.add_api_route(
         "/profile",
         _wrap(ProfileController, "show", lambda c: c.show()),
         methods=["GET"],
+    )
+
+    # Jobs CRUD
+    resources(router, "/jobs", JobsController)
+
+    # Job versions (nested under jobs)
+    router.add_api_route(
+        "/jobs/{job_id:int}/versions",
+        _wrap(JobsController, "list_versions", lambda c: c.list_versions()),
+        methods=["GET"],
+    )
+    router.add_api_route(
+        "/jobs/{job_id:int}/versions",
+        _wrap(JobsController, "create_version", lambda c: c.create_version()),
+        methods=["POST"],
+    )
+
+    # Job boards CRUD
+    resources(router, "/job-boards", JobBoardsController)
+
+    # Job postings CRUD
+    resources(router, "/postings", JobPostingsController)
+
+    # Applications CRUD
+    resources(router, "/applications", ApplicationsController, only=["index", "show", "create", "destroy"])
+
+    # Application stage update
+    router.add_api_route(
+        "/applications/{id:int}/stage",
+        _wrap(ApplicationsController, "update_stage", lambda c: c.update_stage()),
+        methods=["PATCH"],
     )
 
     app.include_router(router)

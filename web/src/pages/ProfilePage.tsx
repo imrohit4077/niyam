@@ -5,13 +5,16 @@ import { PageView } from '../components/PageViews'
 
 interface Props {
   user: UserData
+  token: string
   onSignOut: () => void
 }
 
 const PAGE_TITLES: Record<SidebarPage, string> = {
   'profile':           'My Profile',
-  'job-applications':  'Job Applications',
-  'job-profiles':      'Job Profiles',
+  'jobs':              'Jobs',
+  'job-boards':        'Job Boards',
+  'postings':          'Postings',
+  'job-applications':  'Applications',
   'candidates':        'Candidates',
   'interviews':        'Interviews',
   'team':              'Team',
@@ -34,7 +37,7 @@ function UserAvatar({ name, avatar }: { name: string; avatar: string | null }) {
   return <div className="topnav-avatar">{initials}</div>
 }
 
-export default function ProfilePage({ user, onSignOut }: Props) {
+export default function ProfilePage({ user, token, onSignOut }: Props) {
   const [page, setPage] = useState<SidebarPage>('profile')
 
   return (
@@ -87,7 +90,7 @@ export default function ProfilePage({ user, onSignOut }: Props) {
 
           {/* Page content */}
           <div className="main-body">
-            <PageView page={page} user={user} />
+            <PageView page={page} user={user} token={token} />
           </div>
         </main>
       </div>

@@ -990,3 +990,94 @@ body {
   color: var(--text-muted);
   max-width: 280px;
 }
+
+/* ════════════════════════════════════════
+   MODAL
+════════════════════════════════════════ */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.modal {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  background: var(--navy);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--white);
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: var(--text-nav);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+}
+.modal-close:hover { color: var(--white); }
+
+.modal-body {
+  padding: 20px 20px 24px;
+}
+
+.modal-body .field input,
+.modal-body .field select {
+  height: 36px;
+  width: 100%;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: var(--font);
+  padding: 0 10px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.modal-body .field input:focus,
+.modal-body .field select:focus { border-color: var(--teal); }
+
+/* ── Row action buttons ── */
+.btn-row-action {
+  height: 24px;
+  padding: 0 10px;
+  background: var(--off-white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+  white-space: nowrap;
+}
+.btn-row-action:hover { background: var(--border); color: var(--text-primary); }
+.btn-row-danger { color: var(--error); }
+.btn-row-danger:hover { background: #fdf2f2; border-color: #f5c6c6; color: var(--error); }

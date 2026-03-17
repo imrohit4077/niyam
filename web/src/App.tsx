@@ -26,5 +26,5 @@ export default function App() {
     return <LoginPage onLogin={signIn} loading={loading} error={error} />
   }
 
-  return <ProfilePage user={user} onSignOut={signOut} />
+  return <ProfilePage user={user} token={localStorage.getItem('access_token') ?? ''} onSignOut={signOut} />
 }
