@@ -1,0 +1,21 @@
+# {{APP_NAME}} - FastForge app. Python 3.11+
+
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+sqlalchemy>=2.0.30
+alembic>=1.14.0
+psycopg2-binary>=2.9.10
+pydantic>=2.10.0
+pydantic-settings>=2.6.0
+email-validator>=2.2.0
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4
+celery[redis]>=5.4.0
+redis>=5.2.0
+python-dotenv>=1.0.0
+click>=8.1.0
+pytest>=8.3.0
+pytest-asyncio>=0.24.0
+httpx>=0.28.0
+python-multipart>=0.0.17
+pyyaml>=6.0.2

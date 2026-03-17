@@ -1,0 +1,37 @@
+# Rails-style database configuration.
+# Copy to database.yml and set adapter, host, database, username, password per environment.
+# Environment is selected by APP_ENV (development, test, production).
+#
+# Optional: use ERB-style env in YAML (we substitute via config):
+#   password: <%= ENV['DB_PASSWORD'] %>
+# This project uses simple key-value; override with env vars in .env (DATABASE_URL or DB_*).
+
+default: &default
+  adapter: postgresql
+  encoding: utf8
+  pool: 10
+  timeout: 5000
+
+development:
+  <<: *default
+  database: myapp_development_1
+  username: postgres
+  password: postgres
+  host: localhost
+  port: 5432
+
+test:
+  <<: *default
+  database: myapp_test
+  username: postgres
+  password: postgres
+  host: localhost
+  port: 5432
+
+production:
+  <<: *default
+  database: myapp_production
+  username: postgres
+  password: postgres
+  host: localhost
+  port: 5432

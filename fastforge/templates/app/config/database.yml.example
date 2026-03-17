@@ -1,0 +1,30 @@
+# Copy to database.yml and set credentials per environment.
+default: &default
+  adapter: postgresql
+  encoding: utf8
+  pool: 10
+  timeout: 5000
+
+development:
+  <<: *default
+  database: {{APP_NAME_SNAKE}}_development
+  username: postgres
+  password: postgres
+  host: localhost
+  port: 5432
+
+test:
+  <<: *default
+  database: {{APP_NAME_SNAKE}}_test
+  username: postgres
+  password: postgres
+  host: localhost
+  port: 5432
+
+production:
+  <<: *default
+  database: {{APP_NAME_SNAKE}}_production
+  username: postgres
+  password: postgres
+  host: localhost
+  port: 5432

@@ -1,0 +1,135 @@
+import { useState } from 'react'
+
+export type SidebarPage =
+  | 'profile'
+  | 'job-applications'
+  | 'job-profiles'
+  | 'candidates'
+  | 'interviews'
+  | 'team'
+  | 'settings'
+
+interface NavItem {
+  id: SidebarPage
+  label: string
+  badge?: number
+  icon: string
+  group?: string
+}
+
+const NAV: NavItem[] = [
+  { id: 'profile',           label: 'My Profile',        icon: 'user',    group: 'Overview' },
+  { id: 'job-applications',  label: 'Job Applications',  icon: 'briefcase', badge: 4, group: 'Recruiting' },
+  { id: 'job-profiles',      label: 'Job Profiles',      icon: 'document', group: 'Recruiting' },
+  { id: 'candidates',        label: 'Candidates',        icon: 'people',  badge: 12, group: 'Recruiting' },
+  { id: 'interviews',        label: 'Interviews',        icon: 'calendar', group: 'Recruiting' },
+  { id: 'team',              label: 'Team',              icon: 'team',    group: 'Workspace' },
+  { id: 'settings',          label: 'Settings',          icon: 'gear',    group: 'Workspace' },
+]
+
+const ICONS: Record<string, JSX.Element> = {
+  user: (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M12 12a5 5 0 100-10 5 5 0 000 10zm-7 8a7 7 0 0114 0H5z" />
+    </svg>
+  ),
+  briefcase: (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M20 7h-4V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2H4a2 2 0 00-2 2v11a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2zm-10-2h4v2h-4V5zm10 14H4V9h16v10z" />
+    </svg>
+  ),
+  document: (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm-1 1.5L18.5 9H13V3.5zM6 20V4h5v7h7v9H6z" />
+    </svg>
+  ),
+  people: (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" />
+    </svg>
+  ),
+  calendar: (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2zm0 16H5V9h14v11zM7 11h2v2H7zm4 0h2v2h-2zm4 0h2v2h-2z" />
+    </svg>
+  ),
+  team: (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z" />
+    </svg>
+  ),
+  gear: (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.49.49 0 00-.59-.22l-2.39.96a7.02 7.02 0 00-1.62-.94l-.36-2.54A.484.484 0 0014 2h-4a.484.484 0 00-.48.41l-.36 2.54a7.4 7.4 0 00-1.62.94l-2.39-.96a.48.48 0 00-.59.22L2.74 8.87a.47.47 0 00.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.47.47 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.36 1.04.67 1.62.94l.36 2.54c.05.24.27.41.48.41h4c.24 0 .44-.17.47-.41l.36-2.54a7.4 7.4 0 001.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.47.47 0 00-.12-.61l-2.01-1.58zM12 15.6a3.6 3.6 0 110-7.2 3.6 3.6 0 010 7.2z" />
+    </svg>
+  ),
+  chevron: (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" />
+    </svg>
+  ),
+}
+
+interface Props {
+  active: SidebarPage
+  onChange: (page: SidebarPage) => void
+}
+
+export default function Sidebar({ active, onChange }: Props) {
+  const [collapsed, setCollapsed] = useState(false)
+
+  // Group items
+  const groups = NAV.reduce<Record<string, NavItem[]>>((acc, item) => {
+    const g = item.group ?? 'Other'
+    if (!acc[g]) acc[g] = []
+    acc[g].push(item)
+    return acc
+  }, {})
+
+  return (
+    <aside className={`sidebar ${collapsed ? 'sidebar-collapsed' : ''}`}>
+      {/* Collapse toggle */}
+      <button
+        className="sidebar-toggle"
+        onClick={() => setCollapsed(c => !c)}
+        aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        title={collapsed ? 'Expand' : 'Collapse'}
+      >
+        <span className={`sidebar-toggle-icon ${collapsed ? 'rotated' : ''}`}>
+          {ICONS.chevron}
+        </span>
+      </button>
+
+      <nav className="sidebar-nav">
+        {Object.entries(groups).map(([group, items]) => (
+          <div key={group} className="sidebar-group">
+            {!collapsed && (
+              <div className="sidebar-group-label">{group}</div>
+            )}
+            {items.map(item => (
+              <button
+                key={item.id}
+                className={`sidebar-item ${active === item.id ? 'sidebar-item-active' : ''}`}
+                onClick={() => onChange(item.id)}
+                title={collapsed ? item.label : undefined}
+              >
+                <span className="sidebar-item-icon">{ICONS[item.icon]}</span>
+                {!collapsed && (
+                  <>
+                    <span className="sidebar-item-label">{item.label}</span>
+                    {item.badge != null && (
+                      <span className="sidebar-badge">{item.badge}</span>
+                    )}
+                  </>
+                )}
+                {collapsed && item.badge != null && (
+                  <span className="sidebar-badge-dot" />
+                )}
+              </button>
+            ))}
+          </div>
+        ))}
+      </nav>
+    </aside>
+  )
+}

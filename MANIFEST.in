@@ -1,0 +1,5 @@
+# FastForge pip package — files to include in sdist
+include README.md
+include LICENSE
+include pyproject.toml
+recursive-include fastforge *

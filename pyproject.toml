@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fastforge"
+version = "0.1.0"
+description = "Rails-like CLI and project generator for FastAPI — new, generate, migrate, runserver"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+authors = [{ name = "FastForge" }]
+keywords = ["fastapi", "rails", "cli", "scaffold", "generator", "web-framework"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
+]
+dependencies = [
+    "click>=8.1.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/your-org/srijan"
+Documentation = "https://github.com/your-org/srijan#readme"
+Repository = "https://github.com/your-org/srijan"
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "build", "twine"]
+
+[project.scripts]
+fastforge = "fastforge.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["fastforge*"]
+
+[tool.setuptools.package-data]
+fastforge = ["templates/**/*"]
