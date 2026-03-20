@@ -4,6 +4,7 @@ Routes:
   GET    /api/v1/applications          (?job_id=X, ?status=X)
   POST   /api/v1/applications
   GET    /api/v1/applications/:id
+  PATCH  /api/v1/applications/:id       (body: candidate fields, tags, notes — see service)
   DELETE /api/v1/applications/:id
   PATCH  /api/v1/applications/:id/stage   (body: status?, pipeline_stage_id?, reason?)
 """
@@ -45,6 +46,15 @@ class ApplicationsController(BaseController, Authenticatable):
         result = ApplicationService(self.db).get_application(account_id, app_id)
         if not result["ok"]:
             return self.render_error(result["error"], status=404)
+        return self.render_json(result["data"])
+
+    async def update(self):
+        account_id = self._account_id()
+        app_id = int(self.request.path_params["id"])
+        data = await self._get_body_json()
+        result = ApplicationService(self.db).update_application(account_id, app_id, data)
+        if not result["ok"]:
+            return self.render_error(result["error"], status=422)
         return self.render_json(result["data"])
 
     async def create(self):

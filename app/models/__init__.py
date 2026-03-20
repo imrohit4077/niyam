@@ -26,6 +26,9 @@ from app.models.interview_plan import InterviewPlan
 from app.models.interview_kit import InterviewKit
 from app.models.interview_assignment import InterviewAssignment
 from app.models.interview_scorecard import InterviewScorecard
+from app.models.esign_template import EsignTemplate
+from app.models.esign_stage_rule import EsignStageRule
+from app.models.esign_request import EsignRequest
 
 __all__ = [
     "BaseModel", "Timestampable", "SoftDeletable", "Sluggable",
@@ -33,4 +36,5 @@ __all__ = [
     "Job", "JobAttachment", "JobVersion", "JobBoard", "JobPosting", "Application",
     "HiringPlan", "PipelineStage",
     "InterviewPlan", "InterviewKit", "InterviewAssignment", "InterviewScorecard",
+    "EsignTemplate", "EsignStageRule", "EsignRequest",
 ]

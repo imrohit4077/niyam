@@ -35,3 +35,9 @@ httpx==0.28.1
 # Utilities
 python-multipart==0.0.17
 pyyaml==6.0.2
+
+# E-sign: signed packages as PDF (HTML → PDF)
+# WeasyPrint = best CSS fidelity; needs Pango/Cairo/GObject (brew on macOS).
+# fpdf2 = fallback HTML→PDF when WeasyPrint cannot load native libs (no Cairo/GObject).
+weasyprint==63.1
+fpdf2==2.8.2

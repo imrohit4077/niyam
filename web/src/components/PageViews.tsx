@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useOutletContext, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useOutletContext, useNavigate, useSearchParams } from 'react-router-dom'
 import type { DashboardOutletContext } from '../layouts/DashboardOutletContext'
 import { jobsApi } from '../api/jobs'
 import type { Job } from '../api/jobs'
@@ -820,36 +820,32 @@ function ApplicationForm({
   )
 }
 
-const STAGES = ['applied', 'screening', 'interview', 'offer', 'hired', 'rejected', 'withdrawn']
-
 export function ApplicationsView() {
-  const { token } = useOutletContext<DashboardOutletContext>()
+  const { token, accountId } = useOutletContext<DashboardOutletContext>()
   const toast = useToast()
   const [apps, setApps] = useState<Application[]>([])
+  const [jobs, setJobs] = useState<Job[]>([])
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState('')
   const [showForm, setShowForm] = useState(false)
-  const [stageTarget, setStageTarget] = useState<Application | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<Application | null>(null)
-  const [scoreModalApp, setScoreModalApp] = useState<Application | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true); setErr('')
-    try { setApps(await applicationsApi.list(token)) } catch (e: unknown) { setErr(e instanceof Error ? e.message : 'Failed') } finally { setLoading(false) }
+    try {
+      const [a, j] = await Promise.all([applicationsApi.list(token), jobsApi.list(token)])
+      setApps(a)
+      setJobs(j)
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : 'Failed')
+    } finally {
+      setLoading(false)
+    }
   }, [token])
 
   useEffect(() => { load() }, [load])
 
-  const moveStage = async (app: Application, status: string) => {
-    try {
-      await applicationsApi.updateStage(token, app.id, { status })
-      toast.success('Stage updated', `${app.candidate_name || app.candidate_email} moved to "${status}".`)
-      load()
-    } catch (e: unknown) {
-      toast.error('Stage update failed', e instanceof Error ? e.message : 'Failed')
-    }
-    setStageTarget(null)
-  }
+  const jobTitle = (jobId: number) => jobs.find(j => j.id === jobId)?.title ?? `Job #${jobId}`
 
   const del = async (app: Application) => {
     try {
@@ -873,36 +869,9 @@ export function ApplicationsView() {
         />
       )}
       {showForm && <ApplicationForm token={token} onSave={() => { setShowForm(false); load() }} onClose={() => setShowForm(false)} />}
-      {stageTarget && (
-        <Modal title={`Move: ${stageTarget.candidate_name || stageTarget.candidate_email}`} onClose={() => setStageTarget(null)}>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {STAGES.map(s => (
-              <button
-                key={s}
-                className="btn-action"
-                style={{
-                  background: stageTarget.status === s ? 'var(--navy)' : undefined,
-                  opacity: stageTarget.status === s ? 0.5 : 1,
-                }}
-                onClick={() => moveStage(stageTarget, s)}
-                disabled={stageTarget.status === s}
-              >
-                {s}
-              </button>
-            ))}
-          </div>
-        </Modal>
-      )}
-      {scoreModalApp && (
-        <CandidateInterviewScorecardsModal
-          token={token}
-          application={scoreModalApp}
-          onClose={() => setScoreModalApp(null)}
-        />
-      )}
       <ListHeader title="Applications" count={apps.length} onAction={() => setShowForm(true)} actionLabel="+ New Application" />
       <p className="interviews-lead" style={{ margin: '0 0 12px' }}>
-        Use <strong>Interview scores</strong> to see structured feedback interviewers submitted for each candidate.
+        Open a candidate to edit details, pipeline stage, e-sign documents, and interview scorecards on a full page.
       </p>
       <div className="list-table">
         <div className="list-table-head">
@@ -921,16 +890,13 @@ export function ApplicationsView() {
               <div className="candidate-avatar">{(a.candidate_name || a.candidate_email).slice(0, 2).toUpperCase()}</div>
               <div><div className="list-row-name">{a.candidate_name || '—'}</div><div className="list-row-sub">{a.candidate_email}</div></div>
             </div>
-            <div className="list-col list-row-sub">Job #{a.job_id}</div>
+            <div className="list-col list-row-sub">{jobTitle(a.job_id)}</div>
             <div className="list-col"><span className={`tag ${STAGE_COLORS[a.status] ?? 'tag-blue'}`}>{a.status}</span></div>
             <div className="list-col list-row-sub">{a.source_type}</div>
             <div className="list-col" style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-              <button type="button" className="btn-row-action" onClick={() => setStageTarget(a)}>
-                Stage
-              </button>
-              <button type="button" className="btn-row-action" onClick={() => setScoreModalApp(a)}>
-                Interview scores
-              </button>
+              <Link className="btn-row-action" to={`/account/${accountId}/job-applications/${a.id}`} style={{ textDecoration: 'none' }}>
+                Open
+              </Link>
               <button type="button" className="btn-row-action btn-row-danger" onClick={() => setConfirmDelete(a)}>
                 Del
               </button>
@@ -1365,18 +1331,6 @@ export function TeamView() {
       </svg>
       <div className="empty-view-title">Team Members</div>
       <div className="empty-view-sub">Invite teammates to collaborate on your workspace. Manage roles and permissions from here.</div>
-    </div>
-  )
-}
-
-export function SettingsView() {
-  return (
-    <div className="empty-view">
-      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--gray-300)" strokeWidth="1.5" style={{ marginBottom: 16 }}>
-        <path d="M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.49.49 0 00-.59-.22l-2.39.96a7.02 7.02 0 00-1.62-.94l-.36-2.54A.484.484 0 0014 2h-4a.484.484 0 00-.48.41l-.36 2.54a7.4 7.4 0 00-1.62.94l-2.39-.96a.48.48 0 00-.59.22L2.74 8.87a.47.47 0 00.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.47.47 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.36 1.04.67 1.62.94l.36 2.54c.05.24.27.41.48.41h4c.24 0 .44-.17.47-.41l.36-2.54a7.4 7.4 0 001.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.47.47 0 00-.12-.61l-2.01-1.58zM12 15.6a3.6 3.6 0 110-7.2 3.6 3.6 0 010 7.2z" />
-      </svg>
-      <div className="empty-view-title">Settings</div>
-      <div className="empty-view-sub">Workspace and account settings coming soon. Configure your preferences and integrations.</div>
     </div>
   )
 }

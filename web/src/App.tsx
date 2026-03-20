@@ -4,6 +4,9 @@ import { AuthProvider, useAuth } from './auth/AuthContext'
 import LoginPage from './pages/LoginPage'
 import JobEditorPage from './pages/JobEditorPage'
 import PublicJobApplyPage from './pages/PublicJobApplyPage'
+import PublicEsignSignPage from './pages/PublicEsignSignPage'
+import ApplicationDetailPage from './pages/ApplicationDetailPage'
+import EsignDocumentsPage from './pages/EsignDocumentsPage'
 import DashboardLayout from './layouts/DashboardLayout'
 import HiringPlansView from './components/HiringPlansView'
 import PipelineBoardView from './components/PipelineBoardView'
@@ -16,8 +19,10 @@ import {
   CandidatesView,
   InterviewsView,
   TeamView,
-  SettingsView,
 } from './components/PageViews'
+import SettingsLayout from './layouts/SettingsLayout'
+import GeneralSettingsView from './components/GeneralSettingsView'
+import { EsignSettingsView } from './components/EsignSettingsView'
 import './App.css'
 
 function Splash() {
@@ -66,6 +71,7 @@ function AppRoutes() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/apply/:token" element={<PublicJobApplyPage />} />
+      <Route path="/esign/sign/:token" element={<PublicEsignSignPage />} />
       <Route element={<RequireAuth />}>
         <Route path="/account/:accountId" element={<AccountRedirect />}>
           <Route element={<DashboardLayout />}>
@@ -79,10 +85,16 @@ function AppRoutes() {
             <Route path="job-boards" element={<JobBoardsView />} />
             <Route path="postings" element={<PostingsView />} />
             <Route path="job-applications" element={<ApplicationsView />} />
+            <Route path="job-applications/:applicationId" element={<ApplicationDetailPage />} />
             <Route path="candidates" element={<CandidatesView />} />
             <Route path="interviews" element={<InterviewsView />} />
+            <Route path="esign-documents" element={<EsignDocumentsPage />} />
             <Route path="team" element={<TeamView />} />
-            <Route path="settings" element={<SettingsView />} />
+            <Route path="settings" element={<SettingsLayout />}>
+              <Route index element={<Navigate to="general" replace />} />
+              <Route path="general" element={<GeneralSettingsView />} />
+              <Route path="esign" element={<EsignSettingsView />} />
+            </Route>
           </Route>
         </Route>
       </Route>

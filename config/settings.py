@@ -48,6 +48,14 @@ class Settings(BaseSettings):
     DEFAULT_PAGE_SIZE: int = 20
     MAX_PAGE_SIZE: int = 100
 
+    # E-sign: candidate signing links (SPA origin); optional global webhook secret for providers
+    FRONTEND_PUBLIC_URL: str = ""
+    ESIGN_WEBHOOK_SECRET: str = ""
+    # When set, each merged internal e-sign HTML snapshot is also written under {dir}/{account_id}/{request_id}.html
+    ESIGN_ARTIFACTS_DIR: str = ""
+    # Signed packages (HTML + embedded signature). Empty = project storage/esign_signed/
+    ESIGN_SIGNED_DOCUMENTS_DIR: str = ""
+
 
 @lru_cache
 def get_settings() -> Settings:

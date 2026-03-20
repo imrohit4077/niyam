@@ -12,8 +12,10 @@ export type SidebarPage =
   | 'postings'
   | 'candidates'
   | 'interviews'
+  | 'esign-documents'
   | 'team'
-  | 'settings'
+  | 'settings-general'
+  | 'settings-esign'
 
 interface NavItem {
   id: SidebarPage
@@ -33,8 +35,10 @@ const NAV: NavItem[] = [
   { id: 'job-applications', label: 'Applications', icon: 'document', group: 'Candidates' },
   { id: 'candidates', label: 'Candidates', icon: 'people', group: 'Candidates' },
   { id: 'interviews', label: 'Interviews', icon: 'calendar', group: 'Candidates' },
+  { id: 'esign-documents', label: 'Signed documents', icon: 'signature', group: 'Candidates' },
+  { id: 'settings-general', label: 'General', icon: 'gear', group: 'Settings' },
+  { id: 'settings-esign', label: 'E-sign', icon: 'document', group: 'Settings' },
   { id: 'team', label: 'Team', icon: 'team', group: 'Workspace' },
-  { id: 'settings', label: 'Settings', icon: 'gear', group: 'Workspace' },
 ]
 
 const PATH_SEGMENTS: Record<SidebarPage, string> = {
@@ -47,8 +51,10 @@ const PATH_SEGMENTS: Record<SidebarPage, string> = {
   'job-applications': 'job-applications',
   candidates: 'candidates',
   interviews: 'interviews',
+  'esign-documents': 'esign-documents',
   team: 'team',
-  settings: 'settings',
+  'settings-general': 'settings/general',
+  'settings-esign': 'settings/esign',
 }
 
 const ICONS: Record<string, ReactNode> = {
@@ -110,6 +116,12 @@ const ICONS: Record<string, ReactNode> = {
   columns: (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
       <path d="M6 3h4v18H6V3zm8 0h4v18h-4V3z" />
+    </svg>
+  ),
+  signature: (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm-1 8H7v2h6v-2zm0 4H7v2h6v-2zM13 9V3.5L18.5 9H13z" />
+      <path d="M3 20h18v2H3z" opacity="0.85" />
     </svg>
   ),
 }
@@ -174,7 +186,11 @@ export default function Sidebar({ accountId }: Props) {
                 <NavLink
                   key={item.id}
                   to={to}
-                  end={item.id === 'profile'}
+                  end={
+                    item.id === 'profile' ||
+                    item.id === 'settings-general' ||
+                    item.id === 'settings-esign'
+                  }
                   title={collapsed ? item.label : undefined}
                   className={({ isActive }) =>
                     `sidebar-item ${isActive ? 'sidebar-item-active' : ''}`
