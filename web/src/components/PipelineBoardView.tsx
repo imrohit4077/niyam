@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useOutletContext } from 'react-router-dom'
+import type { DashboardOutletContext } from '../layouts/DashboardOutletContext'
 import {
   DndContext,
   DragOverlay,
@@ -352,7 +354,8 @@ function useApplicationFilters(apps: Application[], search: string, status: stri
   }, [apps, search, status, source])
 }
 
-export default function PipelineBoardView({ token }: { token: string }) {
+export default function PipelineBoardView() {
+  const { token } = useOutletContext<DashboardOutletContext>()
   const toast = useToast()
   const [jobs, setJobs] = useState<Job[]>([])
   const [jobId, setJobId] = useState<number | ''>('')

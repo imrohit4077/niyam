@@ -94,3 +94,15 @@ class JobsController(BaseController, Authenticatable):
         if not result["ok"]:
             return self.render_error(result["error"], status=422)
         return self.render_json(result["data"], status=201)
+
+    async def update_version(self):
+        account_id = self._account_id()
+        job_id = int(self.request.path_params["job_id"])
+        version_id = int(self.request.path_params["version_id"])
+        data = await self._get_body_json()
+        result = JobService(self.db).update_version(
+            account_id, job_id, version_id, data
+        )
+        if not result["ok"]:
+            return self.render_error(result["error"], status=404)
+        return self.render_json(result["data"])

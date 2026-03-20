@@ -21,10 +21,15 @@ from app.models.job_posting import JobPosting
 from app.models.application import Application
 from app.models.hiring_plan import HiringPlan
 from app.models.pipeline_stage import PipelineStage
+from app.models.interview_plan import InterviewPlan
+from app.models.interview_kit import InterviewKit
+from app.models.interview_assignment import InterviewAssignment
+from app.models.interview_scorecard import InterviewScorecard
 
 __all__ = [
     "BaseModel", "Timestampable", "SoftDeletable", "Sluggable",
     "User", "Account", "AccountUser", "Role", "AccountUserRole",
     "Job", "JobVersion", "JobBoard", "JobPosting", "Application",
     "HiringPlan", "PipelineStage",
+    "InterviewPlan", "InterviewKit", "InterviewAssignment", "InterviewScorecard",
 ]

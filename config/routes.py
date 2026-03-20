@@ -106,6 +106,8 @@ def draw_routes(app: "FastAPI") -> None:
     from app.controllers.applications_controller import ApplicationsController
     from app.controllers.hiring_plans_controller import HiringPlansController
     from app.controllers.pipeline_stages_controller import PipelineStagesController
+    from app.controllers.interview_plans_controller import InterviewPlansController
+    from app.controllers.interviews_controller import InterviewsController
 
     router = APIRouter(prefix="/api/v1")
 
@@ -134,6 +136,11 @@ def draw_routes(app: "FastAPI") -> None:
         _wrap(JobsController, "create_version", lambda c: c.create_version()),
         methods=["POST"],
     )
+    router.add_api_route(
+        "/jobs/{job_id:int}/versions/{version_id:int}",
+        _wrap(JobsController, "update_version", lambda c: c.update_version()),
+        methods=["PUT"],
+    )
 
     router.add_api_route(
         "/jobs/{job_id:int}/hiring_plan",
@@ -155,6 +162,63 @@ def draw_routes(app: "FastAPI") -> None:
         "/jobs/{job_id:int}/pipeline_stages",
         _wrap(PipelineStagesController, "create_by_job", lambda c: c.create_by_job()),
         methods=["POST"],
+    )
+
+    router.add_api_route(
+        "/jobs/{job_id:int}/interview_plans/{plan_id:int}/kit",
+        _wrap(InterviewPlansController, "get_kit_for_job", lambda c: c.get_kit_for_job()),
+        methods=["GET"],
+    )
+    router.add_api_route(
+        "/jobs/{job_id:int}/interview_plans/{plan_id:int}/kit",
+        _wrap(InterviewPlansController, "upsert_kit_for_job", lambda c: c.upsert_kit_for_job()),
+        methods=["PUT"],
+    )
+    router.add_api_route(
+        "/jobs/{job_id:int}/interview_plans/{plan_id:int}",
+        _wrap(InterviewPlansController, "show_for_job", lambda c: c.show_for_job()),
+        methods=["GET"],
+    )
+    router.add_api_route(
+        "/jobs/{job_id:int}/interview_plans/{plan_id:int}",
+        _wrap(InterviewPlansController, "update_for_job", lambda c: c.update_for_job()),
+        methods=["PUT"],
+    )
+    router.add_api_route(
+        "/jobs/{job_id:int}/interview_plans/{plan_id:int}",
+        _wrap(InterviewPlansController, "destroy_for_job", lambda c: c.destroy_for_job()),
+        methods=["DELETE"],
+    )
+    router.add_api_route(
+        "/jobs/{job_id:int}/interview_plans",
+        _wrap(InterviewPlansController, "index_by_job", lambda c: c.index_by_job()),
+        methods=["GET"],
+    )
+    router.add_api_route(
+        "/jobs/{job_id:int}/interview_plans",
+        _wrap(InterviewPlansController, "create_by_job", lambda c: c.create_by_job()),
+        methods=["POST"],
+    )
+
+    router.add_api_route(
+        "/interviews/my_assignments",
+        _wrap(InterviewsController, "my_assignments", lambda c: c.my_assignments()),
+        methods=["GET"],
+    )
+    router.add_api_route(
+        "/interviews/{assignment_id:int}/kit",
+        _wrap(InterviewsController, "kit", lambda c: c.kit()),
+        methods=["GET"],
+    )
+    router.add_api_route(
+        "/interviews/{assignment_id:int}/scorecard",
+        _wrap(InterviewsController, "submit_scorecard", lambda c: c.submit_scorecard()),
+        methods=["POST"],
+    )
+    router.add_api_route(
+        "/interviews/{assignment_id:int}",
+        _wrap(InterviewsController, "update_assignment", lambda c: c.update_assignment()),
+        methods=["PATCH"],
     )
 
     # Job boards CRUD

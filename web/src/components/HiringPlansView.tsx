@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
+import { useOutletContext } from 'react-router-dom'
+import type { DashboardOutletContext } from '../layouts/DashboardOutletContext'
 import { jobsApi, type Job } from '../api/jobs'
 import { hiringPlansApi, type HiringPlan } from '../api/hiringPlans'
 import { useToast } from '../contexts/ToastContext'
@@ -206,7 +208,8 @@ function PlanForm({
   )
 }
 
-export default function HiringPlansView({ token }: { token: string }) {
+export default function HiringPlansView() {
+  const { token } = useOutletContext<DashboardOutletContext>()
   const toast = useToast()
   const [plans, setPlans] = useState<HiringPlan[]>([])
   const [jobs, setJobs] = useState<Job[]>([])

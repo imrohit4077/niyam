@@ -72,4 +72,24 @@ export const jobsApi = {
 
   createVersion: (token: string, jobId: number, data: Partial<JobVersion> & { description: string }) =>
     req<JobVersion>(`/jobs/${jobId}/versions`, token, { method: 'POST', body: JSON.stringify(data) }),
+
+  updateVersion: (
+    token: string,
+    jobId: number,
+    versionId: number,
+    data: Partial<{
+      description: string
+      requirements: string | null
+      benefits: string | null
+      title_override: string | null
+      call_to_action: string
+      traffic_weight: number
+      is_active: boolean
+      is_control: boolean
+    }>,
+  ) =>
+    req<JobVersion>(`/jobs/${jobId}/versions/${versionId}`, token, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
 }

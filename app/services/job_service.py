@@ -124,6 +124,38 @@ class JobService(BaseService):
         v = self._create_version(job_id, account_id, user_id, name, description, data)
         return self.success(v.to_dict())
 
+    def update_version(
+        self, account_id: int, job_id: int, version_id: int, data: dict
+    ) -> dict:
+        job = Job.find_by(self.db, id=job_id, account_id=account_id)
+        if not job or job.deleted_at:
+            return self.failure("Job not found")
+        v = JobVersion.find_by(
+            self.db, id=version_id, job_id=job_id, account_id=account_id
+        )
+        if not v:
+            return self.failure("Version not found")
+        if "description" in data and data["description"] is not None:
+            v.description = data["description"]
+        if "requirements" in data:
+            v.requirements = data["requirements"]
+        if "benefits" in data:
+            v.benefits = data["benefits"]
+        if "title_override" in data:
+            v.title_override = data["title_override"]
+        if "call_to_action" in data:
+            v.call_to_action = data["call_to_action"]
+        if "traffic_weight" in data and data["traffic_weight"] is not None:
+            v.traffic_weight = int(data["traffic_weight"])
+        if "is_active" in data and data["is_active"] is not None:
+            v.is_active = bool(data["is_active"])
+        if "is_control" in data and data["is_control"] is not None:
+            v.is_control = bool(data["is_control"])
+        v.updated_at = datetime.now(timezone.utc)
+        v.save(self.db)
+        logger.info(f"JobService.update_version — job={job_id} version={version_id}")
+        return self.success(v.to_dict())
+
     def _create_version(self, job_id, account_id, user_id, name, description, data, is_control=False):
         now = datetime.now(timezone.utc)
         # Count existing versions for version_number
