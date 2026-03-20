@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useRef } from 'react'
+import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info'
@@ -52,19 +52,22 @@ const ICONS: Record<ToastType, ReactNode> = {
 
 function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: (id: string) => void }) {
   const [exiting, setExiting] = useState(false)
-  const timerRef = useRef<ReturnType<typeof setTimeout>>()
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const dismiss = useCallback(() => {
     setExiting(true)
     setTimeout(() => onRemove(toast.id), 300)
   }, [toast.id, onRemove])
 
-  useState(() => {
+  useEffect(() => {
     const duration = toast.duration ?? 4000
     if (duration > 0) {
       timerRef.current = setTimeout(dismiss, duration)
     }
-  })
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+    }
+  }, [dismiss, toast.duration])
 
   return (
     <div

@@ -182,7 +182,7 @@ Copy `.env.example` to `.env`. Key variables:
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | Access token TTL | `15` |
 | `REFRESH_TOKEN_EXPIRE_DAYS` | Refresh token TTL | `7` |
 | `REDIS_URL` | Redis connection | `redis://localhost:6379/0` |
-| `CELERY_BROKER_URL` | Celery broker | `redis://localhost:6379/1` |
+| `CELERY_BROKER_URL` | Celery broker | `redis://localhost:6379/2` |
 | `CELERY_RESULT_BACKEND` | Celery results | `redis://localhost:6379/2` |
 | `DEFAULT_PAGE_SIZE` / `MAX_PAGE_SIZE` | Pagination | `20` / `100` |
 

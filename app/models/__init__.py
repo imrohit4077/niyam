@@ -19,9 +19,12 @@ from app.models.job_version import JobVersion
 from app.models.job_board import JobBoard
 from app.models.job_posting import JobPosting
 from app.models.application import Application
+from app.models.hiring_plan import HiringPlan
+from app.models.pipeline_stage import PipelineStage
 
 __all__ = [
     "BaseModel", "Timestampable", "SoftDeletable", "Sluggable",
     "User", "Account", "AccountUser", "Role", "AccountUserRole",
     "Job", "JobVersion", "JobBoard", "JobPosting", "Application",
+    "HiringPlan", "PipelineStage",
 ]

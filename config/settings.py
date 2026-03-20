@@ -40,7 +40,8 @@ class Settings(BaseSettings):
     REDIS_URL: str = "redis://localhost:6379/0"
 
     # Celery
-    CELERY_BROKER_URL: str = "redis://localhost:6379/1"
+    # Celery broker DB index (Rails/Sidekiq style). Requested default: Redis DB 2.
+    CELERY_BROKER_URL: str = "redis://localhost:6379/2"
     CELERY_RESULT_BACKEND: str = "redis://localhost:6379/2"
 
     # Pagination

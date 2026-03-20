@@ -46,6 +46,23 @@ const endpoints = {
     destroy:     (id: number) => `${BASE_URL}/applications/${id}`,
     updateStage: (id: number) => `${BASE_URL}/applications/${id}/stage`,
   },
+
+  hiringPlans: {
+    list:    `${BASE_URL}/hiring_plans`,
+    create:  `${BASE_URL}/hiring_plans`,
+    show:    (id: number) => `${BASE_URL}/hiring_plans/${id}`,
+    update:  (id: number) => `${BASE_URL}/hiring_plans/${id}`,
+    destroy: (id: number) => `${BASE_URL}/hiring_plans/${id}`,
+    forJob:  (jobId: number) => `${BASE_URL}/jobs/${jobId}/hiring_plan`,
+  },
+
+  pipelineStages: {
+    byJob:   (jobId: number) => `${BASE_URL}/jobs/${jobId}/pipeline_stages`,
+    reorder: (jobId: number) => `${BASE_URL}/jobs/${jobId}/pipeline_stages/reorder`,
+    show:    (id: number) => `${BASE_URL}/pipeline_stages/${id}`,
+    update:  (id: number) => `${BASE_URL}/pipeline_stages/${id}`,
+    destroy: (id: number) => `${BASE_URL}/pipeline_stages/${id}`,
+  },
 } as const
 
 export default endpoints

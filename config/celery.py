@@ -3,6 +3,11 @@ Celery application instance and configuration.
 Rails equivalent: config/application.rb (ActiveJob backend) + Sidekiq.
 """
 
+from __future__ import annotations
+
+import importlib
+from pathlib import Path
+
 from celery import Celery
 from celery.schedules import crontab
 
@@ -14,7 +19,7 @@ celery_app = Celery(
     "myapp",
     broker=settings.CELERY_BROKER_URL,
     backend=settings.CELERY_RESULT_BACKEND,
-    include=[],  # Add your job modules: e.g. "app.jobs.my_job"
+    include=[],
 )
 
 celery_app.conf.update(
@@ -25,6 +30,12 @@ celery_app.conf.update(
     enable_utc=True,
     task_track_started=True,
     task_default_queue="default",
+    # Production-grade worker behavior (smooth reliability)
+    task_acks_late=True,  # ack after task completes
+    task_reject_on_worker_lost=True,
+    worker_prefetch_multiplier=1,
+    broker_connection_retry_on_startup=True,
+    result_expires=3600,  # seconds
     task_queues={
         "default": {"exchange": "default", "routing_key": "default"},
         "mailers": {"exchange": "mailers", "routing_key": "mailers"},
@@ -44,3 +55,26 @@ if CELERY_BEAT_SCHEDULE:
             "options": entry.get("options", {}),
         }
 celery_app.conf.beat_schedule = beat_schedule
+
+
+def _import_job_modules() -> None:
+    """
+    Rails-like convention: autoload every `app/jobs/*_job.py` module so the
+    `@celery_app.task(...)` decorators run and tasks get registered.
+    """
+    jobs_dir = Path(__file__).resolve().parents[1] / "app" / "jobs"
+    if not jobs_dir.exists():
+        return
+
+    for path in jobs_dir.iterdir():
+        if path.suffix != ".py":
+            continue
+        stem = path.stem
+        if stem in {"__init__", "base_job"}:
+            continue
+        if not stem.endswith("_job"):
+            continue
+        importlib.import_module(f"app.jobs.{stem}")
+
+
+_import_job_modules()

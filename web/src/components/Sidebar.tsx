@@ -1,8 +1,11 @@
 import { useState } from 'react'
+import type { ReactNode } from 'react'
 
 export type SidebarPage =
   | 'profile'
   | 'jobs'
+  | 'hiring-plans'
+  | 'pipeline'
   | 'job-applications'
   | 'job-boards'
   | 'postings'
@@ -22,6 +25,8 @@ interface NavItem {
 const NAV: NavItem[] = [
   { id: 'profile',           label: 'My Profile',        icon: 'user',      group: 'Overview' },
   { id: 'jobs',              label: 'Jobs',              icon: 'briefcase', group: 'Jobs' },
+  { id: 'hiring-plans',      label: 'Hiring plans',      icon: 'target',    group: 'Jobs' },
+  { id: 'pipeline',          label: 'Pipeline',          icon: 'columns',   group: 'Jobs' },
   { id: 'job-boards',        label: 'Job Boards',        icon: 'globe',     group: 'Jobs' },
   { id: 'postings',          label: 'Postings',          icon: 'send',      group: 'Jobs' },
   { id: 'job-applications',  label: 'Applications',      icon: 'document',  group: 'Candidates' },
@@ -31,7 +36,7 @@ const NAV: NavItem[] = [
   { id: 'settings',          label: 'Settings',          icon: 'gear',      group: 'Workspace' },
 ]
 
-const ICONS: Record<string, JSX.Element> = {
+const ICONS: Record<string, ReactNode> = {
   user: (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
       <path d="M12 12a5 5 0 100-10 5 5 0 000 10zm-7 8a7 7 0 0114 0H5z" />
@@ -80,6 +85,16 @@ const ICONS: Record<string, JSX.Element> = {
   send: (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
       <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+    </svg>
+  ),
+  target: (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm0-14c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm0 10c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z" />
+    </svg>
+  ),
+  columns: (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M6 3h4v18H6V3zm8 0h4v18h-4V3z" />
     </svg>
   ),
 }

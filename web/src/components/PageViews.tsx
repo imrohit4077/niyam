@@ -10,6 +10,8 @@ import type { JobPosting } from '../api/postings'
 import { applicationsApi } from '../api/applications'
 import type { Application } from '../api/applications'
 import { useToast } from '../contexts/ToastContext'
+import HiringPlansView from './HiringPlansView'
+import PipelineBoardView from './PipelineBoardView'
 
 // ── Shared UI primitives ───────────────────────────────────────────
 
@@ -458,11 +460,29 @@ function JobBoardsView({ token }: { token: string }) {
 
 // ── Postings view ──────────────────────────────────────────────────
 
-function PostingForm({ token, onSave, onClose }: { token: string; onSave: () => void; onClose: () => void }) {
+function PostingForm({
+  token,
+  initialPosting,
+  onSave,
+  onClose,
+}: {
+  token: string
+  initialPosting?: JobPosting | null
+  onSave: () => void
+  onClose: () => void
+}) {
   const toast = useToast()
   const [jobs, setJobs] = useState<import('../api/jobs').Job[]>([])
   const [boards, setBoards] = useState<JobBoard[]>([])
-  const [form, setForm] = useState({ job_id: '', board_id: '' })
+  const [step, setStep] = useState<'form' | 'preview'>('form')
+  const [form, setForm] = useState({
+    job_id: initialPosting ? String(initialPosting.job_id) : '',
+    board_id: initialPosting ? String(initialPosting.board_id) : '',
+    post_to: 'internal',
+    external_url: initialPosting?.external_url ?? '',
+    external_apply_url: initialPosting?.external_apply_url ?? '',
+    status: initialPosting?.status ?? 'pending',
+  })
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState('')
 
@@ -472,12 +492,21 @@ function PostingForm({ token, onSave, onClose }: { token: string; onSave: () => 
       .catch(() => {})
   }, [token])
 
+  const selectedJob = jobs.find(j => j.id === Number(form.job_id))
+  const selectedBoard = boards.find(b => b.id === Number(form.board_id))
+
   const submit = async () => {
     if (!form.job_id || !form.board_id) { setErr('Select a job and board'); return }
     setSaving(true); setErr('')
     try {
-      await postingsApi.create(token, { job_id: Number(form.job_id), board_id: Number(form.board_id) })
-      toast.success('Job posted', 'Your job has been posted to the board.')
+      await postingsApi.create(token, {
+        job_id: Number(form.job_id),
+        board_id: Number(form.board_id),
+        status: form.status,
+        external_url: form.external_url || undefined,
+        external_apply_url: form.external_apply_url || undefined,
+      })
+      toast.success('Job post saved', 'Your posting has been created. Use LIVE/OFF toggle from list.')
       onSave()
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Failed'
@@ -487,21 +516,62 @@ function PostingForm({ token, onSave, onClose }: { token: string; onSave: () => 
   }
 
   return (
-    <Modal title="Post Job to Board" onClose={onClose}>
+    <Modal title={step === 'form' ? 'Create Job Post' : 'Preview Job Post'} onClose={onClose}>
       {err && <div className="auth-error">{err}</div>}
-      <FormField label="Job *">
-        <select value={form.job_id} onChange={e => setForm(f => ({ ...f, job_id: e.target.value }))}>
-          <option value="">Select a job...</option>
-          {jobs.map(j => <option key={j.id} value={j.id}>{j.title}</option>)}
-        </select>
-      </FormField>
-      <FormField label="Job Board *">
-        <select value={form.board_id} onChange={e => setForm(f => ({ ...f, board_id: e.target.value }))}>
-          <option value="">Select a board...</option>
-          {boards.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-        </select>
-      </FormField>
-      <button className="btn-primary" onClick={submit} disabled={saving}>{saving ? 'Posting...' : 'Post Job'}</button>
+      {step === 'form' ? (
+        <>
+          <FormField label="Job *">
+            <select value={form.job_id} onChange={e => setForm(f => ({ ...f, job_id: e.target.value }))}>
+              <option value="">Select a job...</option>
+              {jobs.map(j => <option key={j.id} value={j.id}>{j.title}</option>)}
+            </select>
+          </FormField>
+          <FormField label="Post To *">
+            <select value={form.post_to} onChange={e => setForm(f => ({ ...f, post_to: e.target.value }))}>
+              <option value="internal">Internal</option>
+              <option value="external">External</option>
+            </select>
+          </FormField>
+          <FormField label="Board *">
+            <select value={form.board_id} onChange={e => setForm(f => ({ ...f, board_id: e.target.value }))}>
+              <option value="">Select a board...</option>
+              {boards.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+            </select>
+          </FormField>
+          <FormField label="Post Status">
+            <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))}>
+              <option value="pending">OFF (Draft)</option>
+              <option value="posted">LIVE</option>
+            </select>
+          </FormField>
+          <FormField label="External URL (optional)">
+            <input value={form.external_url} onChange={e => setForm(f => ({ ...f, external_url: e.target.value }))} placeholder="https://company.com/jobs/xyz" />
+          </FormField>
+          <FormField label="Apply URL (optional)">
+            <input value={form.external_apply_url} onChange={e => setForm(f => ({ ...f, external_apply_url: e.target.value }))} placeholder="https://company.com/apply/xyz" />
+          </FormField>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button className="btn-confirm-cancel" onClick={onClose}>Cancel</button>
+            <button className="btn-primary" onClick={() => setStep('preview')} disabled={!form.job_id || !form.board_id}>Preview</button>
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="panel" style={{ marginBottom: 16 }}>
+            <div className="panel-header"><span className="panel-header-title">Job Post Preview</span></div>
+            <div className="panel-body">
+              <div className="panel-row"><span className="panel-row-label">Job</span><span className="panel-row-value">{selectedJob?.title ?? '—'}</span></div>
+              <div className="panel-row"><span className="panel-row-label">Post To</span><span className="panel-row-value">{form.post_to}</span></div>
+              <div className="panel-row"><span className="panel-row-label">Board</span><span className="panel-row-value">{selectedBoard?.name ?? '—'}</span></div>
+              <div className="panel-row"><span className="panel-row-label">Status</span><span className="panel-row-value"><span className={`tag ${form.status === 'posted' ? 'tag-green' : 'tag-gray'}`}>{form.status === 'posted' ? 'LIVE' : 'OFF'}</span></span></div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button className="btn-confirm-cancel" onClick={() => setStep('form')}>Back</button>
+            <button className="btn-primary" onClick={submit} disabled={saving}>{saving ? 'Saving...' : 'Save Post'}</button>
+          </div>
+        </>
+      )}
     </Modal>
   )
 }
@@ -509,9 +579,12 @@ function PostingForm({ token, onSave, onClose }: { token: string; onSave: () => 
 function PostingsView({ token }: { token: string }) {
   const toast = useToast()
   const [postings, setPostings] = useState<JobPosting[]>([])
+  const [jobs, setJobs] = useState<Job[]>([])
+  const [boards, setBoards] = useState<JobBoard[]>([])
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState('')
   const [showForm, setShowForm] = useState(false)
+  const [duplicateFrom, setDuplicateFrom] = useState<JobPosting | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<JobPosting | null>(null)
 
   const load = useCallback(async () => {
@@ -520,6 +593,22 @@ function PostingsView({ token }: { token: string }) {
   }, [token])
 
   useEffect(() => { load() }, [load])
+  useEffect(() => {
+    Promise.all([jobsApi.list(token), boardsApi.list(token)])
+      .then(([j, b]) => { setJobs(j); setBoards(b) })
+      .catch(() => {})
+  }, [token])
+
+  const toggleLive = async (posting: JobPosting) => {
+    const nextStatus = posting.status === 'posted' ? 'pending' : 'posted'
+    try {
+      await postingsApi.update(token, posting.id, { status: nextStatus })
+      toast.success('Posting updated', `Posting is now ${nextStatus === 'posted' ? 'LIVE' : 'OFF'}.`)
+      load()
+    } catch (e: unknown) {
+      toast.error('Toggle failed', e instanceof Error ? e.message : 'Failed')
+    }
+  }
 
   const del = async (posting: JobPosting) => {
     try {
@@ -542,12 +631,19 @@ function PostingsView({ token }: { token: string }) {
           onCancel={() => setConfirmDelete(null)}
         />
       )}
-      {showForm && <PostingForm token={token} onSave={() => { setShowForm(false); load() }} onClose={() => setShowForm(false)} />}
+      {(showForm || duplicateFrom) && (
+        <PostingForm
+          token={token}
+          initialPosting={duplicateFrom}
+          onSave={() => { setShowForm(false); setDuplicateFrom(null); load() }}
+          onClose={() => { setShowForm(false); setDuplicateFrom(null) }}
+        />
+      )}
       <ListHeader title="Job Postings" count={postings.length} onAction={() => setShowForm(true)} actionLabel="+ Post Job" />
       <div className="list-table">
         <div className="list-table-head">
-          <div className="list-col list-col-main">Job ID</div>
-          <div className="list-col">Board ID</div>
+          <div className="list-col list-col-main">Job</div>
+          <div className="list-col">Board</div>
           <div className="list-col">Status</div>
           <div className="list-col">Posted At</div>
           <div className="list-col">Actions</div>
@@ -557,11 +653,13 @@ function PostingsView({ token }: { token: string }) {
         {!loading && !err && postings.length === 0 && <EmptyRow text="No postings yet. Post your first job to a board." />}
         {postings.map(p => (
           <div key={p.id} className="list-row">
-            <div className="list-col list-col-main"><div className="list-row-name">Job #{p.job_id}</div></div>
-            <div className="list-col list-row-sub">Board #{p.board_id}</div>
-            <div className="list-col"><span className={`tag ${STAGE_COLORS[p.status] ?? 'tag-gray'}`}>{p.status}</span></div>
+            <div className="list-col list-col-main"><div className="list-row-name">{jobs.find(j => j.id === p.job_id)?.title ?? `Job #${p.job_id}`}</div></div>
+            <div className="list-col list-row-sub">{boards.find(b => b.id === p.board_id)?.name ?? `Board #${p.board_id}`}</div>
+            <div className="list-col"><span className={`tag ${p.status === 'posted' ? 'tag-green' : 'tag-gray'}`}>{p.status === 'posted' ? 'LIVE' : 'OFF'}</span></div>
             <div className="list-col list-row-sub">{p.posted_at ? new Date(p.posted_at).toLocaleDateString() : '—'}</div>
-            <div className="list-col">
+            <div className="list-col" style={{ display: 'flex', gap: 6 }}>
+              <button className="btn-row-action" onClick={() => toggleLive(p)}>{p.status === 'posted' ? 'Set OFF' : 'Set LIVE'}</button>
+              <button className="btn-row-action" onClick={() => setDuplicateFrom(p)}>Duplicate</button>
               <button className="btn-row-action btn-row-danger" onClick={() => setConfirmDelete(p)}>Remove</button>
             </div>
           </div>
@@ -637,7 +735,7 @@ function ApplicationsView({ token }: { token: string }) {
 
   const moveStage = async (app: Application, status: string) => {
     try {
-      await applicationsApi.updateStage(token, app.id, status)
+      await applicationsApi.updateStage(token, app.id, { status })
       toast.success('Stage updated', `${app.candidate_name || app.candidate_email} moved to "${status}".`)
       load()
     } catch (e: unknown) {
@@ -832,6 +930,8 @@ export function PageView({ page, user, token }: { page: SidebarPage; user: UserD
   switch (page) {
     case 'profile':          return <ProfileView user={user} />
     case 'jobs':             return <JobsView token={token} />
+    case 'hiring-plans':     return <HiringPlansView token={token} />
+    case 'pipeline':         return <PipelineBoardView token={token} />
     case 'job-boards':       return <JobBoardsView token={token} />
     case 'postings':         return <PostingsView token={token} />
     case 'job-applications': return <ApplicationsView token={token} />

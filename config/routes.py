@@ -104,6 +104,8 @@ def draw_routes(app: "FastAPI") -> None:
     from app.controllers.job_boards_controller import JobBoardsController
     from app.controllers.job_postings_controller import JobPostingsController
     from app.controllers.applications_controller import ApplicationsController
+    from app.controllers.hiring_plans_controller import HiringPlansController
+    from app.controllers.pipeline_stages_controller import PipelineStagesController
 
     router = APIRouter(prefix="/api/v1")
 
@@ -133,11 +135,37 @@ def draw_routes(app: "FastAPI") -> None:
         methods=["POST"],
     )
 
+    router.add_api_route(
+        "/jobs/{job_id:int}/hiring_plan",
+        _wrap(HiringPlansController, "show_for_job", lambda c: c.show_for_job()),
+        methods=["GET"],
+    )
+
+    router.add_api_route(
+        "/jobs/{job_id:int}/pipeline_stages/reorder",
+        _wrap(PipelineStagesController, "reorder_by_job", lambda c: c.reorder_by_job()),
+        methods=["PATCH"],
+    )
+    router.add_api_route(
+        "/jobs/{job_id:int}/pipeline_stages",
+        _wrap(PipelineStagesController, "index_by_job", lambda c: c.index_by_job()),
+        methods=["GET"],
+    )
+    router.add_api_route(
+        "/jobs/{job_id:int}/pipeline_stages",
+        _wrap(PipelineStagesController, "create_by_job", lambda c: c.create_by_job()),
+        methods=["POST"],
+    )
+
     # Job boards CRUD
     resources(router, "/job-boards", JobBoardsController)
 
     # Job postings CRUD
     resources(router, "/postings", JobPostingsController)
+
+    resources(router, "/hiring_plans", HiringPlansController)
+
+    resources(router, "/pipeline_stages", PipelineStagesController, only=["show", "update", "destroy"])
 
     # Applications CRUD
     resources(router, "/applications", ApplicationsController, only=["index", "show", "create", "destroy"])

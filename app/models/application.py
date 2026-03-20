@@ -32,6 +32,9 @@ class Application(BaseModel):
     custom_answers: Mapped[dict] = mapped_column(JSON, nullable=False, server_default="{}")
 
     status: Mapped[str] = mapped_column(String(50), nullable=False, server_default="applied")
+    pipeline_stage_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger, ForeignKey("pipeline_stages.id", ondelete="SET NULL"), nullable=True
+    )
     stage_history: Mapped[list] = mapped_column(JSON, nullable=False, server_default="[]")
     assigned_to: Mapped[Optional[int]] = mapped_column(BigInteger, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     rejection_reason: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)

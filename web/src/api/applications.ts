@@ -13,7 +13,8 @@ export interface Application {
   linkedin_url: string | null
   source_type: string
   status: string
-  stage_history: { stage: string; changed_at: string; changed_by?: number }[]
+  pipeline_stage_id?: number | null
+  stage_history: { stage: string; changed_at: string; changed_by?: number; pipeline_stage_id?: number | null }[]
   tags: string[]
   score: number | null
   rejection_reason: string | null
@@ -50,10 +51,14 @@ export const applicationsApi = {
   create: (token: string, data: { job_id: number; candidate_email: string; [k: string]: unknown }) =>
     req<Application>('/applications', token, { method: 'POST', body: JSON.stringify(data) }),
 
-  updateStage: (token: string, id: number, status: string, reason?: string) =>
+  updateStage: (
+    token: string,
+    id: number,
+    body: { status?: string; pipeline_stage_id?: number | null; reason?: string },
+  ) =>
     req<Application>(`/applications/${id}/stage`, token, {
       method: 'PATCH',
-      body: JSON.stringify({ status, reason }),
+      body: JSON.stringify(body),
     }),
 
   delete: (token: string, id: number) =>

@@ -31,7 +31,8 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     REDIS_URL: str = "redis://localhost:6379/0"
-    CELERY_BROKER_URL: str = "redis://localhost:6379/1"
+    # Celery broker DB index (Rails/Sidekiq style). Requested default: Redis DB 2.
+    CELERY_BROKER_URL: str = "redis://localhost:6379/2"
     CELERY_RESULT_BACKEND: str = "redis://localhost:6379/2"
     DEFAULT_PAGE_SIZE: int = 20
     MAX_PAGE_SIZE: int = 100

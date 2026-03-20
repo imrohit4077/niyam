@@ -3,10 +3,34 @@ from datetime import datetime, timezone
 from sqlalchemy import select
 from app.models.application import Application
 from app.models.job import Job
+from app.models.pipeline_stage import PipelineStage
 from app.helpers.logger import get_logger
 from app.services.base_service import BaseService
 
 logger = get_logger(__name__)
+
+_STAGES_FROM_TYPE = {
+    "applied": "applied",
+    "screening": "screening",
+    "interview": "interview",
+    "offer": "offer",
+    "hired": "hired",
+    "rejected": "rejected",
+    "withdrawn": "withdrawn",
+}
+
+
+def _enqueue_hiring_plan_refresh(account_id: int, job_id: int) -> None:
+    try:
+        from app.jobs.refresh_hiring_plan_hires_job import refresh_hiring_plan_hires_made
+
+        refresh_hiring_plan_hires_made.delay(account_id=account_id, job_id=job_id)
+    except Exception:
+        logger.warning(
+            "Could not enqueue hiring plan hires refresh",
+            exc_info=True,
+            extra={"account_id": account_id, "job_id": job_id},
+        )
 
 
 class ApplicationService(BaseService):
@@ -67,30 +91,89 @@ class ApplicationService(BaseService):
         logger.info(f"ApplicationService.create — id={app.id} job={job_id} email={email}")
         return self.success(app.to_dict())
 
-    def update_stage(self, account_id: int, app_id: int, user_id: int, status: str,
-                     reason: str | None = None) -> dict:
+    def update_stage(
+        self,
+        account_id: int,
+        app_id: int,
+        user_id: int,
+        status: str | None = None,
+        reason: str | None = None,
+        pipeline_stage_id: int | None = None,
+        *,
+        pipeline_touch: bool = False,
+        status_touch: bool = False,
+    ) -> dict:
         app = Application.find_by(self.db, id=app_id, account_id=account_id)
         if not app or app.deleted_at:
             return self.failure("Application not found")
+        if not status_touch and not pipeline_touch:
+            return self.failure("Provide status and/or pipeline_stage_id")
+
         valid = {"applied", "screening", "interview", "offer", "hired", "rejected", "withdrawn"}
-        if status not in valid:
-            return self.failure(f"Invalid status. Must be one of: {', '.join(valid)}")
+        old_status = app.status
+        derived_from_stage: str | None = None
+
+        if pipeline_touch:
+            if pipeline_stage_id is None:
+                app.pipeline_stage_id = None
+            else:
+                stage = PipelineStage.find_by(
+                    self.db,
+                    id=pipeline_stage_id,
+                    account_id=account_id,
+                    job_id=app.job_id,
+                )
+                if not stage:
+                    return self.failure("Pipeline stage not found for this job")
+                app.pipeline_stage_id = pipeline_stage_id
+                if stage.stage_type and stage.stage_type in _STAGES_FROM_TYPE:
+                    derived_from_stage = _STAGES_FROM_TYPE[stage.stage_type]
+
+        effective_status: str | None = None
+        if status_touch:
+            if not status:
+                return self.failure("status cannot be empty when provided")
+            if status not in valid:
+                return self.failure(f"Invalid status. Must be one of: {', '.join(sorted(valid))}")
+            effective_status = status
+        elif derived_from_stage is not None:
+            effective_status = derived_from_stage
+
+        if effective_status is not None:
+            app.status = effective_status
+
         now = datetime.now(timezone.utc)
         history = list(app.stage_history or [])
-        history.append({"stage": status, "changed_by": user_id, "changed_at": now.isoformat()})
-        app.status = status
+        history.append(
+            {
+                "stage": app.status,
+                "pipeline_stage_id": app.pipeline_stage_id,
+                "changed_by": user_id,
+                "changed_at": now.isoformat(),
+            }
+        )
         app.stage_history = history
-        if status == "rejected" and reason:
+        if app.status == "rejected" and reason:
             app.rejection_reason = reason
         app.updated_at = now
         app.save(self.db)
-        logger.info(f"ApplicationService.update_stage — id={app_id} status={status}")
+
+        if old_status != app.status and (app.status == "hired" or old_status == "hired"):
+            _enqueue_hiring_plan_refresh(account_id, app.job_id)
+
+        logger.info(
+            f"ApplicationService.update_stage — id={app_id} status={app.status} "
+            f"pipeline_stage_id={app.pipeline_stage_id}"
+        )
         return self.success(app.to_dict())
 
     def delete_application(self, account_id: int, app_id: int) -> dict:
         app = Application.find_by(self.db, id=app_id, account_id=account_id)
         if not app or app.deleted_at:
             return self.failure("Application not found")
+        was_hired = app.status == "hired"
         app.deleted_at = datetime.now(timezone.utc)
         app.save(self.db)
+        if was_hired:
+            _enqueue_hiring_plan_refresh(account_id, app.job_id)
         return self.success({"deleted": True})

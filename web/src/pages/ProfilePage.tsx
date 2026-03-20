@@ -14,6 +14,8 @@ interface Props {
 const PAGE_TITLES: Record<SidebarPage, string> = {
   'profile':           'My Profile',
   'jobs':              'Jobs',
+  'hiring-plans':      'Hiring plans',
+  'pipeline':          'Pipeline',
   'job-boards':        'Job Boards',
   'postings':          'Postings',
   'job-applications':  'Applications',

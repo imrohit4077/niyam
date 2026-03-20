@@ -5,7 +5,7 @@ Routes:
   POST   /api/v1/applications
   GET    /api/v1/applications/:id
   DELETE /api/v1/applications/:id
-  PATCH  /api/v1/applications/:id/stage
+  PATCH  /api/v1/applications/:id/stage   (body: status?, pipeline_stage_id?, reason?)
 """
 
 from app.controllers.base_controller import BaseController, before_action
@@ -69,9 +69,16 @@ class ApplicationsController(BaseController, Authenticatable):
         user_id = self._user_id()
         app_id = int(self.request.path_params["id"])
         data = await self._get_body_json()
-        status = data.get("status", "")
-        reason = data.get("reason")
-        result = ApplicationService(self.db).update_stage(account_id, app_id, user_id, status, reason=reason)
+        result = ApplicationService(self.db).update_stage(
+            account_id,
+            app_id,
+            user_id,
+            status=data.get("status"),
+            reason=data.get("reason"),
+            pipeline_stage_id=data.get("pipeline_stage_id"),
+            pipeline_touch="pipeline_stage_id" in data,
+            status_touch="status" in data,
+        )
         if not result["ok"]:
             return self.render_error(result["error"], status=422)
         logger.info(f"ApplicationsController#update_stage — id={app_id} status={status}")

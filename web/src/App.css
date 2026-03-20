@@ -1547,6 +1547,413 @@ a { color: inherit; text-decoration: none; }
 }
 .btn-confirm-danger:hover { background: #dc2626; }
 
+.modal.modal-wide {
+  max-width: 640px;
+}
+
+.form-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin: -8px 0 16px;
+}
+
+.modal-divider {
+  border: none;
+  border-top: 1px solid var(--border-light);
+  margin: 20px 0;
+}
+
+.list-loading,
+.list-error,
+.list-empty {
+  padding: 40px 24px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-muted);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.list-error {
+  color: var(--error);
+  background: var(--error-bg);
+  border-bottom: 1px solid var(--error-border);
+}
+
+/* ── Hiring plans ── */
+.hiring-plans-toolbar {
+  margin-bottom: 16px;
+}
+
+.hiring-plans-intro {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.55;
+  max-width: 720px;
+}
+
+.hiring-plans-table .hiring-col-progress {
+  min-width: 140px;
+}
+
+.hiring-plan-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.hiring-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 200px;
+}
+
+.hiring-progress-track {
+  flex: 1;
+  height: 8px;
+  background: var(--gray-100);
+  border-radius: 99px;
+  overflow: hidden;
+  border: 1px solid var(--border-light);
+}
+
+.hiring-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--teal), #0891b2);
+  border-radius: 99px;
+  transition: width 0.35s ease;
+}
+
+.hiring-progress-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.health-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.health-badge-success {
+  background: var(--success-bg);
+  color: var(--tag-green);
+  border: 1px solid var(--success-border);
+}
+
+.health-badge-ok {
+  background: var(--info-bg);
+  color: var(--tag-blue);
+  border: 1px solid var(--info-border);
+}
+
+.health-badge-risk {
+  background: var(--error-bg);
+  color: var(--tag-red);
+  border: 1px solid var(--error-border);
+  animation: healthPulse 2s ease-in-out infinite;
+}
+
+.health-badge-muted {
+  background: var(--tag-gray-bg);
+  color: var(--tag-gray);
+  border: 1px solid var(--gray-200);
+}
+
+@keyframes healthPulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.25); }
+  50% { opacity: 0.92; box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+}
+
+/* ── Pipeline / Kanban ── */
+.pipeline-toolbar {
+  margin-bottom: 20px;
+  padding: 16px 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-xs);
+}
+
+.pipeline-toolbar-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 14px;
+}
+
+.pipeline-job-select {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 200px;
+  max-width: 420px;
+}
+
+.pipeline-job-select label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.pipeline-job-select select {
+  height: 40px;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-sm);
+  padding: 0 12px;
+  font-size: 14px;
+  font-family: var(--font);
+  background: var(--white);
+  color: var(--text-primary);
+}
+
+.pipeline-toolbar-meta {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.pipeline-placeholder {
+  padding: 48px 24px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--text-secondary);
+  background: var(--gray-50);
+  border: 1px dashed var(--gray-300);
+  border-radius: var(--radius-md);
+  line-height: 1.6;
+}
+
+.kanban-board {
+  display: flex;
+  gap: 14px;
+  align-items: stretch;
+  overflow-x: auto;
+  padding-bottom: 12px;
+  margin: 0 -4px;
+  scroll-snap-type: x proximity;
+}
+
+.kanban-column {
+  flex: 0 0 280px;
+  min-width: 260px;
+  max-height: min(70vh, 640px);
+  display: flex;
+  flex-direction: column;
+  background: var(--gray-50);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  scroll-snap-align: start;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.kanban-column-over {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px var(--teal-glow);
+}
+
+.kanban-column-head {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.kanban-column-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  flex: 1;
+  min-width: 0;
+}
+
+.kanban-column-sub {
+  width: 100%;
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.kanban-column-count {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--teal);
+  background: var(--teal-light);
+  padding: 2px 8px;
+  border-radius: 99px;
+}
+
+.kanban-column-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.kanban-empty {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 20px 8px;
+  border: 1px dashed var(--gray-300);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.kanban-card {
+  display: flex;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-xs);
+  cursor: grab;
+  touch-action: none;
+  transition: box-shadow var(--transition), border-color var(--transition);
+}
+
+.kanban-card:hover {
+  border-color: var(--gray-300);
+  box-shadow: var(--shadow-sm);
+}
+
+.kanban-card:active {
+  cursor: grabbing;
+}
+
+.kanban-card-overlay {
+  cursor: grabbing;
+  box-shadow: var(--shadow-md);
+  opacity: 0.95;
+}
+
+.kanban-card-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, var(--navy-mid), var(--navy));
+  color: var(--white);
+  font-size: 11px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.kanban-card-body {
+  min-width: 0;
+  flex: 1;
+}
+
+.kanban-card-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kanban-card-email {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+
+.kanban-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.kanban-fit {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--indigo);
+  background: rgba(99, 102, 241, 0.1);
+  padding: 2px 6px;
+  border-radius: var(--radius-xs);
+}
+
+.pipeline-sort-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.pipeline-sort-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--gray-50);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.pipeline-sort-handle {
+  cursor: grab;
+  border: none;
+  background: var(--gray-200);
+  color: var(--text-muted);
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-xs);
+  font-size: 12px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.pipeline-sort-handle:active {
+  cursor: grabbing;
+}
+
+.pipeline-sort-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.pipeline-sort-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
 
 /* ════════════════════════════════════════════════════════════════════
    RESPONSIVE
@@ -1564,4 +1971,6 @@ a { color: inherit; text-decoration: none; }
   .stat-cell { min-width: 50%; }
   .footer-center { display: none; }
   .footer-inner { height: auto; padding: 12px 0; flex-wrap: wrap; justify-content: center; gap: 8px; }
+  .kanban-column { flex: 0 0 85vw; min-width: 85vw; }
+  .hiring-plan-row { flex-wrap: wrap; }
 }
