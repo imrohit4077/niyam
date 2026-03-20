@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useOutletContext, useSearchParams } from 'react-router-dom'
+import { useNavigate, useOutletContext, useSearchParams } from 'react-router-dom'
 import type { DashboardOutletContext } from '../layouts/DashboardOutletContext'
 import {
   DndContext,
@@ -113,7 +113,8 @@ function pipelineSourceFromUrl(searchParams: URLSearchParams, allowed: string[])
   return 'all'
 }
 
-function KanbanCard({ app }: { app: Application }) {
+function KanbanCard({ app, accountId }: { app: Application; accountId: string }) {
+  const navigate = useNavigate()
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: dragAppId(app.id),
     data: { type: 'application', app },
@@ -144,6 +145,17 @@ function KanbanCard({ app }: { app: Application }) {
           {app.score != null && <span className="kanban-fit">Fit {Math.round(app.score)}%</span>}
           {app.source_type && <span className="kanban-source">{app.source_type}</span>}
         </div>
+        <button
+          type="button"
+          className="kanban-card-open"
+          onPointerDown={e => e.stopPropagation()}
+          onClick={e => {
+            e.stopPropagation()
+            navigate(`/account/${accountId}/job-applications/${app.id}`)
+          }}
+        >
+          Open candidate
+        </button>
       </div>
     </div>
   )
@@ -157,6 +169,7 @@ function KanbanColumn({
   appsVisible,
   emptyHint,
   accentClass,
+  accountId,
 }: {
   id: string
   title: string
@@ -165,6 +178,7 @@ function KanbanColumn({
   appsVisible: Application[]
   emptyHint: string
   accentClass?: string
+  accountId: string
 }) {
   const { setNodeRef, isOver } = useDroppable({ id, data: { type: 'column' } })
   const filteredOut = appsAll.length - appsVisible.length
@@ -206,7 +220,7 @@ function KanbanColumn({
             </div>
           )}
           {appsVisible.map(a => (
-            <KanbanCard key={a.id} app={a} />
+            <KanbanCard key={a.id} app={a} accountId={accountId} />
           ))}
         </div>
       </div>
@@ -378,7 +392,7 @@ function useApplicationFilters(apps: Application[], search: string, status: stri
 }
 
 export default function PipelineBoardView() {
-  const { token } = useOutletContext<DashboardOutletContext>()
+  const { token, accountId } = useOutletContext<DashboardOutletContext>()
   const toast = useToast()
   const [searchParams, setSearchParams] = useSearchParams()
   const [jobs, setJobs] = useState<Job[]>([])
@@ -796,6 +810,7 @@ export default function PipelineBoardView() {
               appsVisible={visibleByColumn.get('unassigned') ?? []}
               emptyHint="Drop here to remove stage assignment"
               accentClass="kanban-column-unassigned"
+              accountId={accountId}
             />
             {stages.map((s, i) => (
               <KanbanColumn
@@ -807,6 +822,7 @@ export default function PipelineBoardView() {
                 appsVisible={visibleByColumn.get(s.id) ?? []}
                 emptyHint="Drop candidates here"
                 accentClass={accentForStage(i)}
+                accountId={accountId}
               />
             ))}
           </div>

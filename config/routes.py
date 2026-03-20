@@ -111,6 +111,12 @@ def draw_routes(app: "FastAPI") -> None:
     from app.controllers.scorecards_controller import ScorecardsController
     from app.controllers.account_members_controller import AccountMembersController
     from app.controllers.public_apply_controller import PublicApplyController
+    from app.controllers.esign_templates_controller import EsignTemplatesController
+    from app.controllers.esign_stage_rules_controller import EsignStageRulesController
+    from app.controllers.esign_requests_controller import EsignRequestsController
+    from app.controllers.account_esign_settings_controller import AccountEsignSettingsController
+    from app.controllers.public_esign_controller import PublicEsignController
+    from app.controllers.esign_webhooks_controller import EsignWebhooksController
 
     router = APIRouter(prefix="/api/v1")
 
@@ -130,6 +136,28 @@ def draw_routes(app: "FastAPI") -> None:
         methods=["POST"],
     )
 
+    router.add_api_route(
+        "/public/esign/sign/{token}",
+        _wrap(PublicEsignController, "show_sign", lambda c: c.show_sign(), run_before=False),
+        methods=["GET"],
+    )
+    router.add_api_route(
+        "/public/esign/sign/{token}",
+        _wrap(PublicEsignController, "submit_sign", lambda c: c.submit_sign(), run_before=False),
+        methods=["POST"],
+    )
+    router.add_api_route(
+        "/public/esign/sign/{token}/download",
+        _wrap(PublicEsignController, "download_signed", lambda c: c.download_signed(), run_before=False),
+        methods=["GET"],
+    )
+
+    router.add_api_route(
+        "/webhooks/esign",
+        _wrap(EsignWebhooksController, "receive", lambda c: c.receive(), run_before=False),
+        methods=["POST"],
+    )
+
     # Profile (protected)
     router.add_api_route(
         "/profile",
@@ -142,6 +170,20 @@ def draw_routes(app: "FastAPI") -> None:
         _wrap(AccountMembersController, "index", lambda c: c.index()),
         methods=["GET"],
     )
+
+    router.add_api_route(
+        "/account/esign_settings",
+        _wrap(AccountEsignSettingsController, "show", lambda c: c.show()),
+        methods=["GET"],
+    )
+    router.add_api_route(
+        "/account/esign_settings",
+        _wrap(AccountEsignSettingsController, "update", lambda c: c.update()),
+        methods=["PATCH"],
+    )
+
+    resources(router, "/esign_templates", EsignTemplatesController)
+    resources(router, "/esign_stage_rules", EsignStageRulesController)
 
     # Jobs CRUD
     resources(router, "/jobs", JobsController)
@@ -286,12 +328,35 @@ def draw_routes(app: "FastAPI") -> None:
 
     # Applications CRUD
     resources(router, "/applications", ApplicationsController, only=["index", "show", "create", "destroy"])
+    router.add_api_route(
+        "/applications/{id:int}",
+        _wrap(ApplicationsController, "update", lambda c: c.update()),
+        methods=["PATCH"],
+    )
 
     # Application stage update
     router.add_api_route(
         "/applications/{id:int}/stage",
         _wrap(ApplicationsController, "update_stage", lambda c: c.update_stage()),
         methods=["PATCH"],
+    )
+
+    router.add_api_route(
+        "/esign_requests",
+        _wrap(EsignRequestsController, "index", lambda c: c.index()),
+        methods=["GET"],
+    )
+
+    router.add_api_route(
+        "/applications/{application_id:int}/esign_requests",
+        _wrap(EsignRequestsController, "index_for_application", lambda c: c.index_for_application()),
+        methods=["GET"],
+    )
+
+    router.add_api_route(
+        "/applications/{application_id:int}/esign_requests/generate",
+        _wrap(EsignRequestsController, "generate_for_application", lambda c: c.generate_for_application()),
+        methods=["POST"],
     )
 
     app.include_router(router)

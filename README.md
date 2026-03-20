@@ -268,6 +268,16 @@ python manage.py db:seed
 | `python manage.py shell` | REPL with `db` and all `app.models` |
 | `python manage.py routes` | List registered routes |
 
+**E-sign / background jobs:** Stage-based document automation uses Celery. With Redis running (`CELERY_BROKER_URL`), start a worker alongside the API:
+
+```bash
+python manage.py worker
+```
+
+If Redis or enqueue fails, e-sign rules still run **inline** in the API process (slower responses). Optional HTML snapshots: set `ESIGN_ARTIFACTS_DIR` in `.env` to write merged documents to disk under `{dir}/{account_id}/{request_id}.html`.
+
+**Signed downloads** are stored and served as **PDF**. The API tries [WeasyPrint](https://weasyprint.org/) first (best layout/CSS); if native libraries are missing (typical macOS error: `cannot load library 'libgobject-2.0-0'`), it automatically falls back to **fpdf2** (pip-only: Pillow + fonttools, no Pango/Cairo). For best fidelity you can still install WeasyPrint’s system deps: `brew install pango cairo gdk-pixbuf libffi` (Linux: distro packages for `pango`, `cairo`, etc.).
+
 **Endpoints (framework default):**
 
 - **GET `/health`** — Health check (no auth).

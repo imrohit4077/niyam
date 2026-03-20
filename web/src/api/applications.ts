@@ -11,6 +11,7 @@ export interface Application {
   resume_url: string | null
   cover_letter: string | null
   linkedin_url: string | null
+  portfolio_url: string | null
   source_type: string
   status: string
   pipeline_stage_id?: number | null
@@ -18,6 +19,7 @@ export interface Application {
   tags: string[]
   score: number | null
   rejection_reason: string | null
+  rejection_note: string | null
   created_at: string
   updated_at: string
 }
@@ -50,6 +52,9 @@ export const applicationsApi = {
 
   create: (token: string, data: { job_id: number; candidate_email: string; [k: string]: unknown }) =>
     req<Application>('/applications', token, { method: 'POST', body: JSON.stringify(data) }),
+
+  patch: (token: string, id: number, data: Record<string, unknown>) =>
+    req<Application>(`/applications/${id}`, token, { method: 'PATCH', body: JSON.stringify(data) }),
 
   updateStage: (
     token: string,

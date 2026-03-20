@@ -7,10 +7,13 @@ and defines startup/shutdown events. Includes health check endpoint.
 """
 
 from contextlib import asynccontextmanager
+import logging
 from typing import Any
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from sqlalchemy.exc import SQLAlchemyError
 
 from config.settings import get_settings
 from config.database import engine
@@ -60,6 +63,18 @@ def create_app() -> FastAPI:
 
     # Register all routes (like Rails routes.rb)
     draw_routes(app)
+
+    @app.exception_handler(SQLAlchemyError)
+    async def sqlalchemy_exception_handler(_request: Request, exc: SQLAlchemyError) -> JSONResponse:
+        """Return JSON (not HTML/plain) so API clients don't break on res.json()."""
+        logging.exception("Database error: %s", exc)
+        hint = (
+            "Database error. If you just pulled new code, run: python manage.py db migrate"
+        )
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "error": hint, "code": 500},
+        )
 
     return app
 

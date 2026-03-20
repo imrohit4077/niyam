@@ -31,3 +31,6 @@ demo_app/
 # OS
 .DS_Store
 Thumbs.db
+
+# Local e-sign signed HTML storage (see ESIGN_SIGNED_DOCUMENTS_DIR)
+storage/
