@@ -23,6 +23,12 @@ export interface InterviewAssignmentRow {
   } | null
 }
 
+export interface ScorecardCriterion {
+  name: string
+  scale_max: number
+  required: boolean
+}
+
 export interface InterviewKitPayload {
   assignment: InterviewAssignmentRow
   interview_plan: { id: number; name: string; pipeline_stage_id: number | null; position: number }
@@ -34,6 +40,7 @@ export interface InterviewKitPayload {
   candidate: Record<string, unknown> | null
   job: Record<string, unknown> | null
   application: Record<string, unknown>
+  scorecard_criteria?: ScorecardCriterion[]
 }
 
 function authHeaders(token: string) {
@@ -66,7 +73,11 @@ export const interviewsApi = {
     data: {
       overall_recommendation: string
       criteria_scores?: Record<string, number | string>
+      scores?: Record<string, number | string>
       notes?: string | null
+      pros?: string | null
+      cons?: string | null
+      internal_notes?: string | null
     },
   ) =>
     req<Record<string, unknown>>(`/interviews/${assignmentId}/scorecard`, token, {

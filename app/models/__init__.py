@@ -15,6 +15,7 @@ from app.models.account_user import AccountUser
 from app.models.role import Role
 from app.models.account_user_role import AccountUserRole
 from app.models.job import Job
+from app.models.job_attachment import JobAttachment
 from app.models.job_version import JobVersion
 from app.models.job_board import JobBoard
 from app.models.job_posting import JobPosting
@@ -29,7 +30,7 @@ from app.models.interview_scorecard import InterviewScorecard
 __all__ = [
     "BaseModel", "Timestampable", "SoftDeletable", "Sluggable",
     "User", "Account", "AccountUser", "Role", "AccountUserRole",
-    "Job", "JobVersion", "JobBoard", "JobPosting", "Application",
+    "Job", "JobAttachment", "JobVersion", "JobBoard", "JobPosting", "Application",
     "HiringPlan", "PipelineStage",
     "InterviewPlan", "InterviewKit", "InterviewAssignment", "InterviewScorecard",
 ]

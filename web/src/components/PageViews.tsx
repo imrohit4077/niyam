@@ -11,6 +11,7 @@ import { applicationsApi } from '../api/applications'
 import type { Application } from '../api/applications'
 import { useToast } from '../contexts/ToastContext'
 import { interviewsApi, type InterviewAssignmentRow, type InterviewKitPayload } from '../api/interviews'
+import { scorecardsApi, type ScorecardRow } from '../api/scorecards'
 
 // ── Shared UI primitives ───────────────────────────────────────────
 
@@ -95,6 +96,115 @@ const STAGE_COLORS: Record<string, string> = {
   draft: 'tag-gray', open: 'tag-green', closed: 'tag-gray', paused: 'tag-orange',
   pending: 'tag-orange', posted: 'tag-green', failed: 'tag-red',
   scheduled: 'tag-blue', completed: 'tag-green', cancelled: 'tag-gray',
+  strong_yes: 'tag-green', yes: 'tag-blue', maybe: 'tag-orange', no: 'tag-orange', strong_no: 'tag-red',
+}
+
+/** Scorecards are always tied to a candidate application / interview—not to the job posting itself. */
+function CandidateInterviewScorecardsModal({
+  token,
+  application,
+  onClose,
+}: {
+  token: string
+  application: Application
+  onClose: () => void
+}) {
+  const [rows, setRows] = useState<ScorecardRow[]>([])
+  const [loading, setLoading] = useState(true)
+  const [err, setErr] = useState('')
+
+  useEffect(() => {
+    let cancelled = false
+    setErr('')
+    setRows([])
+    setLoading(true)
+    scorecardsApi
+      .forApplication(token, application.id)
+      .then(data => {
+        if (!cancelled) setRows(data)
+      })
+      .catch(e => {
+        if (!cancelled) setErr(e instanceof Error ? e.message : 'Failed to load scorecards')
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [token, application.id])
+
+  const who = application.candidate_name || application.candidate_email || 'Candidate'
+
+  return (
+    <Modal title={`Interview scorecards — ${who}`} onClose={onClose}>
+      <p className="interviews-lead" style={{ marginTop: 0, marginBottom: 14 }}>
+        These scores are from interviewers after sessions with this candidate. They are not ratings of the job
+        opening.
+      </p>
+      {loading && <LoadingRow />}
+      {err && <ErrorRow msg={err} />}
+      {!loading && !err && rows.length === 0 && (
+        <p className="job-editor-muted">No interview scorecards yet for this candidate.</p>
+      )}
+      {!loading &&
+        rows.map(sc => {
+          const scores = sc.scores ?? sc.criteria_scores ?? {}
+          const entries = Object.entries(scores)
+          return (
+            <div key={sc.id} className="scorecard-summary-card">
+              <div className="scorecard-summary-head">
+                <span className={`tag ${STAGE_COLORS[sc.overall_recommendation] ?? 'tag-blue'}`}>
+                  {sc.overall_recommendation.replace(/_/g, ' ')}
+                </span>
+                {sc.criteria_average != null && (
+                  <span className="scorecard-summary-avg">Avg {sc.criteria_average}</span>
+                )}
+                <span className="scorecard-summary-meta">
+                  {sc.submitted_at ? new Date(sc.submitted_at).toLocaleString() : '—'}
+                </span>
+              </div>
+              {entries.length > 0 && (
+                <div className="scorecard-bar-list">
+                  {entries.map(([k, v]) => {
+                    const n = Number(v)
+                    const pct = Number.isNaN(n) ? 0 : Math.min(100, (n / 5) * 100)
+                    return (
+                      <div key={k} className="scorecard-bar-row">
+                        <span className="scorecard-bar-label">{k}</span>
+                        <div className="scorecard-bar-track">
+                          <div className="scorecard-bar-fill" style={{ width: `${pct}%` }} />
+                        </div>
+                        <span className="scorecard-bar-val">{String(v)}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+              {(sc.pros || sc.cons) && (
+                <div className="scorecard-pros-cons">
+                  {sc.pros && (
+                    <p>
+                      <strong>Pros:</strong> {sc.pros}
+                    </p>
+                  )}
+                  {sc.cons && (
+                    <p>
+                      <strong>Cons:</strong> {sc.cons}
+                    </p>
+                  )}
+                </div>
+              )}
+              {sc.bias_flags && sc.bias_flags.length > 0 && (
+                <div className="scorecard-bias-hint">
+                  Bias review: flagged terms in notes — {sc.bias_flags.join(', ')}
+                </div>
+              )}
+            </div>
+          )
+        })}
+    </Modal>
+  )
 }
 
 // ── Confirm Dialog ──────────────────────────────────────────────────
@@ -233,6 +343,10 @@ export function JobsView() {
         onAction={() => navigate(`/account/${accountId}/jobs/new`)}
         actionLabel="+ New Job"
       />
+      <p className="interviews-lead" style={{ margin: '0 0 12px' }}>
+        Interview scorecards are recorded per candidate (after interviews), not for the job itself. Open{' '}
+        <strong>Applications</strong> or <strong>Interviews</strong> to view or submit scores.
+      </p>
       <div className="list-table">
         <div className="list-table-head">
           <div className="list-col list-col-main">Title</div>
@@ -250,14 +364,48 @@ export function JobsView() {
             <div className="list-col list-row-sub">{j.department || '—'}</div>
             <div className="list-col list-row-sub">{j.location || '—'}</div>
             <div className="list-col"><span className={`tag ${STAGE_COLORS[j.status] ?? 'tag-gray'}`}>{j.status}</span></div>
-            <div className="list-col" style={{ display: 'flex', gap: 6 }}>
+            <div className="list-col" style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               <button
+                type="button"
                 className="btn-row-action"
                 onClick={() => navigate(`/account/${accountId}/jobs/${j.id}/edit`)}
               >
                 Edit
               </button>
-              <button className="btn-row-action btn-row-danger" onClick={() => setConfirmDelete(j)}>Delete</button>
+              {j.apply_token && (
+                <>
+                  <button
+                    type="button"
+                    className="btn-row-action"
+                    title={j.status === 'open' ? 'Open candidate apply page' : 'Set status to Open so candidates can view and apply'}
+                    disabled={j.status !== 'open'}
+                    onClick={() => {
+                      const u = `${window.location.origin}/apply/${encodeURIComponent(j.apply_token!)}`
+                      window.open(u, '_blank', 'noopener,noreferrer')
+                    }}
+                  >
+                    Apply page
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-row-action"
+                    title={j.status === 'open' ? 'Copy link' : 'Candidates can only apply when job status is Open'}
+                    disabled={j.status !== 'open'}
+                    onClick={() => {
+                      const u = `${window.location.origin}/apply/${encodeURIComponent(j.apply_token!)}`
+                      void navigator.clipboard.writeText(u).then(
+                        () => toast.success('Apply link copied', 'Share this URL with candidates.'),
+                        () => toast.error('Copy failed', 'Copy the link from the address bar after opening Apply page.'),
+                      )
+                    }}
+                  >
+                    Copy link
+                  </button>
+                </>
+              )}
+              <button type="button" className="btn-row-action btn-row-danger" onClick={() => setConfirmDelete(j)}>
+                Delete
+              </button>
             </div>
           </div>
         ))}
@@ -683,6 +831,7 @@ export function ApplicationsView() {
   const [showForm, setShowForm] = useState(false)
   const [stageTarget, setStageTarget] = useState<Application | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<Application | null>(null)
+  const [scoreModalApp, setScoreModalApp] = useState<Application | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true); setErr('')
@@ -744,7 +893,17 @@ export function ApplicationsView() {
           </div>
         </Modal>
       )}
+      {scoreModalApp && (
+        <CandidateInterviewScorecardsModal
+          token={token}
+          application={scoreModalApp}
+          onClose={() => setScoreModalApp(null)}
+        />
+      )}
       <ListHeader title="Applications" count={apps.length} onAction={() => setShowForm(true)} actionLabel="+ New Application" />
+      <p className="interviews-lead" style={{ margin: '0 0 12px' }}>
+        Use <strong>Interview scores</strong> to see structured feedback interviewers submitted for each candidate.
+      </p>
       <div className="list-table">
         <div className="list-table-head">
           <div className="list-col list-col-main">Candidate</div>
@@ -765,9 +924,16 @@ export function ApplicationsView() {
             <div className="list-col list-row-sub">Job #{a.job_id}</div>
             <div className="list-col"><span className={`tag ${STAGE_COLORS[a.status] ?? 'tag-blue'}`}>{a.status}</span></div>
             <div className="list-col list-row-sub">{a.source_type}</div>
-            <div className="list-col" style={{ display: 'flex', gap: 6 }}>
-              <button className="btn-row-action" onClick={() => setStageTarget(a)}>Stage</button>
-              <button className="btn-row-action btn-row-danger" onClick={() => setConfirmDelete(a)}>Del</button>
+            <div className="list-col" style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              <button type="button" className="btn-row-action" onClick={() => setStageTarget(a)}>
+                Stage
+              </button>
+              <button type="button" className="btn-row-action" onClick={() => setScoreModalApp(a)}>
+                Interview scores
+              </button>
+              <button type="button" className="btn-row-action btn-row-danger" onClick={() => setConfirmDelete(a)}>
+                Del
+              </button>
             </div>
           </div>
         ))}
@@ -783,6 +949,7 @@ export function CandidatesView() {
   const [apps, setApps] = useState<Application[]>([])
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState('')
+  const [scoreModalApp, setScoreModalApp] = useState<Application | null>(null)
 
   useEffect(() => {
     applicationsApi.list(token)
@@ -793,13 +960,25 @@ export function CandidatesView() {
 
   return (
     <>
+      {scoreModalApp && (
+        <CandidateInterviewScorecardsModal
+          token={token}
+          application={scoreModalApp}
+          onClose={() => setScoreModalApp(null)}
+        />
+      )}
       <ListHeader title="Candidates" count={apps.length} />
+      <p className="interviews-lead" style={{ margin: '0 0 12px' }}>
+        Interview scorecards belong to each person you interview—open <strong>Interview scores</strong> for their
+        feedback.
+      </p>
       <div className="list-table">
         <div className="list-table-head">
           <div className="list-col list-col-main">Candidate</div>
           <div className="list-col">Job</div>
           <div className="list-col">Stage</div>
           <div className="list-col">Source</div>
+          <div className="list-col">Actions</div>
         </div>
         {loading && <LoadingRow />}
         {err && <ErrorRow msg={err} />}
@@ -813,6 +992,11 @@ export function CandidatesView() {
             <div className="list-col list-row-sub">Job #{a.job_id}</div>
             <div className="list-col"><span className={`tag ${STAGE_COLORS[a.status] ?? 'tag-blue'}`}>{a.status}</span></div>
             <div className="list-col list-row-sub">{a.source_type}</div>
+            <div className="list-col">
+              <button type="button" className="btn-row-action" onClick={() => setScoreModalApp(a)}>
+                Interview scores
+              </button>
+            </div>
           </div>
         ))}
       </div>
@@ -870,6 +1054,11 @@ export function InterviewsView() {
 
   const jobTitle = (jobId: number) => jobs.find(j => j.id === jobId)?.title ?? `Job #${jobId}`
 
+  const [criterionScores, setCriterionScores] = useState<Record<string, number>>({})
+  const [scorePros, setScorePros] = useState('')
+  const [scoreCons, setScoreCons] = useState('')
+  const [internalNotes, setInternalNotes] = useState('')
+
   const loadKitForRow = useCallback(
     async (row: InterviewAssignmentRow) => {
       setKitOpenId(row.id)
@@ -877,6 +1066,10 @@ export function InterviewsView() {
       setKitLoading(true)
       setScoreRec('yes')
       setScoreNotes('')
+      setCriterionScores({})
+      setScorePros('')
+      setScoreCons('')
+      setInternalNotes('')
       try {
         const data = await interviewsApi.getKit(token, row.id)
         setKitPayload(data)
@@ -942,13 +1135,30 @@ export function InterviewsView() {
     loadKitForRow,
   ])
 
+  useEffect(() => {
+    if (!kitPayload?.scorecard_criteria) {
+      setCriterionScores({})
+      return
+    }
+    const next: Record<string, number> = {}
+    for (const c of kitPayload.scorecard_criteria) {
+      const max = c.scale_max ?? 5
+      next[c.name] = Math.max(1, Math.min(max, Math.ceil(max / 2)))
+    }
+    setCriterionScores(next)
+  }, [kitPayload?.assignment?.id, kitPayload?.scorecard_criteria])
+
   const submitScore = async () => {
     if (!kitPayload) return
     setScoreSaving(true)
     try {
       await interviewsApi.submitScorecard(token, kitPayload.assignment.id, {
         overall_recommendation: scoreRec,
+        criteria_scores: criterionScores,
         notes: scoreNotes || undefined,
+        pros: scorePros || undefined,
+        cons: scoreCons || undefined,
+        internal_notes: internalNotes || undefined,
       })
       toast.success('Scorecard submitted', 'Thanks — assignment marked complete.')
       closeKit()
@@ -1019,16 +1229,75 @@ export function InterviewsView() {
                   {kitPayload.assignment.status !== 'completed' && (
                     <div className="job-editor-card interviews-scorecard">
                       <h3 className="job-editor-card-title">Scorecard</h3>
+                      {kitPayload.scorecard_criteria && kitPayload.scorecard_criteria.length > 0 ? (
+                        <div className="scorecard-criteria-grid">
+                          {kitPayload.scorecard_criteria.map(c => {
+                            const max = c.scale_max ?? 5
+                            const v = criterionScores[c.name] ?? 1
+                            return (
+                              <FormField key={c.name} label={`${c.name} (${v} / ${max})`}>
+                                <input
+                                  type="range"
+                                  min={1}
+                                  max={max}
+                                  value={v}
+                                  onChange={e =>
+                                    setCriterionScores(s => ({ ...s, [c.name]: Number(e.target.value) }))
+                                  }
+                                  aria-valuemin={1}
+                                  aria-valuemax={max}
+                                  aria-valuenow={v}
+                                />
+                              </FormField>
+                            )
+                          })}
+                        </div>
+                      ) : (
+                        <p className="job-editor-muted job-editor-muted--boxed">
+                          This job has no scorecard rubric yet. Add attributes on the job&apos;s Interview step, or submit
+                          with recommendation only.
+                        </p>
+                      )}
                       <FormField label="Recommendation">
                         <select value={scoreRec} onChange={e => setScoreRec(e.target.value)}>
                           <option value="strong_yes">Strong yes</option>
                           <option value="yes">Yes</option>
                           <option value="maybe">Maybe</option>
                           <option value="no">No</option>
+                          <option value="strong_no">Strong no</option>
                         </select>
                       </FormField>
-                      <FormField label="Notes">
-                        <textarea value={scoreNotes} onChange={e => setScoreNotes(e.target.value)} rows={4} placeholder="Structured feedback…" />
+                      <FormField label="Pros">
+                        <textarea
+                          value={scorePros}
+                          onChange={e => setScorePros(e.target.value)}
+                          rows={2}
+                          placeholder="What stood out positively…"
+                        />
+                      </FormField>
+                      <FormField label="Cons">
+                        <textarea
+                          value={scoreCons}
+                          onChange={e => setScoreCons(e.target.value)}
+                          rows={2}
+                          placeholder="Gaps or concerns…"
+                        />
+                      </FormField>
+                      <FormField label="Summary notes (shared)">
+                        <textarea
+                          value={scoreNotes}
+                          onChange={e => setScoreNotes(e.target.value)}
+                          rows={3}
+                          placeholder="Overall summary for the hiring team…"
+                        />
+                      </FormField>
+                      <FormField label="Internal notes (bias scan)">
+                        <textarea
+                          value={internalNotes}
+                          onChange={e => setInternalNotes(e.target.value)}
+                          rows={2}
+                          placeholder="Private notes — flagged terms surface as bias hints after save."
+                        />
                       </FormField>
                       <button type="button" className="btn-primary" onClick={submitScore} disabled={scoreSaving}>
                         {scoreSaving ? 'Submitting…' : 'Submit scorecard'}

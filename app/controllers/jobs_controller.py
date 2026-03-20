@@ -67,6 +67,40 @@ class JobsController(BaseController, Authenticatable):
             return self.render_error(result["error"], status=404)
         return self.render_json(result["data"])
 
+    def analytics(self):
+        account_id = self._account_id()
+        job_id = int(self.request.path_params["job_id"])
+        result = JobService(self.db).job_analytics(account_id, job_id)
+        if not result["ok"]:
+            return self.render_error(result["error"], status=404)
+        return self.render_json(result["data"])
+
+    def list_attachments(self):
+        account_id = self._account_id()
+        job_id = int(self.request.path_params["job_id"])
+        result = JobService(self.db).list_attachments(account_id, job_id)
+        if not result["ok"]:
+            return self.render_error(result["error"], status=404)
+        return self.render_json(result["data"])
+
+    async def create_attachment(self):
+        account_id = self._account_id()
+        job_id = int(self.request.path_params["job_id"])
+        data = await self._get_body_json()
+        result = JobService(self.db).create_attachment(account_id, job_id, data)
+        if not result["ok"]:
+            return self.render_error(result["error"], status=422)
+        return self.render_json(result["data"], status=201)
+
+    def destroy_attachment(self):
+        account_id = self._account_id()
+        job_id = int(self.request.path_params["job_id"])
+        attachment_id = int(self.request.path_params["attachment_id"])
+        result = JobService(self.db).delete_attachment(account_id, job_id, attachment_id)
+        if not result["ok"]:
+            return self.render_error(result["error"], status=404)
+        return self.render_json(result["data"])
+
     def destroy(self):
         account_id = self._account_id()
         job_id = int(self.request.path_params["id"])

@@ -18,6 +18,8 @@ export interface InterviewPlan {
   name: string
   pipeline_stage_id: number | null
   position: number
+  duration_minutes?: number | null
+  interview_format?: string | null
   created_at: string
   updated_at: string
   kit?: InterviewKit | null
@@ -48,6 +50,8 @@ export const interviewPlansApi = {
       name: string
       pipeline_stage_id?: number | null
       position?: number
+      duration_minutes?: number | null
+      interview_format?: string | null
       kit?: { focus_area?: string | null; instructions?: string | null; questions?: unknown[] }
     },
   ) =>
@@ -60,7 +64,13 @@ export const interviewPlansApi = {
     token: string,
     jobId: number,
     planId: number,
-    data: Partial<{ name: string; pipeline_stage_id: number | null; position: number }>,
+    data: Partial<{
+      name: string
+      pipeline_stage_id: number | null
+      position: number
+      duration_minutes: number | null
+      interview_format: string | null
+    }>,
   ) =>
     req<InterviewPlan>(`/jobs/${jobId}/interview_plans/${planId}`, token, {
       method: 'PUT',

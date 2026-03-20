@@ -1,11 +1,18 @@
 """JobService — CRUD for jobs (tenant-scoped)."""
 import re
+import secrets
 from datetime import datetime, timezone
+from typing import Any
+
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
-from sqlalchemy import select
+
+from app.models.application import Application
 from app.models.job import Job
+from app.models.job_attachment import JobAttachment
 from app.models.job_version import JobVersion
 from app.helpers.logger import get_logger
+from app.helpers.scorecard_criteria import normalize_job_criteria
 from app.services.base_service import BaseService
 
 logger = get_logger(__name__)
@@ -13,6 +20,30 @@ logger = get_logger(__name__)
 
 def _slugify(text: str) -> str:
     return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
+
+
+def _parse_open_positions(raw: Any) -> int:
+    if raw is None:
+        return 1
+    try:
+        return max(1, int(raw))
+    except (TypeError, ValueError):
+        return 1
+
+
+def _coerce_job_config(raw: Any) -> dict:
+    if isinstance(raw, dict):
+        return raw
+    return {}
+
+
+def _next_attachment_id(db: Session) -> int:
+    mx = db.scalar(select(func.coalesce(func.max(JobAttachment.id), 0)))
+    return int(mx or 0) + 1
+
+
+def _new_apply_token() -> str:
+    return secrets.token_urlsafe(32)
 
 
 class JobService(BaseService):
@@ -33,6 +64,8 @@ class JobService(BaseService):
         versions = JobVersion.where(self.db, job_id=job_id)
         data = job.to_dict()
         data["versions"] = [v.to_dict() for v in versions]
+        atts = JobAttachment.where(self.db, job_id=job_id, account_id=account_id)
+        data["attachments"] = [a.to_dict() for a in atts]
         return self.success(data)
 
     def create_job(self, account_id: int, user_id: int, data: dict) -> dict:
@@ -48,11 +81,21 @@ class JobService(BaseService):
         job = Job(
             account_id=account_id, created_by=user_id,
             title=title, slug=slug,
+            apply_token=_new_apply_token(),
             department=data.get("department"),
             location=data.get("location"),
             location_type=data.get("location_type", "onsite"),
             employment_type=data.get("employment_type", "full_time"),
             experience_level=data.get("experience_level"),
+            open_positions=_parse_open_positions(data.get("open_positions")),
+            bonus_incentives=data.get("bonus_incentives"),
+            budget_approval_status=data.get("budget_approval_status"),
+            cost_center=data.get("cost_center"),
+            hiring_budget_id=data.get("hiring_budget_id"),
+            hiring_manager_user_id=data.get("hiring_manager_user_id"),
+            recruiter_user_id=data.get("recruiter_user_id"),
+            requisition_id=data.get("requisition_id"),
+            job_config=_coerce_job_config(data.get("job_config")),
             salary_min=data.get("salary_min"),
             salary_max=data.get("salary_max"),
             salary_currency=data.get("salary_currency", "USD"),
@@ -62,6 +105,7 @@ class JobService(BaseService):
             seo_metadata=data.get("seo_metadata", {}),
             custom_fields=data.get("custom_fields", {}),
             tags=data.get("tags", []),
+            scorecard_criteria=normalize_job_criteria(data.get("scorecard_criteria")),
             created_at=now, updated_at=now,
         )
         job.save(self.db)
@@ -76,15 +120,32 @@ class JobService(BaseService):
         job = Job.find_by(self.db, id=job_id, account_id=account_id)
         if not job or job.deleted_at:
             return self.failure("Job not found")
-        allowed = ["title", "department", "location", "location_type", "employment_type",
-                   "experience_level", "salary_min", "salary_max", "salary_currency",
-                   "salary_visible", "status", "video_embed_url", "seo_metadata",
-                   "custom_fields", "tags", "closes_at"]
+        allowed = [
+            "title", "department", "location", "location_type", "employment_type",
+            "experience_level", "open_positions", "bonus_incentives", "budget_approval_status",
+            "cost_center", "hiring_budget_id", "hiring_manager_user_id", "recruiter_user_id",
+            "requisition_id", "job_config",
+            "salary_min", "salary_max", "salary_currency",
+            "salary_visible", "status", "video_embed_url", "seo_metadata",
+            "custom_fields", "tags", "closes_at", "scorecard_criteria",
+        ]
         for k in allowed:
             if k in data:
-                setattr(job, k, data[k])
+                if k == "scorecard_criteria":
+                    job.scorecard_criteria = normalize_job_criteria(data[k])
+                elif k == "job_config":
+                    job.job_config = _coerce_job_config(data[k])
+                elif k == "open_positions":
+                    job.open_positions = _parse_open_positions(data[k])
+                elif k in ("hiring_manager_user_id", "recruiter_user_id"):
+                    v = data[k]
+                    setattr(job, k, int(v) if v is not None and v != "" else None)
+                else:
+                    setattr(job, k, data[k])
         if data.get("status") == "open" and not job.published_at:
             job.published_at = datetime.now(timezone.utc)
+        if not getattr(job, "apply_token", None):
+            job.apply_token = _new_apply_token()
         job.updated_at = datetime.now(timezone.utc)
         job.save(self.db)
         logger.info(f"JobService.update_job — updated id={job_id}")
@@ -97,6 +158,94 @@ class JobService(BaseService):
         job.deleted_at = datetime.now(timezone.utc)
         job.save(self.db)
         logger.info(f"JobService.delete_job — soft-deleted id={job_id}")
+        return self.success({"deleted": True})
+
+    # ── Analytics (read-only aggregates) ──────────────────────────
+
+    def job_analytics(self, account_id: int, job_id: int) -> dict:
+        job = Job.find_by(self.db, id=job_id, account_id=account_id)
+        if not job or job.deleted_at:
+            return self.failure("Job not found")
+        total = self.db.scalar(
+            select(func.count(Application.id)).where(
+                Application.account_id == account_id,
+                Application.job_id == job_id,
+                Application.deleted_at == None,
+            )
+        ) or 0
+        by_status_rows = self.db.execute(
+            select(Application.status, func.count(Application.id))
+            .where(
+                Application.account_id == account_id,
+                Application.job_id == job_id,
+                Application.deleted_at == None,
+            )
+            .group_by(Application.status)
+        ).all()
+        by_source_rows = self.db.execute(
+            select(Application.source_type, func.count(Application.id))
+            .where(
+                Application.account_id == account_id,
+                Application.job_id == job_id,
+                Application.deleted_at == None,
+            )
+            .group_by(Application.source_type)
+        ).all()
+        hired = sum(c for s, c in by_status_rows if s == "hired")
+        offered = sum(c for s, c in by_status_rows if s == "offer")
+        rejected = sum(c for s, c in by_status_rows if s in ("rejected", "withdrawn"))
+        return self.success(
+            {
+                "total_applicants": int(total),
+                "by_status": {str(s): int(c) for s, c in by_status_rows},
+                "by_source": {str(s): int(c) for s, c in by_source_rows},
+                "hired_count": int(hired),
+                "offer_stage_count": int(offered),
+                "rejected_or_withdrawn": int(rejected),
+                "offer_acceptance_rate": (hired / offered) if offered else None,
+            }
+        )
+
+    # ── Attachments ───────────────────────────────────────────────
+
+    def list_attachments(self, account_id: int, job_id: int) -> dict:
+        job = Job.find_by(self.db, id=job_id, account_id=account_id)
+        if not job or job.deleted_at:
+            return self.failure("Job not found")
+        rows = JobAttachment.where(self.db, job_id=job_id, account_id=account_id)
+        rows.sort(key=lambda a: a.id)
+        return self.success([r.to_dict() for r in rows])
+
+    def create_attachment(self, account_id: int, job_id: int, data: dict) -> dict:
+        job = Job.find_by(self.db, id=job_id, account_id=account_id)
+        if not job or job.deleted_at:
+            return self.failure("Job not found")
+        name = (data.get("name") or "").strip()
+        file_url = (data.get("file_url") or "").strip()
+        if not name or not file_url:
+            return self.failure("name and file_url are required")
+        now = datetime.now(timezone.utc)
+        att = JobAttachment(
+            id=_next_attachment_id(self.db),
+            account_id=account_id,
+            job_id=job_id,
+            name=name,
+            doc_type=data.get("doc_type"),
+            file_url=file_url,
+            created_at=now,
+            updated_at=now,
+        )
+        att.save(self.db)
+        return self.success(att.to_dict())
+
+    def delete_attachment(self, account_id: int, job_id: int, attachment_id: int) -> dict:
+        job = Job.find_by(self.db, id=job_id, account_id=account_id)
+        if not job or job.deleted_at:
+            return self.failure("Job not found")
+        att = JobAttachment.find_by(self.db, id=attachment_id, job_id=job_id, account_id=account_id)
+        if not att:
+            return self.failure("Attachment not found")
+        att.destroy(self.db)
         return self.success({"deleted": True})
 
     # ── Versions ──────────────────────────────────────────────────

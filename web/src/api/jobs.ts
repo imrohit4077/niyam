@@ -1,15 +1,93 @@
 const BASE = '/api/v1'
 
+/** Job-wide attributes interviewers must score (1–scale_max). Drives scorecard validation. */
+export interface ScorecardCriterion {
+  name: string
+  scale_max?: number
+  required?: boolean
+}
+
+/** Flexible JSON for wizard sections not stored as top-level columns. */
+export type JobConfig = Record<string, unknown> & {
+  skills_required?: string[]
+  skills_nice?: string[]
+  interview_defaults?: {
+    default_duration_minutes?: number
+    default_format?: string
+    calendar_integration_note?: string
+  }
+  evaluation?: {
+    feedback_template?: string
+    rating_scale_note?: string
+    mandatory_fields_before_submit?: boolean
+  }
+  posting?: {
+    visibility?: string
+    job_board_ids?: number[]
+    application_fields?: Record<string, boolean>
+  }
+  automation?: {
+    resume_screening_rules?: string
+    ai_scoring_enabled?: boolean
+    interview_invite_template?: string
+    rejection_template?: string
+    followup_template?: string
+    sla_review_hours?: number
+  }
+  permissions?: {
+    view_user_ids?: number[]
+    edit_user_ids?: number[]
+    move_user_ids?: number[]
+    feedback_user_ids?: number[]
+  }
+  compliance?: {
+    eeo_note?: string
+    approval_workflow?: string
+  }
+}
+
+export interface JobAttachment {
+  id: number
+  account_id: number
+  job_id: number
+  name: string
+  doc_type: string | null
+  file_url: string
+  created_at: string
+  updated_at: string
+}
+
+export interface JobAnalytics {
+  total_applicants: number
+  by_status: Record<string, number>
+  by_source: Record<string, number>
+  hired_count: number
+  offer_stage_count: number
+  rejected_or_withdrawn: number
+  offer_acceptance_rate: number | null
+}
+
 export interface Job {
   id: number
   account_id: number
   title: string
   slug: string
+  /** Public apply URL: `/apply/{apply_token}` — submissions use source_type `public_apply`. */
+  apply_token?: string
   department: string | null
   location: string | null
   location_type: string
   employment_type: string
   experience_level: string | null
+  open_positions?: number
+  bonus_incentives?: string | null
+  budget_approval_status?: string | null
+  cost_center?: string | null
+  hiring_budget_id?: string | null
+  hiring_manager_user_id?: number | null
+  recruiter_user_id?: number | null
+  requisition_id?: string | null
+  job_config?: JobConfig
   salary_min: number | null
   salary_max: number | null
   salary_currency: string
@@ -18,9 +96,11 @@ export interface Job {
   published_at: string | null
   closes_at: string | null
   tags: string[]
+  scorecard_criteria?: ScorecardCriterion[] | string[]
   created_at: string
   updated_at: string
   versions?: JobVersion[]
+  attachments?: JobAttachment[]
 }
 
 export interface JobVersion {
@@ -61,8 +141,23 @@ export const jobsApi = {
   create: (token: string, data: Partial<Job> & { description?: string }) =>
     req<Job>('/jobs', token, { method: 'POST', body: JSON.stringify(data) }),
 
-  update: (token: string, id: number, data: Partial<Job>) =>
+  update: (token: string, id: number, data: Partial<Job> & { job_config?: JobConfig }) =>
     req<Job>(`/jobs/${id}`, token, { method: 'PUT', body: JSON.stringify(data) }),
+
+  analytics: (token: string, jobId: number) =>
+    req<JobAnalytics>(`/jobs/${jobId}/analytics`, token),
+
+  listAttachments: (token: string, jobId: number) =>
+    req<JobAttachment[]>(`/jobs/${jobId}/attachments`, token),
+
+  createAttachment: (token: string, jobId: number, data: { name: string; file_url: string; doc_type?: string }) =>
+    req<JobAttachment>(`/jobs/${jobId}/attachments`, token, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  deleteAttachment: (token: string, jobId: number, attachmentId: number) =>
+    req<{ deleted: boolean }>(`/jobs/${jobId}/attachments/${attachmentId}`, token, { method: 'DELETE' }),
 
   delete: (token: string, id: number) =>
     req<{ deleted: boolean }>(`/jobs/${id}`, token, { method: 'DELETE' }),

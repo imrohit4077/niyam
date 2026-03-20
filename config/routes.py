@@ -108,12 +108,27 @@ def draw_routes(app: "FastAPI") -> None:
     from app.controllers.pipeline_stages_controller import PipelineStagesController
     from app.controllers.interview_plans_controller import InterviewPlansController
     from app.controllers.interviews_controller import InterviewsController
+    from app.controllers.scorecards_controller import ScorecardsController
+    from app.controllers.account_members_controller import AccountMembersController
+    from app.controllers.public_apply_controller import PublicApplyController
 
     router = APIRouter(prefix="/api/v1")
 
     # Auth (public)
     router.add_api_route("/auth/login", _wrap(AuthController, "login", lambda c: c.login()), methods=["POST"])
     router.add_api_route("/auth/refresh", _wrap(AuthController, "refresh", lambda c: c.refresh()), methods=["POST"])
+
+    # Public job application (no auth; token is capability URL)
+    router.add_api_route(
+        "/public/apply/{token}",
+        _wrap(PublicApplyController, "show", lambda c: c.show(), run_before=False),
+        methods=["GET"],
+    )
+    router.add_api_route(
+        "/public/apply/{token}",
+        _wrap(PublicApplyController, "create", lambda c: c.create(), run_before=False),
+        methods=["POST"],
+    )
 
     # Profile (protected)
     router.add_api_route(
@@ -122,8 +137,35 @@ def draw_routes(app: "FastAPI") -> None:
         methods=["GET"],
     )
 
+    router.add_api_route(
+        "/account/members",
+        _wrap(AccountMembersController, "index", lambda c: c.index()),
+        methods=["GET"],
+    )
+
     # Jobs CRUD
     resources(router, "/jobs", JobsController)
+
+    router.add_api_route(
+        "/jobs/{job_id:int}/analytics",
+        _wrap(JobsController, "analytics", lambda c: c.analytics()),
+        methods=["GET"],
+    )
+    router.add_api_route(
+        "/jobs/{job_id:int}/attachments",
+        _wrap(JobsController, "list_attachments", lambda c: c.list_attachments()),
+        methods=["GET"],
+    )
+    router.add_api_route(
+        "/jobs/{job_id:int}/attachments",
+        _wrap(JobsController, "create_attachment", lambda c: c.create_attachment()),
+        methods=["POST"],
+    )
+    router.add_api_route(
+        "/jobs/{job_id:int}/attachments/{attachment_id:int}",
+        _wrap(JobsController, "destroy_attachment", lambda c: c.destroy_attachment()),
+        methods=["DELETE"],
+    )
 
     # Job versions (nested under jobs)
     router.add_api_route(
@@ -219,6 +261,17 @@ def draw_routes(app: "FastAPI") -> None:
         "/interviews/{assignment_id:int}",
         _wrap(InterviewsController, "update_assignment", lambda c: c.update_assignment()),
         methods=["PATCH"],
+    )
+
+    router.add_api_route(
+        "/applications/{application_id:int}/scorecards",
+        _wrap(ScorecardsController, "by_application", lambda c: c.by_application()),
+        methods=["GET"],
+    )
+    router.add_api_route(
+        "/jobs/{job_id:int}/scorecards/debrief",
+        _wrap(ScorecardsController, "debrief_for_job", lambda c: c.debrief_for_job()),
+        methods=["GET"],
     )
 
     # Job boards CRUD

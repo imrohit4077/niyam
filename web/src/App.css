@@ -2730,6 +2730,198 @@ a.sidebar-item {
   margin: 0;
 }
 
+.job-stepper--twelve {
+  max-height: min(52vh, 560px);
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.job-skill-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.job-skill-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 40px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  background: rgba(15, 25, 35, 0.03);
+  border: 1px solid rgba(15, 25, 35, 0.1);
+  border-radius: var(--radius-md, 8px);
+}
+
+.job-skill-chips-empty {
+  align-self: center;
+  font-size: 13px;
+}
+
+.job-skill-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px 4px 10px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  max-width: 100%;
+}
+
+.job-skill-chip--required {
+  background: var(--tag-blue-bg, #eff6ff);
+  color: var(--tag-blue, #2563eb);
+  border-color: rgba(37, 99, 235, 0.2);
+}
+
+.job-skill-chip--nice {
+  background: var(--tag-gray-bg, #f3f4f6);
+  color: var(--tag-gray, #4b5563);
+  border-color: rgba(107, 114, 128, 0.25);
+}
+
+.job-skill-chip-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 200px;
+}
+
+.job-skill-chip-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  margin: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.06);
+  color: inherit;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.job-skill-chip-remove:hover {
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.job-skill-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.job-skill-select {
+  width: 100%;
+}
+
+.job-skill-custom-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.job-skill-custom-row .job-editor-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.job-pipeline-rules {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.job-pipeline-rule-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 12px 16px;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(15, 25, 35, 0.06);
+}
+
+.job-checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.job-stat-big {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 8px 0 0;
+  letter-spacing: -0.02em;
+}
+
+.job-analytics-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.job-analytics-list li {
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(15, 25, 35, 0.06);
+}
+
+.job-attachments-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.job-attachment-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(15, 25, 35, 0.06);
+}
+
+.job-board-checkboxes {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.job-perm-table-wrap {
+  overflow-x: auto;
+}
+
+.job-perm-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.job-perm-table th,
+.job-perm-table td {
+  padding: 10px 8px;
+  text-align: left;
+  border-bottom: 1px solid rgba(15, 25, 35, 0.08);
+  vertical-align: top;
+}
+
+.job-perm-table th {
+  font-weight: 600;
+  color: var(--text-muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
 @media (max-width: 1024px) {
   .job-editor-split {
     grid-template-columns: 1fr;
@@ -3262,6 +3454,152 @@ a.sidebar-item {
 
 .interviews-scorecard {
   margin-top: 4px;
+}
+
+.scorecard-criteria-grid {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.scorecard-criteria-grid input[type='range'] {
+  width: 100%;
+  accent-color: var(--teal);
+}
+
+.job-scorecard-criteria-card {
+  margin-bottom: 24px;
+}
+
+.scorecard-summary-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  background: var(--gray-50);
+}
+
+.scorecard-summary-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.scorecard-summary-avg {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.scorecard-summary-meta {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-left: auto;
+}
+
+.scorecard-bar-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.scorecard-bar-row {
+  display: grid;
+  grid-template-columns: minmax(100px, 140px) 1fr 36px;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+}
+
+.scorecard-bar-label {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.scorecard-bar-track {
+  height: 8px;
+  background: var(--gray-200);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.scorecard-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--teal), var(--blue));
+  border-radius: 4px;
+  min-width: 2px;
+}
+
+.scorecard-bar-val {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.scorecard-pros-cons {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 10px;
+  line-height: 1.45;
+}
+
+.scorecard-bias-hint {
+  margin-top: 10px;
+  padding: 8px 10px;
+  font-size: 12px;
+  color: var(--warning);
+  background: var(--warning-bg);
+  border: 1px solid var(--warning-border);
+  border-radius: var(--radius-sm);
+}
+
+.debrief-table {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.debrief-row {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  background: var(--gray-50);
+}
+
+.debrief-row-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.debrief-candidate {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.debrief-fit {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--teal-hover);
+}
+
+.debrief-count {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-left: auto;
+}
+
+.debrief-recs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
 /* Rich text (TipTap) — job description */

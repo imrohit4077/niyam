@@ -10,8 +10,9 @@ from app.models.interview_plan import InterviewPlan
 from app.models.interview_scorecard import InterviewScorecard
 from app.models.job import Job
 from app.services.base_service import BaseService
+from app.helpers.scorecard_criteria import normalize_job_criteria, validate_criteria_scores
 
-_RECOMMENDATIONS = frozenset({"yes", "strong_yes", "no", "maybe"})
+_RECOMMENDATIONS = frozenset({"yes", "strong_yes", "strong_no", "no", "maybe"})
 
 
 def _parse_dt(value: datetime | str | None) -> datetime | None:
@@ -82,6 +83,8 @@ class InterviewWorkflowService(BaseService):
             "portfolio_url": app.portfolio_url,
         }
 
+        crit = normalize_job_criteria(job.scorecard_criteria if job else [])
+
         return self.success(
             {
                 "assignment": ass.to_dict(),
@@ -90,6 +93,7 @@ class InterviewWorkflowService(BaseService):
                 "candidate": candidate,
                 "job": job.to_dict() if job else None,
                 "application": app.to_dict(),
+                "scorecard_criteria": crit,
             }
         )
 
@@ -106,14 +110,32 @@ class InterviewWorkflowService(BaseService):
         if ass.interviewer_id is not None and ass.interviewer_id != interviewer_id:
             return self.failure("You are not the assigned interviewer for this slot")
 
-        rec = (data.get("overall_recommendation") or "").strip().lower()
+        rec = (data.get("overall_recommendation") or "").strip().lower().replace(" ", "_")
+        if rec == "strongno":
+            rec = "strong_no"
         if rec not in _RECOMMENDATIONS:
             return self.failure(
                 f"overall_recommendation must be one of: {', '.join(sorted(_RECOMMENDATIONS))}"
             )
-        criteria = data.get("criteria_scores")
-        if criteria is not None and not isinstance(criteria, dict):
-            return self.failure("criteria_scores must be an object")
+
+        app = Application.find_by(self.db, id=ass.application_id, account_id=account_id)
+        if not app:
+            return self.failure("Application not found")
+        job = Job.find_by(self.db, id=app.job_id, account_id=account_id)
+        if not job:
+            return self.failure("Job not found")
+
+        raw_scores = data.get("criteria_scores")
+        if raw_scores is None and data.get("scores") is not None:
+            raw_scores = data.get("scores")
+        if raw_scores is not None and not isinstance(raw_scores, dict):
+            return self.failure("criteria_scores (or scores) must be an object")
+        scores_dict: dict = raw_scores if isinstance(raw_scores, dict) else {}
+
+        template = normalize_job_criteria(job.scorecard_criteria)
+        err = validate_criteria_scores(template, scores_dict)
+        if err:
+            return self.failure(err)
 
         existing = InterviewScorecard.find_by(
             self.db, assignment_id=assignment_id, interviewer_id=interviewer_id
@@ -125,10 +147,15 @@ class InterviewWorkflowService(BaseService):
         sc = InterviewScorecard(
             account_id=account_id,
             assignment_id=assignment_id,
+            application_id=app.id,
+            job_id=job.id,
             interviewer_id=interviewer_id,
             overall_recommendation=rec,
-            criteria_scores=criteria if isinstance(criteria, dict) else {},
+            criteria_scores=scores_dict,
             notes=data.get("notes"),
+            pros=data.get("pros"),
+            cons=data.get("cons"),
+            internal_notes=data.get("internal_notes"),
             submitted_at=now,
             created_at=now,
             updated_at=now,

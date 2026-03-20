@@ -65,6 +65,8 @@ class InterviewPlanService(BaseService):
             name=name,
             pipeline_stage_id=psid,
             position=int(pos),
+            duration_minutes=data.get("duration_minutes"),
+            interview_format=data.get("interview_format"),
             created_at=now,
             updated_at=now,
         )
@@ -106,6 +108,11 @@ class InterviewPlanService(BaseService):
                 if not st:
                     return self.failure("pipeline_stage_id not found for this job")
             plan.pipeline_stage_id = psid
+        if "duration_minutes" in data:
+            dm = data.get("duration_minutes")
+            plan.duration_minutes = int(dm) if dm is not None and dm != "" else None
+        if "interview_format" in data:
+            plan.interview_format = data.get("interview_format")
         plan.updated_at = datetime.now(timezone.utc)
         plan.save(self.db)
         return self.success(self._plan_with_kit(plan))

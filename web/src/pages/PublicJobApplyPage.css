@@ -1,0 +1,253 @@
+.public-apply-page {
+  min-height: 100vh;
+  background: linear-gradient(165deg, #f0f4f8 0%, #e8eef5 40%, #f8fafc 100%);
+  color: #0f1923;
+}
+
+.public-apply-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  background: rgba(255, 255, 255, 0.85);
+  border-bottom: 1px solid rgba(15, 25, 35, 0.08);
+  backdrop-filter: blur(8px);
+}
+
+.public-apply-brand {
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: -0.02em;
+  color: #0d9488;
+}
+
+.public-apply-header-link {
+  font-size: 13px;
+  font-weight: 500;
+  color: #475569;
+  text-decoration: none;
+}
+
+.public-apply-header-link:hover {
+  color: #0d9488;
+}
+
+.public-apply-main {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 28px 20px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.public-apply-main--narrow {
+  max-width: 480px;
+}
+
+.public-apply-loading {
+  padding: 80px 24px;
+  text-align: center;
+  color: #64748b;
+}
+
+.public-apply-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px 26px;
+  border: 1px solid rgba(15, 25, 35, 0.08);
+  box-shadow: 0 1px 3px rgba(15, 25, 35, 0.06);
+}
+
+.public-apply-success .public-apply-title {
+  color: #059669;
+}
+
+.public-apply-company {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #64748b;
+  margin: 0 0 6px;
+}
+
+.public-apply-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0 0 12px;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+}
+
+.public-apply-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 4px;
+  list-style: none;
+  padding: 0;
+  margin: 0 0 18px;
+  font-size: 14px;
+  color: #475569;
+}
+
+.public-apply-meta li {
+  padding-left: 10px;
+  margin-left: 10px;
+  border-left: 1px solid #e2e8f0;
+}
+
+.public-apply-meta li:first-child {
+  padding-left: 0;
+  margin-left: 0;
+  border-left: none;
+}
+
+.public-apply-meta-salary {
+  font-weight: 600;
+  color: #0d9488;
+}
+
+.public-apply-skills {
+  margin-bottom: 14px;
+}
+
+.public-apply-skills-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+  margin-bottom: 8px;
+}
+
+.public-apply-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.public-apply-tag {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.public-apply-tag-req {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.public-apply-bonus {
+  font-size: 14px;
+  color: #334155;
+  margin: 0 0 16px;
+  line-height: 1.5;
+}
+
+.public-apply-description {
+  font-size: 15px;
+  line-height: 1.65;
+  color: #334155;
+}
+
+.public-apply-description.rte-content p {
+  margin: 0 0 12px;
+}
+
+.public-apply-description.rte-content ul,
+.public-apply-description.rte-content ol {
+  margin: 0 0 12px;
+  padding-left: 1.25rem;
+}
+
+.public-apply-form-title {
+  font-size: 1.25rem;
+  margin: 0 0 8px;
+}
+
+.public-apply-muted {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0 0 16px;
+  line-height: 1.45;
+}
+
+.public-apply-error {
+  margin-bottom: 12px;
+}
+
+.public-apply-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.public-apply-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #334155;
+}
+
+.public-apply-field input,
+.public-apply-field textarea {
+  font: inherit;
+  padding: 10px 12px;
+  border: 1px solid rgba(15, 25, 35, 0.12);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.public-apply-field input:focus,
+.public-apply-field textarea:focus {
+  outline: none;
+  border-color: #0d9488;
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
+}
+
+.public-apply-submit {
+  margin-top: 8px;
+  padding: 12px 20px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  background: #0d9488;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.public-apply-submit:hover:not(:disabled) {
+  background: #0f766e;
+}
+
+.public-apply-submit:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+@media (min-width: 840px) {
+  .public-apply-main {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    align-items: start;
+    max-width: 1100px;
+    gap: 24px;
+  }
+
+  .public-apply-main--narrow {
+    display: flex;
+    max-width: 480px;
+  }
+
+  .public-apply-form-card {
+    position: sticky;
+    top: 24px;
+  }
+}

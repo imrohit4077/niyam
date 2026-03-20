@@ -3,6 +3,7 @@ import { ToastProvider } from './contexts/ToastContext'
 import { AuthProvider, useAuth } from './auth/AuthContext'
 import LoginPage from './pages/LoginPage'
 import JobEditorPage from './pages/JobEditorPage'
+import PublicJobApplyPage from './pages/PublicJobApplyPage'
 import DashboardLayout from './layouts/DashboardLayout'
 import HiringPlansView from './components/HiringPlansView'
 import PipelineBoardView from './components/PipelineBoardView'
@@ -64,6 +65,7 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/apply/:token" element={<PublicJobApplyPage />} />
       <Route element={<RequireAuth />}>
         <Route path="/account/:accountId" element={<AccountRedirect />}>
           <Route element={<DashboardLayout />}>
