@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { ReactNode } from 'react'
+import { NavLink } from 'react-router-dom'
 
 export type SidebarPage =
   | 'profile'
@@ -23,18 +24,32 @@ interface NavItem {
 }
 
 const NAV: NavItem[] = [
-  { id: 'profile',           label: 'My Profile',        icon: 'user',      group: 'Overview' },
-  { id: 'jobs',              label: 'Jobs',              icon: 'briefcase', group: 'Jobs' },
-  { id: 'hiring-plans',      label: 'Hiring plans',      icon: 'target',    group: 'Jobs' },
-  { id: 'pipeline',          label: 'Pipeline',          icon: 'columns',   group: 'Jobs' },
-  { id: 'job-boards',        label: 'Job Boards',        icon: 'globe',     group: 'Jobs' },
-  { id: 'postings',          label: 'Postings',          icon: 'send',      group: 'Jobs' },
-  { id: 'job-applications',  label: 'Applications',      icon: 'document',  group: 'Candidates' },
-  { id: 'candidates',        label: 'Candidates',        icon: 'people',    group: 'Candidates' },
-  { id: 'interviews',        label: 'Interviews',        icon: 'calendar',  group: 'Candidates' },
-  { id: 'team',              label: 'Team',              icon: 'team',      group: 'Workspace' },
-  { id: 'settings',          label: 'Settings',          icon: 'gear',      group: 'Workspace' },
+  { id: 'profile', label: 'My Profile', icon: 'user', group: 'Overview' },
+  { id: 'jobs', label: 'Jobs', icon: 'briefcase', group: 'Jobs' },
+  { id: 'hiring-plans', label: 'Hiring plans', icon: 'target', group: 'Jobs' },
+  { id: 'pipeline', label: 'Pipeline', icon: 'columns', group: 'Jobs' },
+  { id: 'job-boards', label: 'Job Boards', icon: 'globe', group: 'Jobs' },
+  { id: 'postings', label: 'Postings', icon: 'send', group: 'Jobs' },
+  { id: 'job-applications', label: 'Applications', icon: 'document', group: 'Candidates' },
+  { id: 'candidates', label: 'Candidates', icon: 'people', group: 'Candidates' },
+  { id: 'interviews', label: 'Interviews', icon: 'calendar', group: 'Candidates' },
+  { id: 'team', label: 'Team', icon: 'team', group: 'Workspace' },
+  { id: 'settings', label: 'Settings', icon: 'gear', group: 'Workspace' },
 ]
+
+const PATH_SEGMENTS: Record<SidebarPage, string> = {
+  profile: 'profile',
+  jobs: 'jobs',
+  'hiring-plans': 'hiring-plans',
+  pipeline: 'pipeline',
+  'job-boards': 'job-boards',
+  postings: 'postings',
+  'job-applications': 'job-applications',
+  candidates: 'candidates',
+  interviews: 'interviews',
+  team: 'team',
+  settings: 'settings',
+}
 
 const ICONS: Record<string, ReactNode> = {
   user: (
@@ -100,14 +115,12 @@ const ICONS: Record<string, ReactNode> = {
 }
 
 interface Props {
-  active: SidebarPage
-  onChange: (page: SidebarPage) => void
+  accountId: string
 }
 
-export default function Sidebar({ active, onChange }: Props) {
+export default function Sidebar({ accountId }: Props) {
   const [collapsed, setCollapsed] = useState(false)
 
-  // Group items
   const groups = NAV.reduce<Record<string, NavItem[]>>((acc, item) => {
     const g = item.group ?? 'Other'
     if (!acc[g]) acc[g] = []
@@ -115,9 +128,10 @@ export default function Sidebar({ active, onChange }: Props) {
     return acc
   }, {})
 
+  const base = `/account/${accountId}`
+
   return (
     <aside className={`sidebar ${collapsed ? 'sidebar-collapsed' : ''}`}>
-      {/* Collapse toggle */}
       <button
         className="sidebar-toggle"
         onClick={() => setCollapsed(c => !c)}
@@ -132,30 +146,31 @@ export default function Sidebar({ active, onChange }: Props) {
       <nav className="sidebar-nav">
         {Object.entries(groups).map(([group, items]) => (
           <div key={group} className="sidebar-group">
-            {!collapsed && (
-              <div className="sidebar-group-label">{group}</div>
-            )}
-            {items.map(item => (
-              <button
-                key={item.id}
-                className={`sidebar-item ${active === item.id ? 'sidebar-item-active' : ''}`}
-                onClick={() => onChange(item.id)}
-                title={collapsed ? item.label : undefined}
-              >
-                <span className="sidebar-item-icon">{ICONS[item.icon]}</span>
-                {!collapsed && (
-                  <>
-                    <span className="sidebar-item-label">{item.label}</span>
-                    {item.badge != null && (
-                      <span className="sidebar-badge">{item.badge}</span>
-                    )}
-                  </>
-                )}
-                {collapsed && item.badge != null && (
-                  <span className="sidebar-badge-dot" />
-                )}
-              </button>
-            ))}
+            {!collapsed && <div className="sidebar-group-label">{group}</div>}
+            {items.map(item => {
+              const seg = PATH_SEGMENTS[item.id]
+              const to = `${base}/${seg}`
+              return (
+                <NavLink
+                  key={item.id}
+                  to={to}
+                  end={item.id === 'profile'}
+                  title={collapsed ? item.label : undefined}
+                  className={({ isActive }) =>
+                    `sidebar-item ${isActive ? 'sidebar-item-active' : ''}`
+                  }
+                >
+                  <span className="sidebar-item-icon">{ICONS[item.icon]}</span>
+                  {!collapsed && (
+                    <>
+                      <span className="sidebar-item-label">{item.label}</span>
+                      {item.badge != null && <span className="sidebar-badge">{item.badge}</span>}
+                    </>
+                  )}
+                  {collapsed && item.badge != null && <span className="sidebar-badge-dot" />}
+                </NavLink>
+              )
+            })}
           </div>
         ))}
       </nav>

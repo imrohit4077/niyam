@@ -106,6 +106,7 @@ class ApplicationService(BaseService):
         app = Application.find_by(self.db, id=app_id, account_id=account_id)
         if not app or app.deleted_at:
             return self.failure("Application not found")
+        old_pipeline_stage_id = app.pipeline_stage_id
         if not status_touch and not pipeline_touch:
             return self.failure("Provide status and/or pipeline_stage_id")
 
@@ -157,6 +158,19 @@ class ApplicationService(BaseService):
             app.rejection_reason = reason
         app.updated_at = now
         app.save(self.db)
+
+        if pipeline_touch:
+            from app.services.interview_sync_service import (
+                sync_interview_assignments_for_pipeline_move,
+            )
+
+            sync_interview_assignments_for_pipeline_move(
+                self.db,
+                account_id,
+                app,
+                old_pipeline_stage_id,
+                app.pipeline_stage_id,
+            )
 
         if old_status != app.status and (app.status == "hired" or old_status == "hired"):
             _enqueue_hiring_plan_refresh(account_id, app.job_id)

@@ -1,25 +1,33 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
+import { Navigate, useNavigate } from 'react-router-dom'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
 import { useToast } from '../contexts/ToastContext'
+import { useAuth } from '../auth/AuthContext'
 
-interface Props {
-  onLogin: (email: string, password: string) => Promise<boolean>
-  loading: boolean
-  error: string | null
-}
-
-export default function LoginPage({ onLogin, loading, error }: Props) {
+export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const toast = useToast()
+  const { signIn, loading, error, user } = useAuth()
+  const navigate = useNavigate()
+
+  if (user?.account) {
+    return <Navigate to={`/account/${user.account.id}/profile`} replace />
+  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
-    const success = await onLogin(email, password)
-    if (success) {
+    const u = await signIn(email, password)
+    if (u?.account) {
       toast.success('Welcome back!', 'You have been signed in successfully.')
+      navigate(`/account/${u.account.id}/profile`, { replace: true })
+    } else if (u) {
+      toast.error(
+        'No workspace linked',
+        'This user is not a member of any account. Ask an admin to invite you.',
+      )
     }
   }
 

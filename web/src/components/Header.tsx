@@ -1,10 +1,13 @@
 import { useState, useRef, useEffect } from 'react'
+import { Link, NavLink } from 'react-router-dom'
 import type { UserData } from '../api/auth'
 
 interface Props {
   user?: UserData | null
   onSignOut?: () => void
   variant?: 'app' | 'auth'
+  /** e.g. /account/1/profile — SPA home for logged-in user */
+  accountHomePath?: string
 }
 
 function BrandIcon() {
@@ -44,7 +47,7 @@ function UserAvatar({ name, avatar, size = 32 }: { name: string; avatar: string 
   )
 }
 
-export default function Header({ user, onSignOut, variant = 'app' }: Props) {
+export default function Header({ user, onSignOut, variant = 'app', accountHomePath }: Props) {
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -76,10 +79,17 @@ export default function Header({ user, onSignOut, variant = 'app' }: Props) {
     <header className="header header-app">
       <div className="header-inner">
         <div className="header-left">
-          <a className="header-brand" href="/">
-            <BrandIcon />
-            <span className="header-brand-text">ForgeAPI</span>
-          </a>
+          {accountHomePath ? (
+            <Link className="header-brand" to={accountHomePath}>
+              <BrandIcon />
+              <span className="header-brand-text">ForgeAPI</span>
+            </Link>
+          ) : (
+            <a className="header-brand" href="/">
+              <BrandIcon />
+              <span className="header-brand-text">ForgeAPI</span>
+            </a>
+          )}
           <div className="header-search">
             <SearchIcon />
             <input type="text" placeholder="Search jobs, candidates..." className="header-search-input" />
@@ -119,14 +129,29 @@ export default function Header({ user, onSignOut, variant = 'app' }: Props) {
                     </div>
                   </div>
                   <div className="header-dropdown-divider" />
-                  <button className="header-dropdown-item" onClick={() => setMenuOpen(false)}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 12a5 5 0 100-10 5 5 0 000 10zm-7 8a7 7 0 0114 0H5z" /></svg>
-                    My Profile
-                  </button>
-                  <button className="header-dropdown-item" onClick={() => setMenuOpen(false)}>
+                  {accountHomePath ? (
+                    <NavLink
+                      className="header-dropdown-item"
+                      to={accountHomePath}
+                      onClick={() => setMenuOpen(false)}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 12a5 5 0 100-10 5 5 0 000 10zm-7 8a7 7 0 0114 0H5z" /></svg>
+                      My Profile
+                    </NavLink>
+                  ) : (
+                    <button className="header-dropdown-item" onClick={() => setMenuOpen(false)}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 12a5 5 0 100-10 5 5 0 000 10zm-7 8a7 7 0 0114 0H5z" /></svg>
+                      My Profile
+                    </button>
+                  )}
+                  <NavLink
+                    className="header-dropdown-item"
+                    to={accountHomePath ? accountHomePath.replace(/\/profile$/, '/settings') : '/settings'}
+                    onClick={() => setMenuOpen(false)}
+                  >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.49.49 0 00-.59-.22l-2.39.96a7.02 7.02 0 00-1.62-.94l-.36-2.54A.484.484 0 0014 2h-4a.484.484 0 00-.48.41l-.36 2.54a7.4 7.4 0 00-1.62.94l-2.39-.96a.48.48 0 00-.59.22L2.74 8.87a.47.47 0 00.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.47.47 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.36 1.04.67 1.62.94l.36 2.54c.05.24.27.41.48.41h4c.24 0 .44-.17.47-.41l.36-2.54a7.4 7.4 0 001.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.47.47 0 00-.12-.61l-2.01-1.58zM12 15.6a3.6 3.6 0 110-7.2 3.6 3.6 0 010 7.2z" /></svg>
                     Settings
-                  </button>
+                  </NavLink>
                   <div className="header-dropdown-divider" />
                   <button className="header-dropdown-item header-dropdown-danger" onClick={onSignOut}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" /></svg>

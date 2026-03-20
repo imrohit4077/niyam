@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
-import type { UserData } from '../api/auth'
-import type { SidebarPage } from './Sidebar'
+import { useOutletContext, useNavigate } from 'react-router-dom'
+import type { DashboardOutletContext } from '../layouts/DashboardOutletContext'
 import { jobsApi } from '../api/jobs'
 import type { Job } from '../api/jobs'
 import { boardsApi } from '../api/boards'
@@ -10,8 +10,7 @@ import type { JobPosting } from '../api/postings'
 import { applicationsApi } from '../api/applications'
 import type { Application } from '../api/applications'
 import { useToast } from '../contexts/ToastContext'
-import HiringPlansView from './HiringPlansView'
-import PipelineBoardView from './PipelineBoardView'
+import { interviewsApi, type InterviewAssignmentRow, type InterviewKitPayload } from '../api/interviews'
 
 // ── Shared UI primitives ───────────────────────────────────────────
 
@@ -95,6 +94,7 @@ const STAGE_COLORS: Record<string, string> = {
   offer: 'tag-green', hired: 'tag-green', rejected: 'tag-red', withdrawn: 'tag-gray',
   draft: 'tag-gray', open: 'tag-green', closed: 'tag-gray', paused: 'tag-orange',
   pending: 'tag-orange', posted: 'tag-green', failed: 'tag-red',
+  scheduled: 'tag-blue', completed: 'tag-green', cancelled: 'tag-gray',
 }
 
 // ── Confirm Dialog ──────────────────────────────────────────────────
@@ -152,7 +152,8 @@ function FormField({ label, children }: { label: string; children: React.ReactNo
 
 // ── Profile view ───────────────────────────────────────────────────
 
-function ProfileView({ user }: { user: UserData }) {
+export function ProfileView() {
+  const { user } = useOutletContext<DashboardOutletContext>()
   const memberSince = new Date(user.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
   const lastLogin = user.last_login_at
     ? new Date(user.last_login_at).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })
@@ -189,86 +190,13 @@ function ProfileView({ user }: { user: UserData }) {
 
 // ── Jobs view ──────────────────────────────────────────────────────
 
-function JobForm({ token, job, onSave, onClose }: { token: string; job?: Job; onSave: () => void; onClose: () => void }) {
-  const toast = useToast()
-  const [form, setForm] = useState({
-    title: job?.title ?? '',
-    department: job?.department ?? '',
-    location: job?.location ?? '',
-    location_type: job?.location_type ?? 'onsite',
-    employment_type: job?.employment_type ?? 'full_time',
-    status: job?.status ?? 'draft',
-    description: '',
-  })
-  const [saving, setSaving] = useState(false)
-  const [err, setErr] = useState('')
-
-  const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }))
-
-  const submit = async () => {
-    setSaving(true); setErr('')
-    try {
-      if (job) {
-        await jobsApi.update(token, job.id, form)
-        toast.success('Job updated', `"${form.title}" has been updated successfully.`)
-      } else {
-        await jobsApi.create(token, form)
-        toast.success('Job created', `"${form.title}" has been created successfully.`)
-      }
-      onSave()
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : 'Failed to save'
-      setErr(msg)
-      toast.error('Failed to save job', msg)
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  return (
-    <Modal title={job ? 'Edit Job' : 'New Job'} onClose={onClose}>
-      {err && <div className="auth-error">{err}</div>}
-      <FormField label="Job Title *"><input value={form.title} onChange={e => set('title', e.target.value)} placeholder="e.g. Senior Engineer" /></FormField>
-      <FormField label="Department"><input value={form.department} onChange={e => set('department', e.target.value)} placeholder="Engineering" /></FormField>
-      <FormField label="Location"><input value={form.location} onChange={e => set('location', e.target.value)} placeholder="San Francisco, CA" /></FormField>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-        <FormField label="Location Type">
-          <select value={form.location_type} onChange={e => set('location_type', e.target.value)}>
-            <option value="onsite">On-site</option>
-            <option value="remote">Remote</option>
-            <option value="hybrid">Hybrid</option>
-          </select>
-        </FormField>
-        <FormField label="Employment Type">
-          <select value={form.employment_type} onChange={e => set('employment_type', e.target.value)}>
-            <option value="full_time">Full-time</option>
-            <option value="part_time">Part-time</option>
-            <option value="contract">Contract</option>
-            <option value="internship">Internship</option>
-          </select>
-        </FormField>
-      </div>
-      <FormField label="Status">
-        <select value={form.status} onChange={e => set('status', e.target.value)}>
-          <option value="draft">Draft</option>
-          <option value="open">Open</option>
-          <option value="paused">Paused</option>
-          <option value="closed">Closed</option>
-        </select>
-      </FormField>
-      {!job && <FormField label="Description"><textarea value={form.description} onChange={e => set('description', e.target.value)} placeholder="Job description..." rows={4} /></FormField>}
-      <button className="btn-primary" onClick={submit} disabled={saving}>{saving ? 'Saving...' : job ? 'Update Job' : 'Create Job'}</button>
-    </Modal>
-  )
-}
-
-function JobsView({ token }: { token: string }) {
+export function JobsView() {
+  const { token, accountId } = useOutletContext<DashboardOutletContext>()
+  const navigate = useNavigate()
   const toast = useToast()
   const [jobs, setJobs] = useState<Job[]>([])
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState('')
-  const [showForm, setShowForm] = useState(false)
-  const [editing, setEditing] = useState<Job | undefined>()
   const [confirmDelete, setConfirmDelete] = useState<Job | null>(null)
 
   const load = useCallback(async () => {
@@ -299,8 +227,12 @@ function JobsView({ token }: { token: string }) {
           onCancel={() => setConfirmDelete(null)}
         />
       )}
-      {(showForm || editing) && <JobForm token={token} job={editing} onSave={() => { setShowForm(false); setEditing(undefined); load() }} onClose={() => { setShowForm(false); setEditing(undefined) }} />}
-      <ListHeader title="Jobs" count={jobs.length} onAction={() => setShowForm(true)} actionLabel="+ New Job" />
+      <ListHeader
+        title="Jobs"
+        count={jobs.length}
+        onAction={() => navigate(`/account/${accountId}/jobs/new`)}
+        actionLabel="+ New Job"
+      />
       <div className="list-table">
         <div className="list-table-head">
           <div className="list-col list-col-main">Title</div>
@@ -319,7 +251,12 @@ function JobsView({ token }: { token: string }) {
             <div className="list-col list-row-sub">{j.location || '—'}</div>
             <div className="list-col"><span className={`tag ${STAGE_COLORS[j.status] ?? 'tag-gray'}`}>{j.status}</span></div>
             <div className="list-col" style={{ display: 'flex', gap: 6 }}>
-              <button className="btn-row-action" onClick={() => setEditing(j)}>Edit</button>
+              <button
+                className="btn-row-action"
+                onClick={() => navigate(`/account/${accountId}/jobs/${j.id}/edit`)}
+              >
+                Edit
+              </button>
               <button className="btn-row-action btn-row-danger" onClick={() => setConfirmDelete(j)}>Delete</button>
             </div>
           </div>
@@ -331,7 +268,17 @@ function JobsView({ token }: { token: string }) {
 
 // ── Job Boards view ────────────────────────────────────────────────
 
-function BoardForm({ token, board, onSave, onClose }: { token: string; board?: JobBoard; onSave: () => void; onClose: () => void }) {
+function BoardForm({
+  token,
+  board,
+  onSave,
+  onClose,
+}: {
+  token: string
+  board?: JobBoard
+  onSave: () => void
+  onClose: () => void
+}) {
   const toast = useToast()
   const [form, setForm] = useState({
     name: board?.name ?? '',
@@ -388,7 +335,8 @@ function BoardForm({ token, board, onSave, onClose }: { token: string; board?: J
   )
 }
 
-function JobBoardsView({ token }: { token: string }) {
+export function JobBoardsView() {
+  const { token } = useOutletContext<DashboardOutletContext>()
   const toast = useToast()
   const [boards, setBoards] = useState<JobBoard[]>([])
   const [loading, setLoading] = useState(true)
@@ -576,7 +524,8 @@ function PostingForm({
   )
 }
 
-function PostingsView({ token }: { token: string }) {
+export function PostingsView() {
+  const { token } = useOutletContext<DashboardOutletContext>()
   const toast = useToast()
   const [postings, setPostings] = useState<JobPosting[]>([])
   const [jobs, setJobs] = useState<Job[]>([])
@@ -671,7 +620,15 @@ function PostingsView({ token }: { token: string }) {
 
 // ── Applications view ──────────────────────────────────────────────
 
-function ApplicationForm({ token, onSave, onClose }: { token: string; onSave: () => void; onClose: () => void }) {
+function ApplicationForm({
+  token,
+  onSave,
+  onClose,
+}: {
+  token: string
+  onSave: () => void
+  onClose: () => void
+}) {
   const toast = useToast()
   const [jobs, setJobs] = useState<import('../api/jobs').Job[]>([])
   const [form, setForm] = useState({ job_id: '', candidate_name: '', candidate_email: '', candidate_phone: '', cover_letter: '' })
@@ -717,7 +674,8 @@ function ApplicationForm({ token, onSave, onClose }: { token: string; onSave: ()
 
 const STAGES = ['applied', 'screening', 'interview', 'offer', 'hired', 'rejected', 'withdrawn']
 
-function ApplicationsView({ token }: { token: string }) {
+export function ApplicationsView() {
+  const { token } = useOutletContext<DashboardOutletContext>()
   const toast = useToast()
   const [apps, setApps] = useState<Application[]>([])
   const [loading, setLoading] = useState(true)
@@ -820,7 +778,8 @@ function ApplicationsView({ token }: { token: string }) {
 
 // ── Candidates view (derived from applications) ────────────────────
 
-function CandidatesView({ token }: { token: string }) {
+export function CandidatesView() {
+  const { token } = useOutletContext<DashboardOutletContext>()
   const [apps, setApps] = useState<Application[]>([])
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState('')
@@ -861,38 +820,199 @@ function CandidatesView({ token }: { token: string }) {
   )
 }
 
-function InterviewsView({ token }: { token: string }) {
-  const [apps, setApps] = useState<Application[]>([])
+export function InterviewsView() {
+  const { token } = useOutletContext<DashboardOutletContext>()
+  const toast = useToast()
+  const [assignments, setAssignments] = useState<InterviewAssignmentRow[]>([])
+  const [jobs, setJobs] = useState<Job[]>([])
   const [loading, setLoading] = useState(true)
+  const [kitOpenId, setKitOpenId] = useState<number | null>(null)
+  const [kitPayload, setKitPayload] = useState<InterviewKitPayload | null>(null)
+  const [kitLoading, setKitLoading] = useState(false)
+  const [scoreRec, setScoreRec] = useState('yes')
+  const [scoreNotes, setScoreNotes] = useState('')
+  const [scoreSaving, setScoreSaving] = useState(false)
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    try {
+      const [a, j] = await Promise.all([interviewsApi.myAssignments(token), jobsApi.list(token)])
+      setAssignments(a)
+      setJobs(j)
+    } catch {
+      setAssignments([])
+    } finally {
+      setLoading(false)
+    }
+  }, [token])
 
   useEffect(() => {
-    applicationsApi.list(token, undefined, 'interview')
-      .then(setApps)
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [token])
+    load()
+  }, [load])
+
+  const jobTitle = (jobId: number) => jobs.find(j => j.id === jobId)?.title ?? `Job #${jobId}`
+
+  const closeKit = () => {
+    setKitOpenId(null)
+    setKitPayload(null)
+  }
+
+  const openKit = async (row: InterviewAssignmentRow) => {
+    setKitOpenId(row.id)
+    setKitPayload(null)
+    setKitLoading(true)
+    setScoreRec('yes')
+    setScoreNotes('')
+    try {
+      const data = await interviewsApi.getKit(token, row.id)
+      setKitPayload(data)
+    } catch (e: unknown) {
+      toast.error('Could not load kit', e instanceof Error ? e.message : 'Error')
+      closeKit()
+    } finally {
+      setKitLoading(false)
+    }
+  }
+
+  const submitScore = async () => {
+    if (!kitPayload) return
+    setScoreSaving(true)
+    try {
+      await interviewsApi.submitScorecard(token, kitPayload.assignment.id, {
+        overall_recommendation: scoreRec,
+        notes: scoreNotes || undefined,
+      })
+      toast.success('Scorecard submitted', 'Thanks — assignment marked complete.')
+      closeKit()
+      load()
+    } catch (e: unknown) {
+      toast.error('Scorecard failed', e instanceof Error ? e.message : 'Error')
+    } finally {
+      setScoreSaving(false)
+    }
+  }
+
+  const kitQuestions = kitPayload?.kit?.questions
+  const qLines = Array.isArray(kitQuestions)
+    ? kitQuestions.map(q => (typeof q === 'string' ? q : JSON.stringify(q)))
+    : []
 
   return (
     <>
-      <ListHeader title="Interviews" count={apps.length} />
+      {kitOpenId !== null && (
+        <div className="modal-overlay" onClick={closeKit}>
+          <div className="modal modal-wide interviews-kit-modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <span className="modal-title">Interview kit</span>
+              <button type="button" className="modal-close" onClick={closeKit} aria-label="Close">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                  <path d="M4 4l8 8M12 4l-8 8" />
+                </svg>
+              </button>
+            </div>
+            <div className="modal-body interviews-kit-body">
+              {(kitLoading || !kitPayload) && <LoadingRow />}
+              {!kitLoading && kitPayload && (
+                <>
+                  <div className="interviews-kit-grid">
+                    <div className="job-editor-card">
+                      <h3 className="job-editor-card-title">Candidate</h3>
+                      <p className="panel-row">
+                        <span className="panel-row-label">Name</span>
+                        <span className="panel-row-value">{(kitPayload.candidate?.name as string) || '—'}</span>
+                      </p>
+                      <p className="panel-row">
+                        <span className="panel-row-label">Email</span>
+                        <span className="panel-row-value">{(kitPayload.candidate?.email as string) || '—'}</span>
+                      </p>
+                      <p className="panel-row">
+                        <span className="panel-row-label">Job</span>
+                        <span className="panel-row-value">{(kitPayload.job?.title as string) || '—'}</span>
+                      </p>
+                    </div>
+                    <div className="job-editor-card">
+                      <h3 className="job-editor-card-title">{kitPayload.interview_plan.name}</h3>
+                      {kitPayload.kit?.focus_area && (
+                        <p className="interviews-kit-focus">{kitPayload.kit.focus_area}</p>
+                      )}
+                      {kitPayload.kit?.instructions && (
+                        <p className="interviews-kit-instructions">{kitPayload.kit.instructions}</p>
+                      )}
+                      {qLines.length > 0 && (
+                        <ol className="interviews-kit-questions">
+                          {qLines.map((q, i) => (
+                            <li key={i}>{q}</li>
+                          ))}
+                        </ol>
+                      )}
+                      {!kitPayload.kit && <p className="job-editor-muted">No kit content yet for this round.</p>}
+                    </div>
+                  </div>
+                  {kitPayload.assignment.status !== 'completed' && (
+                    <div className="job-editor-card interviews-scorecard">
+                      <h3 className="job-editor-card-title">Scorecard</h3>
+                      <FormField label="Recommendation">
+                        <select value={scoreRec} onChange={e => setScoreRec(e.target.value)}>
+                          <option value="strong_yes">Strong yes</option>
+                          <option value="yes">Yes</option>
+                          <option value="maybe">Maybe</option>
+                          <option value="no">No</option>
+                        </select>
+                      </FormField>
+                      <FormField label="Notes">
+                        <textarea value={scoreNotes} onChange={e => setScoreNotes(e.target.value)} rows={4} placeholder="Structured feedback…" />
+                      </FormField>
+                      <button type="button" className="btn-primary" onClick={submitScore} disabled={scoreSaving}>
+                        {scoreSaving ? 'Submitting…' : 'Submit scorecard'}
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <ListHeader title="Interviews" count={assignments.length} />
+      <p className="interviews-lead">
+        Interview rounds assigned to you as interviewer. Open a kit to see focus areas and questions, then submit a scorecard.
+        Rows appear once you’re set as the interviewer for that assignment.
+      </p>
       <div className="list-table">
         <div className="list-table-head">
-          <div className="list-col list-col-main">Candidate</div>
+          <div className="list-col list-col-main">Round & candidate</div>
           <div className="list-col">Job</div>
-          <div className="list-col">Stage</div>
-          <div className="list-col">Applied</div>
+          <div className="list-col">Status</div>
+          <div className="list-col">Scheduled</div>
+          <div className="list-col">Actions</div>
         </div>
         {loading && <LoadingRow />}
-        {!loading && apps.length === 0 && <EmptyRow text="No interviews scheduled." />}
-        {apps.map(a => (
-          <div key={a.id} className="list-row">
+        {!loading && assignments.length === 0 && (
+          <EmptyRow text="No interview assignments yet. When you’re set as interviewer on a slot, it appears here." />
+        )}
+        {assignments.map(row => (
+          <div key={row.id} className="list-row">
             <div className="list-col list-col-main">
-              <div className="candidate-avatar">{(a.candidate_name || a.candidate_email).slice(0, 2).toUpperCase()}</div>
-              <div><div className="list-row-name">{a.candidate_name || '—'}</div><div className="list-row-sub">{a.candidate_email}</div></div>
+              <div className="list-row-name">{row.interview_plan?.name ?? `Plan #${row.interview_plan_id}`}</div>
+              <div className="list-row-sub">
+                {row.application?.candidate_name || row.application?.candidate_email || 'Candidate'}
+              </div>
             </div>
-            <div className="list-col list-row-sub">Job #{a.job_id}</div>
-            <div className="list-col"><span className="tag tag-blue">Interview</span></div>
-            <div className="list-col list-row-sub">{new Date(a.created_at).toLocaleDateString()}</div>
+            <div className="list-col list-row-sub">
+              {row.application ? jobTitle(row.application.job_id) : '—'}
+            </div>
+            <div className="list-col">
+              <span className={`tag ${STAGE_COLORS[row.status] ?? 'tag-blue'}`}>{row.status}</span>
+            </div>
+            <div className="list-col list-row-sub">
+              {row.scheduled_at ? new Date(row.scheduled_at).toLocaleString() : '—'}
+            </div>
+            <div className="list-col">
+              <button type="button" className="btn-row-action" onClick={() => openKit(row)}>
+                Open kit
+              </button>
+            </div>
           </div>
         ))}
       </div>
@@ -900,7 +1020,7 @@ function InterviewsView({ token }: { token: string }) {
   )
 }
 
-function TeamView() {
+export function TeamView() {
   return (
     <div className="empty-view">
       <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--gray-300)" strokeWidth="1.5" style={{ marginBottom: 16 }}>
@@ -912,7 +1032,7 @@ function TeamView() {
   )
 }
 
-function SettingsView() {
+export function SettingsView() {
   return (
     <div className="empty-view">
       <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--gray-300)" strokeWidth="1.5" style={{ marginBottom: 16 }}>
@@ -924,20 +1044,3 @@ function SettingsView() {
   )
 }
 
-// ── Router ─────────────────────────────────────────────────────────
-
-export function PageView({ page, user, token }: { page: SidebarPage; user: UserData; token: string }) {
-  switch (page) {
-    case 'profile':          return <ProfileView user={user} />
-    case 'jobs':             return <JobsView token={token} />
-    case 'hiring-plans':     return <HiringPlansView token={token} />
-    case 'pipeline':         return <PipelineBoardView token={token} />
-    case 'job-boards':       return <JobBoardsView token={token} />
-    case 'postings':         return <PostingsView token={token} />
-    case 'job-applications': return <ApplicationsView token={token} />
-    case 'candidates':       return <CandidatesView token={token} />
-    case 'interviews':       return <InterviewsView token={token} />
-    case 'team':             return <TeamView />
-    case 'settings':         return <SettingsView />
-  }
-}
