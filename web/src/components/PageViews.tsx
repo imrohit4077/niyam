@@ -310,11 +310,34 @@ export function JobsView() {
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState('')
   const [confirmDelete, setConfirmDelete] = useState<Job | null>(null)
+  const [filterQ, setFilterQ] = useState('')
+  const [debouncedQ, setDebouncedQ] = useState('')
+  const [statusFilter, setStatusFilter] = useState<string>('')
+  const [departmentFilter, setDepartmentFilter] = useState('')
+  const [locationFilter, setLocationFilter] = useState('')
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQ(filterQ.trim()), 320)
+    return () => clearTimeout(t)
+  }, [filterQ])
 
   const load = useCallback(async () => {
     setLoading(true); setErr('')
-    try { setJobs(await jobsApi.list(token)) } catch (e: unknown) { setErr(e instanceof Error ? e.message : 'Failed') } finally { setLoading(false) }
-  }, [token])
+    try {
+      setJobs(
+        await jobsApi.list(token, {
+          q: debouncedQ || undefined,
+          status: statusFilter || undefined,
+          department: departmentFilter.trim() || undefined,
+          location: locationFilter.trim() || undefined,
+        }),
+      )
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : 'Failed')
+    } finally {
+      setLoading(false)
+    }
+  }, [token, debouncedQ, statusFilter, departmentFilter, locationFilter])
 
   useEffect(() => { load() }, [load])
 
@@ -345,6 +368,44 @@ export function JobsView() {
         onAction={() => navigate(`/account/${accountId}/jobs/new`)}
         actionLabel="+ New Job"
       />
+      <div className="list-filters-bar" role="search" aria-label="Filter jobs">
+        <input
+          type="search"
+          className="list-filter-input"
+          placeholder="Search title, description, versions…"
+          value={filterQ}
+          onChange={e => setFilterQ(e.target.value)}
+          aria-label="Search jobs"
+        />
+        <select
+          className="list-filter-select"
+          value={statusFilter}
+          onChange={e => setStatusFilter(e.target.value)}
+          aria-label="Job status"
+        >
+          <option value="">All statuses</option>
+          <option value="draft">draft</option>
+          <option value="open">open</option>
+          <option value="paused">paused</option>
+          <option value="closed">closed</option>
+        </select>
+        <input
+          type="search"
+          className="list-filter-input list-filter-input--narrow"
+          placeholder="Department"
+          value={departmentFilter}
+          onChange={e => setDepartmentFilter(e.target.value)}
+          aria-label="Filter by department"
+        />
+        <input
+          type="search"
+          className="list-filter-input list-filter-input--narrow"
+          placeholder="Location"
+          value={locationFilter}
+          onChange={e => setLocationFilter(e.target.value)}
+          aria-label="Filter by location"
+        />
+      </div>
       <p className="interviews-lead" style={{ margin: '0 0 12px' }}>
         Interview scorecards are recorded per candidate (after interviews), not for the job itself. Open{' '}
         <strong>Applications</strong> or <strong>Interviews</strong> to view or submit scores.
@@ -494,11 +555,24 @@ export function JobBoardsView() {
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<JobBoard | undefined>()
   const [confirmDelete, setConfirmDelete] = useState<JobBoard | null>(null)
+  const [filterQ, setFilterQ] = useState('')
+  const [debouncedQ, setDebouncedQ] = useState('')
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQ(filterQ.trim()), 320)
+    return () => clearTimeout(t)
+  }, [filterQ])
 
   const load = useCallback(async () => {
     setLoading(true); setErr('')
-    try { setBoards(await boardsApi.list(token)) } catch (e: unknown) { setErr(e instanceof Error ? e.message : 'Failed') } finally { setLoading(false) }
-  }, [token])
+    try {
+      setBoards(await boardsApi.list(token, { q: debouncedQ || undefined }))
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : 'Failed')
+    } finally {
+      setLoading(false)
+    }
+  }, [token, debouncedQ])
 
   useEffect(() => { load() }, [load])
 
@@ -525,6 +599,16 @@ export function JobBoardsView() {
       )}
       {(showForm || editing) && <BoardForm token={token} board={editing} onSave={() => { setShowForm(false); setEditing(undefined); load() }} onClose={() => { setShowForm(false); setEditing(undefined) }} />}
       <ListHeader title="Job Boards" count={boards.length} onAction={() => setShowForm(true)} actionLabel="+ New Board" />
+      <div className="list-filters-bar" role="search" aria-label="Filter boards">
+        <input
+          type="search"
+          className="list-filter-input"
+          placeholder="Search name, slug, website…"
+          value={filterQ}
+          onChange={e => setFilterQ(e.target.value)}
+          aria-label="Search job boards"
+        />
+      </div>
       <div className="list-table">
         <div className="list-table-head">
           <div className="list-col list-col-main">Board</div>
@@ -585,7 +669,7 @@ function PostingForm({
   const [err, setErr] = useState('')
 
   useEffect(() => {
-    Promise.all([jobsApi.list(token), boardsApi.list(token, true)])
+    Promise.all([jobsApi.list(token), boardsApi.list(token, { active: true })])
       .then(([j, b]) => { setJobs(j); setBoards(b) })
       .catch(() => {})
   }, [token])
@@ -685,11 +769,30 @@ export function PostingsView() {
   const [showForm, setShowForm] = useState(false)
   const [duplicateFrom, setDuplicateFrom] = useState<JobPosting | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<JobPosting | null>(null)
+  const [filterQ, setFilterQ] = useState('')
+  const [debouncedQ, setDebouncedQ] = useState('')
+  const [statusFilter, setStatusFilter] = useState<string>('')
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQ(filterQ.trim()), 320)
+    return () => clearTimeout(t)
+  }, [filterQ])
 
   const load = useCallback(async () => {
     setLoading(true); setErr('')
-    try { setPostings(await postingsApi.list(token)) } catch (e: unknown) { setErr(e instanceof Error ? e.message : 'Failed') } finally { setLoading(false) }
-  }, [token])
+    try {
+      setPostings(
+        await postingsApi.list(token, {
+          q: debouncedQ || undefined,
+          status: statusFilter || undefined,
+        }),
+      )
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : 'Failed')
+    } finally {
+      setLoading(false)
+    }
+  }, [token, debouncedQ, statusFilter])
 
   useEffect(() => { load() }, [load])
   useEffect(() => {
@@ -739,6 +842,28 @@ export function PostingsView() {
         />
       )}
       <ListHeader title="Job Postings" count={postings.length} onAction={() => setShowForm(true)} actionLabel="+ Post Job" />
+      <div className="list-filters-bar" role="search" aria-label="Filter postings">
+        <input
+          type="search"
+          className="list-filter-input"
+          placeholder="Search job, board, external URL…"
+          value={filterQ}
+          onChange={e => setFilterQ(e.target.value)}
+          aria-label="Search postings"
+        />
+        <select
+          className="list-filter-select"
+          value={statusFilter}
+          onChange={e => setStatusFilter(e.target.value)}
+          aria-label="Posting status"
+        >
+          <option value="">All statuses</option>
+          <option value="pending">pending</option>
+          <option value="posted">posted</option>
+          <option value="failed">failed</option>
+          <option value="withdrawn">withdrawn</option>
+        </select>
+      </div>
       <div className="list-table">
         <div className="list-table-head">
           <div className="list-col list-col-main">Job</div>
@@ -867,11 +992,30 @@ export function ApplicationsView() {
   const [err, setErr] = useState('')
   const [showForm, setShowForm] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState<Application | null>(null)
+  const [filterQ, setFilterQ] = useState('')
+  const [debouncedQ, setDebouncedQ] = useState('')
+  const [jobFilter, setJobFilter] = useState<string>('')
+  const [statusFilter, setStatusFilter] = useState<string>('')
+  const [sourceFilter, setSourceFilter] = useState('')
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQ(filterQ.trim()), 320)
+    return () => clearTimeout(t)
+  }, [filterQ])
 
   const load = useCallback(async () => {
     setLoading(true); setErr('')
     try {
-      const [a, j] = await Promise.all([applicationsApi.list(token), jobsApi.list(token)])
+      const jobId = jobFilter ? Number(jobFilter) : undefined
+      const [a, j] = await Promise.all([
+        applicationsApi.list(token, {
+          q: debouncedQ || undefined,
+          jobId: Number.isFinite(jobId) ? jobId : undefined,
+          status: statusFilter || undefined,
+          sourceType: sourceFilter.trim() || undefined,
+        }),
+        jobsApi.list(token),
+      ])
       setApps(a)
       setJobs(j)
     } catch (e: unknown) {
@@ -879,7 +1023,7 @@ export function ApplicationsView() {
     } finally {
       setLoading(false)
     }
-  }, [token])
+  }, [token, debouncedQ, jobFilter, statusFilter, sourceFilter])
 
   useEffect(() => { load() }, [load])
 
@@ -911,6 +1055,52 @@ export function ApplicationsView() {
       <p className="interviews-lead" style={{ margin: '0 0 12px' }}>
         Open a candidate to edit details, pipeline stage, e-sign documents, and interview scorecards on a full page.
       </p>
+      <div className="list-filters-bar" role="search" aria-label="Filter applications">
+        <input
+          type="search"
+          className="list-filter-input"
+          placeholder="Search name, email, cover letter, job…"
+          value={filterQ}
+          onChange={e => setFilterQ(e.target.value)}
+          aria-label="Search applications"
+        />
+        <select
+          className="list-filter-select"
+          value={jobFilter}
+          onChange={e => setJobFilter(e.target.value)}
+          aria-label="Filter by job"
+        >
+          <option value="">All jobs</option>
+          {jobs.map(j => (
+            <option key={j.id} value={String(j.id)}>
+              {j.title}
+            </option>
+          ))}
+        </select>
+        <select
+          className="list-filter-select"
+          value={statusFilter}
+          onChange={e => setStatusFilter(e.target.value)}
+          aria-label="Pipeline status"
+        >
+          <option value="">All stages</option>
+          <option value="applied">applied</option>
+          <option value="screening">screening</option>
+          <option value="interview">interview</option>
+          <option value="offer">offer</option>
+          <option value="hired">hired</option>
+          <option value="rejected">rejected</option>
+          <option value="withdrawn">withdrawn</option>
+        </select>
+        <input
+          type="search"
+          className="list-filter-input list-filter-input--narrow"
+          placeholder="Source type"
+          value={sourceFilter}
+          onChange={e => setSourceFilter(e.target.value)}
+          aria-label="Filter by source type"
+        />
+      </div>
       <div className="list-table">
         <div className="list-table-head">
           <div className="list-col list-col-main">Candidate</div>
@@ -954,13 +1144,24 @@ export function CandidatesView() {
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState('')
   const [scoreModalApp, setScoreModalApp] = useState<Application | null>(null)
+  const [filterQ, setFilterQ] = useState('')
+  const [debouncedQ, setDebouncedQ] = useState('')
+  const [statusFilter, setStatusFilter] = useState<string>('')
 
   useEffect(() => {
-    applicationsApi.list(token)
+    const t = setTimeout(() => setDebouncedQ(filterQ.trim()), 320)
+    return () => clearTimeout(t)
+  }, [filterQ])
+
+  useEffect(() => {
+    setLoading(true)
+    setErr('')
+    applicationsApi
+      .list(token, { q: debouncedQ || undefined, status: statusFilter || undefined })
       .then(setApps)
       .catch((e: unknown) => setErr(e instanceof Error ? e.message : 'Failed'))
       .finally(() => setLoading(false))
-  }, [token])
+  }, [token, debouncedQ, statusFilter])
 
   return (
     <>
@@ -976,6 +1177,31 @@ export function CandidatesView() {
         Interview scorecards belong to each person you interview—open <strong>Interview scores</strong> for their
         feedback.
       </p>
+      <div className="list-filters-bar" role="search" aria-label="Filter candidates">
+        <input
+          type="search"
+          className="list-filter-input"
+          placeholder="Search name, email, notes…"
+          value={filterQ}
+          onChange={e => setFilterQ(e.target.value)}
+          aria-label="Search candidates"
+        />
+        <select
+          className="list-filter-select"
+          value={statusFilter}
+          onChange={e => setStatusFilter(e.target.value)}
+          aria-label="Stage"
+        >
+          <option value="">All stages</option>
+          <option value="applied">applied</option>
+          <option value="screening">screening</option>
+          <option value="interview">interview</option>
+          <option value="offer">offer</option>
+          <option value="hired">hired</option>
+          <option value="rejected">rejected</option>
+          <option value="withdrawn">withdrawn</option>
+        </select>
+      </div>
       <div className="list-table">
         <div className="list-table-head">
           <div className="list-col list-col-main">Candidate</div>
@@ -1017,6 +1243,8 @@ export function InterviewsView() {
   const [assignments, setAssignments] = useState<InterviewAssignmentRow[]>([])
   const [jobs, setJobs] = useState<Job[]>([])
   const [loading, setLoading] = useState(true)
+  const [filterQ, setFilterQ] = useState('')
+  const [debouncedQ, setDebouncedQ] = useState('')
   const [kitOpenId, setKitOpenId] = useState<number | null>(null)
   const [kitPayload, setKitPayload] = useState<InterviewKitPayload | null>(null)
   const [kitLoading, setKitLoading] = useState(false)
@@ -1039,10 +1267,18 @@ export function InterviewsView() {
     [setSearchParams],
   )
 
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQ(filterQ.trim()), 320)
+    return () => clearTimeout(t)
+  }, [filterQ])
+
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const [a, j] = await Promise.all([interviewsApi.myAssignments(token), jobsApi.list(token)])
+      const [a, j] = await Promise.all([
+        interviewsApi.myAssignments(token, { q: debouncedQ || undefined }),
+        jobsApi.list(token),
+      ])
       setAssignments(a)
       setJobs(j)
     } catch {
@@ -1050,7 +1286,7 @@ export function InterviewsView() {
     } finally {
       setLoading(false)
     }
-  }, [token])
+  }, [token, debouncedQ])
 
   useEffect(() => {
     load()
@@ -1320,6 +1556,16 @@ export function InterviewsView() {
         Interview rounds assigned to you as interviewer. Open a kit to see focus areas and questions, then submit a scorecard.
         Rows appear once you’re set as the interviewer for that assignment.
       </p>
+      <div className="list-filters-bar" role="search" aria-label="Filter interview assignments">
+        <input
+          type="search"
+          className="list-filter-input"
+          placeholder="Search candidate, job, interview round…"
+          value={filterQ}
+          onChange={e => setFilterQ(e.target.value)}
+          aria-label="Search interviews"
+        />
+      </div>
       <div className="list-table">
         <div className="list-table-head">
           <div className="list-col list-col-main">Round & candidate</div>

@@ -1,6 +1,8 @@
 """ApplicationService — candidate applications CRUD + stage management."""
 from datetime import datetime, timezone
 from sqlalchemy import select
+
+from app.helpers.pg_search import application_search_predicate, normalize_q
 from app.models.application import Application
 from app.models.job import Job
 from app.models.pipeline_stage import PipelineStage
@@ -91,8 +93,14 @@ def _enqueue_esign_stage_transition(
 
 
 class ApplicationService(BaseService):
-    def list_applications(self, account_id: int, job_id: int | None = None,
-                          status: str | None = None) -> dict:
+    def list_applications(
+        self,
+        account_id: int,
+        job_id: int | None = None,
+        status: str | None = None,
+        q: str | None = None,
+        source_type: str | None = None,
+    ) -> dict:
         stmt = select(Application).where(
             Application.account_id == account_id,
             Application.deleted_at == None,
@@ -101,6 +109,18 @@ class ApplicationService(BaseService):
             stmt = stmt.where(Application.job_id == job_id)
         if status:
             stmt = stmt.where(Application.status == status)
+        if source_type:
+            stmt = stmt.where(Application.source_type == source_type)
+        nq = normalize_q(q)
+        if nq:
+            stmt = (
+                stmt.join(Job, Job.id == Application.job_id)
+                .where(
+                    Job.account_id == account_id,
+                    Job.deleted_at == None,
+                    application_search_predicate(Application, Job, q=nq),
+                )
+            )
         stmt = stmt.order_by(Application.created_at.desc())
         apps = list(self.db.execute(stmt).scalars().all())
         return self.success([a.to_dict() for a in apps])

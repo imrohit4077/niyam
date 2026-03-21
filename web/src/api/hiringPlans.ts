@@ -38,10 +38,16 @@ async function req<T>(path: string, token: string, options: RequestInit = {}): P
   return json.data as T
 }
 
+export type HiringPlanListParams = { jobId?: number; q?: string; planStatus?: string }
+
 export const hiringPlansApi = {
-  list: (token: string, jobId?: number) => {
-    const q = jobId != null ? `?job_id=${jobId}` : ''
-    return req<HiringPlan[]>(`/hiring_plans${q}`, token)
+  list: (token: string, params?: HiringPlanListParams) => {
+    const p = new URLSearchParams()
+    if (params?.jobId != null) p.set('job_id', String(params.jobId))
+    if (params?.q?.trim()) p.set('q', params.q.trim())
+    if (params?.planStatus?.trim()) p.set('plan_status', params.planStatus.trim())
+    const qs = p.toString()
+    return req<HiringPlan[]>(`/hiring_plans${qs ? `?${qs}` : ''}`, token)
   },
 
   get: (token: string, id: number) => req<HiringPlan>(`/hiring_plans/${id}`, token),

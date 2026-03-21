@@ -57,12 +57,16 @@ async function req<T>(path: string, token: string, options: RequestInit = {}): P
   return json.data as T
 }
 
+export type MyAssignmentsParams = { status?: string; q?: string }
+
 export const interviewsApi = {
-  myAssignments: (token: string, status?: string) =>
-    req<InterviewAssignmentRow[]>(
-      `/interviews/my_assignments${status ? `?status=${encodeURIComponent(status)}` : ''}`,
-      token,
-    ),
+  myAssignments: (token: string, params?: MyAssignmentsParams) => {
+    const p = new URLSearchParams()
+    if (params?.status) p.set('status', params.status)
+    if (params?.q?.trim()) p.set('q', params.q.trim())
+    const qs = p.toString()
+    return req<InterviewAssignmentRow[]>(`/interviews/my_assignments${qs ? `?${qs}` : ''}`, token)
+  },
 
   getKit: (token: string, assignmentId: number) =>
     req<InterviewKitPayload>(`/interviews/${assignmentId}/kit`, token),

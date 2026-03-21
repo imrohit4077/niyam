@@ -21,7 +21,16 @@ class EsignRequestsController(BaseController, Authenticatable):
         return au.account_id
 
     def index(self):
-        r = EsignRequestService(self.db).list_for_account(self._account_id())
+        q = self.request.query_params.get("q")
+        status = self.request.query_params.get("status")
+        lim_raw = self.request.query_params.get("limit")
+        try:
+            limit = int(lim_raw) if lim_raw else 300
+        except ValueError:
+            limit = 300
+        r = EsignRequestService(self.db).list_for_account(
+            self._account_id(), limit=limit, q=q, status=status
+        )
         return self.render_json(r["data"])
 
     def index_for_application(self):

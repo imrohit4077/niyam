@@ -22,5 +22,6 @@ class AccountMembersController(BaseController, Authenticatable):
 
     def index(self):
         account_id = self._account_id()
-        result = AccountMemberService(self.db).list_members(account_id)
+        q = self.request.query_params.get("q")
+        result = AccountMemberService(self.db).list_members(account_id, q=q)
         return self.render_json(result["data"])

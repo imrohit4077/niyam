@@ -1,7 +1,7 @@
 """
 ApplicationsController — candidate applications CRUD + stage management.
 Routes:
-  GET    /api/v1/applications          (?job_id=X, ?status=X)
+  GET    /api/v1/applications (?job_id=&status=&q=&source_type=)
   POST   /api/v1/applications
   GET    /api/v1/applications/:id
   PATCH  /api/v1/applications/:id       (body: candidate fields, tags, notes — see service)
@@ -36,8 +36,16 @@ class ApplicationsController(BaseController, Authenticatable):
         account_id = self._account_id()
         job_id_raw = self.request.query_params.get("job_id")
         status = self.request.query_params.get("status")
+        q = self.request.query_params.get("q")
+        source_type = self.request.query_params.get("source_type")
         job_id = int(job_id_raw) if job_id_raw else None
-        result = ApplicationService(self.db).list_applications(account_id, job_id=job_id, status=status)
+        result = ApplicationService(self.db).list_applications(
+            account_id,
+            job_id=job_id,
+            status=status,
+            q=q,
+            source_type=source_type,
+        )
         return self.render_json(result["data"])
 
     def show(self):

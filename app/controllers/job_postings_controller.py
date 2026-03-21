@@ -35,7 +35,11 @@ class JobPostingsController(BaseController, Authenticatable):
         account_id = self._account_id()
         job_id_raw = self.request.query_params.get("job_id")
         job_id = int(job_id_raw) if job_id_raw else None
-        result = JobPostingService(self.db).list_postings(account_id, job_id=job_id)
+        q = self.request.query_params.get("q")
+        status = self.request.query_params.get("status")
+        result = JobPostingService(self.db).list_postings(
+            account_id, job_id=job_id, q=q, status=status
+        )
         return self.render_json(result["data"])
 
     def show(self):

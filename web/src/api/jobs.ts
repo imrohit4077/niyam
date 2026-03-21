@@ -133,9 +133,23 @@ async function req<T>(path: string, token: string, options: RequestInit = {}): P
   return json.data as T
 }
 
+export type JobListParams = {
+  status?: string
+  q?: string
+  department?: string
+  location?: string
+}
+
 export const jobsApi = {
-  list: (token: string, status?: string) =>
-    req<Job[]>(`/jobs${status ? `?status=${status}` : ''}`, token),
+  list: (token: string, params?: JobListParams) => {
+    const p = new URLSearchParams()
+    if (params?.status) p.set('status', params.status)
+    if (params?.q?.trim()) p.set('q', params.q.trim())
+    if (params?.department?.trim()) p.set('department', params.department.trim())
+    if (params?.location?.trim()) p.set('location', params.location.trim())
+    const qs = p.toString()
+    return req<Job[]>(`/jobs${qs ? `?${qs}` : ''}`, token)
+  },
 
   get: (token: string, id: number) =>
     req<Job>(`/jobs/${id}`, token),

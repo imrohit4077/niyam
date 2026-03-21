@@ -36,7 +36,11 @@ class HiringPlansController(BaseController, Authenticatable):
         account_id = self._account_id()
         job_raw = self.request.query_params.get("job_id")
         job_id = int(job_raw) if job_raw else None
-        result = HiringPlanService(self.db).list_plans(account_id, job_id=job_id)
+        q = self.request.query_params.get("q")
+        plan_status = self.request.query_params.get("plan_status")
+        result = HiringPlanService(self.db).list_plans(
+            account_id, job_id=job_id, q=q, plan_status=plan_status
+        )
         return self.render_json(result["data"])
 
     def show(self):

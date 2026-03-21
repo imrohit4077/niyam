@@ -1207,7 +1207,7 @@ export default function JobEditorPage() {
 
   useEffect(() => {
     if (stepId === 'posting' && hasPostCreateSteps) {
-      boardsApi.list(token, true).then(setBoards).catch(() => setBoards([]))
+      boardsApi.list(token, { active: true }).then(setBoards).catch(() => setBoards([]))
     }
   }, [stepId, token, hasPostCreateSteps])
 

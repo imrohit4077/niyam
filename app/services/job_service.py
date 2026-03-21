@@ -4,9 +4,10 @@ import secrets
 from datetime import datetime, timezone
 from typing import Any
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
+from app.helpers.pg_search import ilike_contains, job_search_predicate, normalize_q, trigram_match
 from app.models.application import Application
 from app.models.job import Job
 from app.models.job_attachment import JobAttachment
@@ -48,10 +49,38 @@ def _new_apply_token() -> str:
 
 
 class JobService(BaseService):
-    def list_jobs(self, account_id: int, status: str | None = None) -> dict:
+    def list_jobs(
+        self,
+        account_id: int,
+        status: str | None = None,
+        q: str | None = None,
+        department: str | None = None,
+        location: str | None = None,
+    ) -> dict:
         stmt = select(Job).where(Job.account_id == account_id, Job.deleted_at == None)
         if status:
             stmt = stmt.where(Job.status == status)
+        nq = normalize_q(q)
+        if nq:
+            stmt = stmt.where(job_search_predicate(Job, JobVersion, q=nq, account_id=account_id))
+        nd = normalize_q(department)
+        if nd:
+            stmt = stmt.where(
+                Job.department.isnot(None),
+                or_(
+                    trigram_match(Job.department, nd, param_name="job_dept_trgm"),
+                    ilike_contains(Job.department, nd, param_name="job_dept_ilike"),
+                ),
+            )
+        nl = normalize_q(location)
+        if nl:
+            stmt = stmt.where(
+                Job.location.isnot(None),
+                or_(
+                    trigram_match(Job.location, nl, param_name="job_loc_trgm"),
+                    ilike_contains(Job.location, nl, param_name="job_loc_ilike"),
+                ),
+            )
         stmt = stmt.order_by(Job.created_at.desc())
         jobs = list(self.db.execute(stmt).scalars().all())
         logger.info(f"JobService.list_jobs — account={account_id} count={len(jobs)}")

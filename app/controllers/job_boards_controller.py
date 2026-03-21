@@ -24,7 +24,8 @@ class JobBoardsController(BaseController, Authenticatable):
 
     def index(self):
         active_only = self.request.query_params.get("active") == "true"
-        result = JobBoardService(self.db).list_boards(active_only=active_only)
+        q = self.request.query_params.get("q")
+        result = JobBoardService(self.db).list_boards(active_only=active_only, q=q)
         return self.render_json(result["data"])
 
     def show(self):

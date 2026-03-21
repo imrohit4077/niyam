@@ -2,7 +2,10 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from sqlalchemy import select
+
+from sqlalchemy import and_, or_, select
+
+from app.helpers.pg_search import normalize_q, trigram_or
 from app.models.application import Application
 from app.models.interview_assignment import InterviewAssignment
 from app.models.interview_kit import InterviewKit
@@ -29,15 +32,61 @@ def _parse_dt(value: datetime | str | None) -> datetime | None:
 
 
 class InterviewWorkflowService(BaseService):
-    def list_my_assignments(self, account_id: int, user_id: int, status: str | None = None) -> dict:
-        stmt = (
-            select(InterviewAssignment)
-            .where(
-                InterviewAssignment.account_id == account_id,
-                InterviewAssignment.interviewer_id == user_id,
+    def list_my_assignments(
+        self,
+        account_id: int,
+        user_id: int,
+        status: str | None = None,
+        q: str | None = None,
+    ) -> dict:
+        nq = normalize_q(q)
+        if nq:
+            stmt = (
+                select(InterviewAssignment)
+                .join(Application, Application.id == InterviewAssignment.application_id)
+                .join(Job, Job.id == Application.job_id)
+                .outerjoin(
+                    InterviewPlan,
+                    and_(
+                        InterviewPlan.id == InterviewAssignment.interview_plan_id,
+                        InterviewPlan.account_id == account_id,
+                    ),
+                )
+                .where(
+                    InterviewAssignment.account_id == account_id,
+                    InterviewAssignment.interviewer_id == user_id,
+                    Application.account_id == account_id,
+                    Application.deleted_at == None,
+                    Job.account_id == account_id,
+                    Job.deleted_at == None,
+                    or_(
+                        trigram_or(
+                            Application.candidate_name,
+                            Application.candidate_email,
+                            Job.title,
+                            InterviewPlan.name,
+                            q=nq,
+                            param_name="iv_trgm",
+                        ),
+                    ),
+                )
+                .order_by(
+                    InterviewAssignment.scheduled_at.asc().nulls_last(),
+                    InterviewAssignment.id.asc(),
+                )
             )
-            .order_by(InterviewAssignment.scheduled_at.asc().nulls_last(), InterviewAssignment.id.asc())
-        )
+        else:
+            stmt = (
+                select(InterviewAssignment)
+                .where(
+                    InterviewAssignment.account_id == account_id,
+                    InterviewAssignment.interviewer_id == user_id,
+                )
+                .order_by(
+                    InterviewAssignment.scheduled_at.asc().nulls_last(),
+                    InterviewAssignment.id.asc(),
+                )
+            )
         if status:
             stmt = stmt.where(InterviewAssignment.status == status)
         rows = list(self.db.execute(stmt).scalars().all())

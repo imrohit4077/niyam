@@ -2,6 +2,8 @@
 from datetime import date, datetime, timezone
 from typing import Any, Optional
 from sqlalchemy import select
+
+from app.helpers.pg_search import normalize_q, trigram_or
 from app.models.hiring_plan import HiringPlan
 from app.models.job import Job
 from app.services.base_service import BaseService
@@ -73,10 +75,28 @@ class HiringPlanService(BaseService):
         d["health"] = _health_for_plan(plan)
         return d
 
-    def list_plans(self, account_id: int, job_id: int | None = None) -> dict:
+    def list_plans(
+        self,
+        account_id: int,
+        job_id: int | None = None,
+        q: str | None = None,
+        plan_status: str | None = None,
+    ) -> dict:
         stmt = select(HiringPlan).where(HiringPlan.account_id == account_id)
         if job_id is not None:
             stmt = stmt.where(HiringPlan.job_id == job_id)
+        if plan_status:
+            stmt = stmt.where(HiringPlan.plan_status == plan_status)
+        nq = normalize_q(q)
+        if nq:
+            stmt = (
+                stmt.join(Job, Job.id == HiringPlan.job_id)
+                .where(
+                    Job.account_id == account_id,
+                    Job.deleted_at == None,
+                    trigram_or(Job.title, Job.slug, q=nq, param_name="hp_trgm"),
+                )
+            )
         stmt = stmt.order_by(HiringPlan.created_at.desc())
         rows = list(self.db.execute(stmt).scalars().all())
         return self.success([self._serialize(p) for p in rows])

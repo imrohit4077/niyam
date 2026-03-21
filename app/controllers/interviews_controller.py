@@ -34,8 +34,9 @@ class InterviewsController(BaseController, Authenticatable):
         account_id = self._account_id()
         user_id = self._user_id()
         status = self.request.query_params.get("status")
+        q = self.request.query_params.get("q")
         result = InterviewWorkflowService(self.db).list_my_assignments(
-            account_id, user_id, status=status
+            account_id, user_id, status=status, q=q
         )
         return self.render_json(result["data"])
 

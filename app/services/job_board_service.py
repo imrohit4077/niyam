@@ -1,8 +1,9 @@
 """JobBoardService — CRUD for job boards (global, admin-managed)."""
 import re
 from datetime import datetime, timezone
-from sqlalchemy.orm import Session
 from sqlalchemy import select
+
+from app.helpers.pg_search import normalize_q, trigram_or
 from app.models.job_board import JobBoard
 from app.helpers.logger import get_logger
 from app.services.base_service import BaseService
@@ -15,10 +16,15 @@ def _slugify(name: str) -> str:
 
 
 class JobBoardService(BaseService):
-    def list_boards(self, active_only: bool = False) -> dict:
+    def list_boards(self, active_only: bool = False, q: str | None = None) -> dict:
         stmt = select(JobBoard)
         if active_only:
             stmt = stmt.where(JobBoard.is_active == True)
+        nq = normalize_q(q)
+        if nq:
+            stmt = stmt.where(
+                trigram_or(JobBoard.name, JobBoard.slug, JobBoard.website_url, q=nq, param_name="board_trgm")
+            )
         stmt = stmt.order_by(JobBoard.name)
         boards = list(self.db.execute(stmt).scalars().all())
         logger.info(f"JobBoardService.list_boards — returned {len(boards)}")

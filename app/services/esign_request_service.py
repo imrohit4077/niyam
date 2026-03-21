@@ -1,6 +1,7 @@
 """List e-sign requests for applications (recruiter visibility)."""
-from sqlalchemy import select
+from sqlalchemy import and_, or_, select
 
+from app.helpers.pg_search import ilike_contains, normalize_q, trigram_or
 from app.models.application import Application
 from app.models.esign_request import EsignRequest
 from app.models.esign_template import EsignTemplate
@@ -33,13 +34,52 @@ class EsignRequestService(BaseService):
         rows = list(self.db.execute(stmt).scalars().all())
         return self.success([self._enrich_row(account_id, r) for r in rows])
 
-    def list_for_account(self, account_id: int, limit: int = 300) -> dict:
-        stmt = (
-            select(EsignRequest)
-            .where(EsignRequest.account_id == account_id)
-            .order_by(EsignRequest.created_at.desc())
-            .limit(min(max(limit, 1), 500))
-        )
+    def list_for_account(
+        self,
+        account_id: int,
+        limit: int = 300,
+        q: str | None = None,
+        status: str | None = None,
+    ) -> dict:
+        stmt = select(EsignRequest).where(EsignRequest.account_id == account_id)
+        if status:
+            stmt = stmt.where(EsignRequest.status == status)
+        nq = normalize_q(q)
+        if nq:
+            stmt = (
+                stmt.outerjoin(
+                    Application,
+                    and_(
+                        Application.id == EsignRequest.application_id,
+                        Application.account_id == account_id,
+                    ),
+                )
+                .outerjoin(
+                    Job,
+                    and_(Job.id == Application.job_id, Job.account_id == account_id),
+                )
+                .outerjoin(
+                    EsignTemplate,
+                    and_(
+                        EsignTemplate.id == EsignRequest.template_id,
+                        EsignTemplate.account_id == account_id,
+                    ),
+                )
+                .where(
+                    or_(
+                        trigram_or(
+                            Application.candidate_name,
+                            Application.candidate_email,
+                            Job.title,
+                            EsignTemplate.name,
+                            q=nq,
+                            param_name="er_trgm",
+                        ),
+                        ilike_contains(EsignRequest.external_envelope_id, nq, param_name="er_ext"),
+                    )
+                )
+            )
+        stmt = stmt.order_by(EsignRequest.created_at.desc()).limit(min(max(limit, 1), 500))
         rows = list(self.db.execute(stmt).scalars().all())
         out: list[dict] = []
         for r in rows:

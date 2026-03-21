@@ -218,14 +218,28 @@ export default function HiringPlansView() {
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<HiringPlan | undefined>()
   const [confirmDelete, setConfirmDelete] = useState<HiringPlan | null>(null)
+  const [filterQ, setFilterQ] = useState('')
+  const [debouncedQ, setDebouncedQ] = useState('')
+  const [planStatusFilter, setPlanStatusFilter] = useState<string>('')
 
   const jobTitle = (id: number) => jobs.find(j => j.id === id)?.title ?? `Job #${id}`
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQ(filterQ.trim()), 320)
+    return () => clearTimeout(t)
+  }, [filterQ])
 
   const load = useCallback(async () => {
     setLoading(true)
     setErr('')
     try {
-      const [p, j] = await Promise.all([hiringPlansApi.list(token), jobsApi.list(token)])
+      const [p, j] = await Promise.all([
+        hiringPlansApi.list(token, {
+          q: debouncedQ || undefined,
+          planStatus: planStatusFilter || undefined,
+        }),
+        jobsApi.list(token),
+      ])
       setPlans(p)
       setJobs(j)
     } catch (e: unknown) {
@@ -233,7 +247,7 @@ export default function HiringPlansView() {
     } finally {
       setLoading(false)
     }
-  }, [token])
+  }, [token, debouncedQ, planStatusFilter])
 
   useEffect(() => {
     load()
@@ -281,6 +295,27 @@ export default function HiringPlansView() {
         <p className="hiring-plans-intro">
           Set volume, deadlines, and track progress per job. Health reflects whether you can still hit the target before the deadline.
         </p>
+        <div className="list-filters-bar" role="search" aria-label="Filter hiring plans">
+          <input
+            type="search"
+            className="list-filter-input"
+            placeholder="Search by job title…"
+            value={filterQ}
+            onChange={e => setFilterQ(e.target.value)}
+            aria-label="Search hiring plans"
+          />
+          <select
+            className="list-filter-select"
+            value={planStatusFilter}
+            onChange={e => setPlanStatusFilter(e.target.value)}
+            aria-label="Plan status"
+          >
+            <option value="">All plan statuses</option>
+            <option value="active">active</option>
+            <option value="paused">paused</option>
+            <option value="completed">completed</option>
+          </select>
+        </div>
       </div>
       <div className="list-table hiring-plans-table">
         <div className="list-table-head">

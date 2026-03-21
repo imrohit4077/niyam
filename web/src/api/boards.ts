@@ -29,9 +29,16 @@ async function req<T>(path: string, token: string, options: RequestInit = {}): P
   return json.data as T
 }
 
+export type BoardListParams = { active?: boolean; q?: string }
+
 export const boardsApi = {
-  list: (token: string, activeOnly = false) =>
-    req<JobBoard[]>(`/job-boards${activeOnly ? '?active=true' : ''}`, token),
+  list: (token: string, params?: BoardListParams) => {
+    const p = new URLSearchParams()
+    if (params?.active) p.set('active', 'true')
+    if (params?.q?.trim()) p.set('q', params.q.trim())
+    const qs = p.toString()
+    return req<JobBoard[]>(`/job-boards${qs ? `?${qs}` : ''}`, token)
+  },
 
   get: (token: string, id: number) =>
     req<JobBoard>(`/job-boards/${id}`, token),

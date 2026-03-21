@@ -1,9 +1,12 @@
 """JobPostingService — distribute jobs to boards."""
 from datetime import datetime, timezone
-from sqlalchemy import select
-from app.models.job_posting import JobPosting
+
+from sqlalchemy import or_, select
+
+from app.helpers.pg_search import ilike_contains, normalize_q, trigram_or
 from app.models.job import Job
 from app.models.job_board import JobBoard
+from app.models.job_posting import JobPosting
 from app.helpers.logger import get_logger
 from app.services.base_service import BaseService
 
@@ -11,10 +14,33 @@ logger = get_logger(__name__)
 
 
 class JobPostingService(BaseService):
-    def list_postings(self, account_id: int, job_id: int | None = None) -> dict:
-        stmt = select(JobPosting).where(JobPosting.account_id == account_id)
+    def list_postings(
+        self,
+        account_id: int,
+        job_id: int | None = None,
+        q: str | None = None,
+        status: str | None = None,
+    ) -> dict:
+        stmt = (
+            select(JobPosting)
+            .join(Job, Job.id == JobPosting.job_id)
+            .join(JobBoard, JobBoard.id == JobPosting.board_id)
+            .where(JobPosting.account_id == account_id)
+        )
         if job_id:
             stmt = stmt.where(JobPosting.job_id == job_id)
+        if status:
+            stmt = stmt.where(JobPosting.status == status)
+        nq = normalize_q(q)
+        if nq:
+            stmt = stmt.where(
+                or_(
+                    trigram_or(Job.title, JobBoard.name, q=nq, param_name="posting_trgm"),
+                    ilike_contains(JobPosting.external_url, nq, param_name="posting_url"),
+                    ilike_contains(JobPosting.external_apply_url, nq, param_name="posting_apply_url"),
+                    ilike_contains(JobPosting.external_job_id, nq, param_name="posting_ext_id"),
+                )
+            )
         stmt = stmt.order_by(JobPosting.created_at.desc())
         postings = list(self.db.execute(stmt).scalars().all())
         return self.success([p.to_dict() for p in postings])

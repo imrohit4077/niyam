@@ -152,7 +152,17 @@ export const esignApi = {
   listRequestsForApplication: (token: string, applicationId: number) =>
     req<EsignRequestRow[]>(`/applications/${applicationId}/esign_requests`, token),
 
-  listAllRequests: (token: string) => req<EsignRequestRow[]>('/esign_requests', token),
+  listAllRequests: (
+    token: string,
+    params?: { q?: string; status?: string; limit?: number },
+  ) => {
+    const p = new URLSearchParams()
+    if (params?.q?.trim()) p.set('q', params.q.trim())
+    if (params?.status && params.status !== 'all') p.set('status', params.status)
+    if (params?.limit != null) p.set('limit', String(params.limit))
+    const qs = p.toString()
+    return req<EsignRequestRow[]>(`/esign_requests${qs ? `?${qs}` : ''}`, token)
+  },
 
   generateForApplication: (token: string, applicationId: number, body?: { template_id?: number | null }) =>
     req<EsignRequestRow[]>(`/applications/${applicationId}/esign_requests/generate`, token, {

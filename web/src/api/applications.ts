@@ -40,12 +40,21 @@ async function req<T>(path: string, token: string, options: RequestInit = {}): P
   return json.data as T
 }
 
+export type ApplicationListParams = {
+  jobId?: number
+  status?: string
+  q?: string
+  sourceType?: string
+}
+
 export const applicationsApi = {
-  list: (token: string, jobId?: number, status?: string) => {
-    const params = new URLSearchParams()
-    if (jobId) params.set('job_id', String(jobId))
-    if (status) params.set('status', status)
-    const qs = params.toString()
+  list: (token: string, params?: ApplicationListParams) => {
+    const p = new URLSearchParams()
+    if (params?.jobId != null) p.set('job_id', String(params.jobId))
+    if (params?.status) p.set('status', params.status)
+    if (params?.q?.trim()) p.set('q', params.q.trim())
+    if (params?.sourceType?.trim()) p.set('source_type', params.sourceType.trim())
+    const qs = p.toString()
     return req<Application[]>(`/applications${qs ? `?${qs}` : ''}`, token)
   },
 

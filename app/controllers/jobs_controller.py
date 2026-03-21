@@ -37,7 +37,16 @@ class JobsController(BaseController, Authenticatable):
     def index(self):
         account_id = self._account_id()
         status = self.request.query_params.get("status")
-        result = JobService(self.db).list_jobs(account_id, status=status)
+        q = self.request.query_params.get("q")
+        department = self.request.query_params.get("department")
+        location = self.request.query_params.get("location")
+        result = JobService(self.db).list_jobs(
+            account_id,
+            status=status,
+            q=q,
+            department=department,
+            location=location,
+        )
         return self.render_json(result["data"])
 
     def show(self):

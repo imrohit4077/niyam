@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link, useOutletContext } from 'react-router-dom'
 import { esignApi, type EsignRequestRow } from '../api/esign'
 import type { DashboardOutletContext } from '../layouts/DashboardOutletContext'
@@ -24,43 +24,35 @@ export default function EsignDocumentsPage() {
   const [err, setErr] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [q, setQ] = useState('')
+  const [debouncedQ, setDebouncedQ] = useState('')
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQ(q.trim()), 320)
+    return () => clearTimeout(t)
+  }, [q])
 
   const load = useCallback(async () => {
     if (!token) return
     setLoading(true)
     setErr('')
     try {
-      setRows(await esignApi.listAllRequests(token))
+      setRows(
+        await esignApi.listAllRequests(token, {
+          q: debouncedQ || undefined,
+          status: statusFilter,
+        }),
+      )
     } catch (e: unknown) {
       setErr(e instanceof Error ? e.message : 'Failed to load')
       setRows([])
     } finally {
       setLoading(false)
     }
-  }, [token])
+  }, [token, debouncedQ, statusFilter])
 
   useEffect(() => {
     void load()
   }, [load])
-
-  const filtered = useMemo(() => {
-    const needle = q.trim().toLowerCase()
-    return rows.filter(r => {
-      if (statusFilter !== 'all' && r.status !== statusFilter) return false
-      if (!needle) return true
-      const blob = [
-        r.template_name,
-        r.candidate_name,
-        r.candidate_email,
-        r.job_title,
-        String(r.id),
-      ]
-        .filter(Boolean)
-        .join(' ')
-        .toLowerCase()
-      return blob.includes(needle)
-    })
-  }, [rows, statusFilter, q])
 
   return (
     <div className="esign-docs-page">
@@ -113,7 +105,7 @@ export default function EsignDocumentsPage() {
       )}
       {!loading && err && <div className="esign-docs-error">{err}</div>}
 
-      {!loading && !err && filtered.length === 0 && (
+      {!loading && !err && rows.length === 0 && (
         <div className="esign-docs-empty">
           <p>No documents match your filters.</p>
           <p className="esign-docs-empty-hint">
@@ -122,7 +114,7 @@ export default function EsignDocumentsPage() {
         </div>
       )}
 
-      {!loading && !err && filtered.length > 0 && (
+      {!loading && !err && rows.length > 0 && (
         <div className="esign-docs-table-wrap">
           <table className="esign-docs-table">
             <thead>
@@ -136,7 +128,7 @@ export default function EsignDocumentsPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map(r => (
+              {rows.map(r => (
                 <tr key={r.id}>
                   <td className="esign-docs-td-muted">{new Date(r.created_at).toLocaleString()}</td>
                   <td>
