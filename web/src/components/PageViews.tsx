@@ -12,6 +12,8 @@ import type { Application } from '../api/applications'
 import { useToast } from '../contexts/ToastContext'
 import { interviewsApi, type InterviewAssignmentRow, type InterviewKitPayload } from '../api/interviews'
 import { scorecardsApi, type ScorecardRow } from '../api/scorecards'
+import CustomAttributeFields from './CustomAttributeFields'
+import { customAttributesApi, type CustomAttributeDefinition } from '../api/customAttributes'
 
 // ── Shared UI primitives ───────────────────────────────────────────
 
@@ -780,6 +782,8 @@ function ApplicationForm({
   const toast = useToast()
   const [jobs, setJobs] = useState<import('../api/jobs').Job[]>([])
   const [form, setForm] = useState({ job_id: '', candidate_name: '', candidate_email: '', candidate_phone: '', cover_letter: '' })
+  const [custDefs, setCustDefs] = useState<CustomAttributeDefinition[]>([])
+  const [custVals, setCustVals] = useState<Record<string, unknown>>({})
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState('')
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }))
@@ -788,11 +792,40 @@ function ApplicationForm({
     jobsApi.list(token).then(setJobs).catch(() => {})
   }, [token])
 
+  useEffect(() => {
+    customAttributesApi
+      .list(token, 'application')
+      .then(setCustDefs)
+      .catch(() => setCustDefs([]))
+  }, [token])
+
+  useEffect(() => {
+    if (!custDefs.length) return
+    setCustVals(prev => {
+      const next = { ...prev }
+      let changed = false
+      for (const d of custDefs) {
+        if (d.field_type === 'boolean' && next[d.attribute_key] === undefined) {
+          next[d.attribute_key] = false
+          changed = true
+        }
+      }
+      return changed ? next : prev
+    })
+  }, [custDefs])
+
   const submit = async () => {
     if (!form.job_id || !form.candidate_email) { setErr('Job and email are required'); return }
     setSaving(true); setErr('')
     try {
-      await applicationsApi.create(token, { job_id: Number(form.job_id), candidate_email: form.candidate_email, candidate_name: form.candidate_name, candidate_phone: form.candidate_phone, cover_letter: form.cover_letter })
+      await applicationsApi.create(token, {
+        job_id: Number(form.job_id),
+        candidate_email: form.candidate_email,
+        candidate_name: form.candidate_name,
+        candidate_phone: form.candidate_phone,
+        cover_letter: form.cover_letter,
+        custom_attributes: custDefs.length ? custVals : undefined,
+      })
       toast.success('Application submitted', `Application for ${form.candidate_name || form.candidate_email} has been created.`)
       onSave()
     } catch (e: unknown) {
@@ -815,6 +848,11 @@ function ApplicationForm({
       <FormField label="Email *"><input type="email" value={form.candidate_email} onChange={e => set('candidate_email', e.target.value)} placeholder="candidate@email.com" /></FormField>
       <FormField label="Phone"><input value={form.candidate_phone} onChange={e => set('candidate_phone', e.target.value)} placeholder="+1 555 000 0000" /></FormField>
       <FormField label="Cover Letter"><textarea value={form.cover_letter} onChange={e => set('cover_letter', e.target.value)} rows={3} placeholder="Optional cover letter..." /></FormField>
+      {custDefs.length > 0 && (
+        <FormField label="Custom attributes">
+          <CustomAttributeFields definitions={custDefs} values={custVals} onChange={setCustVals} disabled={saving} idPrefix="modal-cf" />
+        </FormField>
+      )}
       <button className="btn-primary" onClick={submit} disabled={saving}>{saving ? 'Submitting...' : 'Submit Application'}</button>
     </Modal>
   )

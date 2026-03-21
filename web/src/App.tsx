@@ -1,5 +1,6 @@
 import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation, useParams } from 'react-router-dom'
 import { ToastProvider } from './contexts/ToastContext'
+import { AppearanceProvider } from './contexts/AppearanceContext'
 import { AuthProvider, useAuth } from './auth/AuthContext'
 import LoginPage from './pages/LoginPage'
 import JobEditorPage from './pages/JobEditorPage'
@@ -22,7 +23,12 @@ import {
 } from './components/PageViews'
 import SettingsLayout from './layouts/SettingsLayout'
 import EsignSettingsLayout from './layouts/EsignSettingsLayout'
-import GeneralSettingsView from './components/GeneralSettingsView'
+import GeneralSettingsLayout from './layouts/GeneralSettingsLayout'
+import OrganizationSettingsPage from './pages/settings/OrganizationSettingsPage'
+import WorkspaceSettingsPage from './pages/settings/WorkspaceSettingsPage'
+import AppearanceSettingsPage from './pages/settings/AppearanceSettingsPage'
+import CustomFieldsSettingsLayout from './layouts/CustomFieldsSettingsLayout'
+import CustomFieldsEntityPage from './pages/settings/CustomFieldsEntityPage'
 import EsignOverviewPage from './pages/esign/EsignOverviewPage'
 import EsignTemplatesListPage from './pages/esign/EsignTemplatesListPage'
 import EsignTemplateEditorPage from './pages/esign/EsignTemplateEditorPage'
@@ -97,7 +103,17 @@ function AppRoutes() {
             <Route path="team" element={<TeamView />} />
             <Route path="settings" element={<SettingsLayout />}>
               <Route index element={<Navigate to="general" replace />} />
-              <Route path="general" element={<GeneralSettingsView />} />
+              <Route path="general" element={<GeneralSettingsLayout />}>
+                <Route index element={<Navigate to="organization" replace />} />
+                <Route path="organization" element={<OrganizationSettingsPage />} />
+                <Route path="workspace" element={<WorkspaceSettingsPage />} />
+                <Route path="appearance" element={<AppearanceSettingsPage />} />
+              </Route>
+              <Route path="custom-fields" element={<CustomFieldsSettingsLayout />}>
+                <Route index element={<Navigate to="jobs" replace />} />
+                <Route path="jobs" element={<CustomFieldsEntityPage entityType="job" />} />
+                <Route path="candidates" element={<CustomFieldsEntityPage entityType="application" />} />
+              </Route>
               <Route path="esign" element={<EsignSettingsLayout />}>
                 <Route index element={<Navigate to="overview" replace />} />
                 <Route path="overview" element={<EsignOverviewPage />} />
@@ -122,7 +138,9 @@ export default function App() {
     <BrowserRouter>
       <ToastProvider>
         <AuthProvider>
-          <AppRoutes />
+          <AppearanceProvider>
+            <AppRoutes />
+          </AppearanceProvider>
         </AuthProvider>
       </ToastProvider>
     </BrowserRouter>

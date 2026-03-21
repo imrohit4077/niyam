@@ -14,6 +14,7 @@ from app.models.job_version import JobVersion
 from app.helpers.logger import get_logger
 from app.helpers.scorecard_criteria import normalize_job_criteria
 from app.services.base_service import BaseService
+from app.services.custom_attribute_service import CustomAttributeService, ENTITY_JOB
 
 logger = get_logger(__name__)
 
@@ -69,6 +70,13 @@ class JobService(BaseService):
         return self.success(data)
 
     def create_job(self, account_id: int, user_id: int, data: dict) -> dict:
+        cas = CustomAttributeService(self.db)
+        merged_cf, err = cas.merge_validated(
+            account_id, ENTITY_JOB, data.get("custom_fields"), {}, full_required_check=True
+        )
+        if err:
+            return self.failure(err)
+        data = {**data, "custom_fields": merged_cf}
         title = (data.get("title") or "").strip()
         if not title:
             return self.failure("title is required")
@@ -120,6 +128,18 @@ class JobService(BaseService):
         job = Job.find_by(self.db, id=job_id, account_id=account_id)
         if not job or job.deleted_at:
             return self.failure("Job not found")
+        if "custom_fields" in data:
+            cas = CustomAttributeService(self.db)
+            merged_cf, err = cas.merge_validated(
+                account_id,
+                ENTITY_JOB,
+                data.get("custom_fields"),
+                job.custom_fields if isinstance(job.custom_fields, dict) else {},
+                full_required_check=True,
+            )
+            if err:
+                return self.failure(err)
+            data = {**data, "custom_fields": merged_cf}
         allowed = [
             "title", "department", "location", "location_type", "employment_type",
             "experience_level", "open_positions", "bonus_incentives", "budget_approval_status",

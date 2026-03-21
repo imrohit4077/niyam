@@ -8,6 +8,7 @@ from app.models.job import Job
 from app.models.job_version import JobVersion
 from app.services.application_service import ApplicationService
 from app.services.base_service import BaseService
+from app.services.custom_attribute_service import CustomAttributeService, ENTITY_APPLICATION
 
 
 def _job_for_token(db, token: str) -> Job | None:
@@ -67,6 +68,9 @@ class PublicApplyService(BaseService):
         else:
             payload["salary"] = None
 
+        defs = CustomAttributeService(self.db).list_definitions(job.account_id, ENTITY_APPLICATION)
+        payload["custom_attribute_definitions"] = defs["data"] if defs.get("ok") else []
+
         return self.success(payload)
 
     def submit(self, token: str, data: dict) -> dict:
@@ -80,6 +84,10 @@ class PublicApplyService(BaseService):
         if not email:
             return self.failure("candidate_email is required")
 
+        raw_attrs = data.get("custom_attributes")
+        if raw_attrs is not None and not isinstance(raw_attrs, dict):
+            return self.failure("custom_attributes must be an object")
+
         body = {
             "job_id": job.id,
             "candidate_email": email,
@@ -91,5 +99,6 @@ class PublicApplyService(BaseService):
             "linkedin_url": (data.get("linkedin_url") or "").strip() or None,
             "portfolio_url": (data.get("portfolio_url") or "").strip() or None,
             "source_type": "public_apply",
+            "custom_attributes": raw_attrs if isinstance(raw_attrs, dict) else {},
         }
         return ApplicationService(self.db).create_application(job.account_id, body)

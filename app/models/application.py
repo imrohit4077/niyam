@@ -2,7 +2,8 @@
 from datetime import datetime
 from decimal import Decimal
 from typing import Optional
-from sqlalchemy import BigInteger, String, Boolean, DateTime, Text, Numeric, JSON, ForeignKey
+from sqlalchemy import BigInteger, String, Boolean, DateTime, Text, Numeric, JSON, ForeignKey, text
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 from app.models.base_model import BaseModel
 
@@ -30,6 +31,9 @@ class Application(BaseModel):
     linkedin_url: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
     portfolio_url: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
     custom_answers: Mapped[dict] = mapped_column(JSON, nullable=False, server_default="{}")
+    custom_attributes: Mapped[dict] = mapped_column(
+        JSONB, nullable=False, server_default=text("'{}'::jsonb")
+    )
 
     status: Mapped[str] = mapped_column(String(50), nullable=False, server_default="applied")
     pipeline_stage_id: Mapped[Optional[int]] = mapped_column(

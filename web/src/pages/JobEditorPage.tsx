@@ -8,6 +8,8 @@ import { interviewPlansApi, type InterviewPlan } from '../api/interviewPlans'
 import { useToast } from '../contexts/ToastContext'
 import type { DashboardOutletContext } from '../layouts/DashboardOutletContext'
 import RichTextEditor from '../components/RichTextEditor'
+import CustomAttributeFields from '../components/CustomAttributeFields'
+import { customAttributesApi, type CustomAttributeDefinition } from '../api/customAttributes'
 
 type JobStepId =
   | 'basic_info'
@@ -1138,6 +1140,8 @@ export default function JobEditorPage() {
   })
   const [skillsRequired, setSkillsRequired] = useState<string[]>([])
   const [skillsNice, setSkillsNice] = useState<string[]>([])
+  const [jobAttrDefs, setJobAttrDefs] = useState<CustomAttributeDefinition[]>([])
+  const [jobCustomFields, setJobCustomFields] = useState<Record<string, unknown>>({})
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState('')
 
@@ -1179,6 +1183,29 @@ export default function JobEditorPage() {
   }, [token])
 
   useEffect(() => {
+    if (!token) return
+    customAttributesApi
+      .list(token, 'job')
+      .then(setJobAttrDefs)
+      .catch(() => setJobAttrDefs([]))
+  }, [token])
+
+  useEffect(() => {
+    if (!jobAttrDefs.length) return
+    setJobCustomFields(prev => {
+      const next = { ...prev }
+      let changed = false
+      for (const d of jobAttrDefs) {
+        if (d.field_type === 'boolean' && next[d.attribute_key] === undefined) {
+          next[d.attribute_key] = false
+          changed = true
+        }
+      }
+      return changed ? next : prev
+    })
+  }, [jobAttrDefs])
+
+  useEffect(() => {
     if (stepId === 'posting' && hasPostCreateSteps) {
       boardsApi.list(token, true).then(setBoards).catch(() => setBoards([]))
     }
@@ -1192,6 +1219,7 @@ export default function JobEditorPage() {
       setJobConfig(defaultJobConfig())
       setSkillsRequired([])
       setSkillsNice([])
+      setJobCustomFields({})
       setForm({
         title: '',
         department: '',
@@ -1233,6 +1261,8 @@ export default function JobEditorPage() {
         setJobConfig(mergeLoadedJobConfig(j.job_config))
         setSkillsRequired(expandSkillEntries(j.job_config?.skills_required))
         setSkillsNice(expandSkillEntries(j.job_config?.skills_nice))
+        const cf = j.custom_fields
+        setJobCustomFields(cf && typeof cf === 'object' && !Array.isArray(cf) ? { ...cf } : {})
         setForm({
           title: j.title,
           department: j.department ?? '',
@@ -1324,6 +1354,7 @@ export default function JobEditorPage() {
       .map(s => s.trim())
       .filter(Boolean),
     job_config: buildJobConfigForSave(),
+    custom_fields: jobCustomFields,
   })
 
   const refreshJob = async (jobId: number) => {
@@ -1544,6 +1575,20 @@ export default function JobEditorPage() {
                       />
                     </JobEditorField>
                   </div>
+                  {jobAttrDefs.length > 0 && (
+                    <JobEditorField
+                      label="Custom fields"
+                      hint="Settings → Custom fields → Job fields. Stored as custom_fields on this requisition."
+                    >
+                      <CustomAttributeFields
+                        definitions={jobAttrDefs}
+                        values={jobCustomFields}
+                        onChange={setJobCustomFields}
+                        disabled={saving}
+                        idPrefix="job-cf"
+                      />
+                    </JobEditorField>
+                  )}
                   <JobEditorField label="Job description" hint="Rich text for public posting and internal alignment.">
                     <div className="job-editor-description-wrap">
                       <RichTextEditor

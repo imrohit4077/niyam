@@ -96,6 +96,8 @@ export interface Job {
   published_at: string | null
   closes_at: string | null
   tags: string[]
+  /** Workspace-defined custom attributes (see Settings → Custom fields → Jobs). */
+  custom_fields?: Record<string, unknown>
   scorecard_criteria?: ScorecardCriterion[] | string[]
   created_at: string
   updated_at: string

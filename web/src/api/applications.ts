@@ -17,6 +17,8 @@ export interface Application {
   pipeline_stage_id?: number | null
   stage_history: { stage: string; changed_at: string; changed_by?: number; pipeline_stage_id?: number | null }[]
   tags: string[]
+  /** Workspace-defined candidate/application attributes (Settings → Custom fields → Candidates). */
+  custom_attributes?: Record<string, unknown>
   score: number | null
   rejection_reason: string | null
   rejection_note: string | null

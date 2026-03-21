@@ -1,8 +1,8 @@
 import { Link, useOutletContext } from 'react-router-dom'
-import { useAuth } from '../auth/AuthContext'
-import type { DashboardOutletContext } from '../layouts/DashboardOutletContext'
+import { useAuth } from '../../auth/AuthContext'
+import type { DashboardOutletContext } from '../../layouts/DashboardOutletContext'
 
-export default function GeneralSettingsView() {
+export default function WorkspaceSettingsPage() {
   const { user } = useAuth()
   const { accountId } = useOutletContext<DashboardOutletContext>()
   const acc = user?.account
@@ -10,8 +10,7 @@ export default function GeneralSettingsView() {
   return (
     <div className="settings-general">
       <p className="settings-lead">
-        Workspace overview. For <strong>E-sign</strong> (in-app offer letters &amp; agreements), use the E-sign tab above
-        or the shortcut in the sidebar.
+        Workspace identifiers and shortcuts. Edit company details under <strong>Organization</strong> in the left menu.
       </p>
 
       <div className="settings-cards">
@@ -59,7 +58,7 @@ export default function GeneralSettingsView() {
           <h2 className="settings-card-title">E-sign (built-in)</h2>
           <p className="settings-card-body">
             Send offer letters and agreements when someone moves on the pipeline — candidates sign in your app, no
-            external provider. Run <code style={{ fontSize: 12 }}>python manage.py db seed</code> for sample templates.
+            external provider.
           </p>
           <Link to={`/account/${accountId}/settings/esign`} className="btn-primary settings-card-cta">
             Open E-sign setup

@@ -115,6 +115,9 @@ def draw_routes(app: "FastAPI") -> None:
     from app.controllers.esign_stage_rules_controller import EsignStageRulesController
     from app.controllers.esign_requests_controller import EsignRequestsController
     from app.controllers.account_esign_settings_controller import AccountEsignSettingsController
+    from app.controllers.account_organization_settings_controller import AccountOrganizationSettingsController
+    from app.controllers.account_appearance_settings_controller import AccountAppearanceSettingsController
+    from app.controllers.custom_attribute_definitions_controller import CustomAttributeDefinitionsController
     from app.controllers.public_esign_controller import PublicEsignController
     from app.controllers.esign_webhooks_controller import EsignWebhooksController
 
@@ -180,6 +183,49 @@ def draw_routes(app: "FastAPI") -> None:
         "/account/esign_settings",
         _wrap(AccountEsignSettingsController, "update", lambda c: c.update()),
         methods=["PATCH"],
+    )
+
+    router.add_api_route(
+        "/account/organization_settings",
+        _wrap(AccountOrganizationSettingsController, "show", lambda c: c.show()),
+        methods=["GET"],
+    )
+    router.add_api_route(
+        "/account/organization_settings",
+        _wrap(AccountOrganizationSettingsController, "update", lambda c: c.update()),
+        methods=["PATCH"],
+    )
+
+    router.add_api_route(
+        "/account/appearance_settings",
+        _wrap(AccountAppearanceSettingsController, "show", lambda c: c.show()),
+        methods=["GET"],
+    )
+    router.add_api_route(
+        "/account/appearance_settings",
+        _wrap(AccountAppearanceSettingsController, "update", lambda c: c.update()),
+        methods=["PATCH"],
+    )
+
+    router.add_api_route(
+        "/custom_attribute_definitions",
+        _wrap(CustomAttributeDefinitionsController, "index", lambda c: c.index()),
+        methods=["GET"],
+    )
+    router.add_api_route(
+        "/custom_attribute_definitions",
+        _wrap(CustomAttributeDefinitionsController, "create", lambda c: c.create()),
+        methods=["POST"],
+    )
+    router.add_api_route(
+        "/custom_attribute_definitions/{id:int}",
+        _wrap(CustomAttributeDefinitionsController, "update", lambda c: c.update()),
+        methods=["PATCH"],
+    )
+    router.add_api_route(
+        "/custom_attribute_definitions/{id:int}",
+        _wrap(CustomAttributeDefinitionsController, "destroy", lambda c: c.destroy()),
+        methods=["DELETE"],
     )
 
     resources(router, "/esign_templates", EsignTemplatesController)

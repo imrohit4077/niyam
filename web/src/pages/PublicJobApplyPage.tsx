@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { publicApplyApi, type PublicJobApplyPayload } from '../api/publicApply'
+import CustomAttributeFields from '../components/CustomAttributeFields'
 import './PublicJobApplyPage.css'
 
 function formatSalary(s: PublicJobApplyPayload['salary']) {
@@ -28,6 +29,7 @@ export default function PublicJobApplyPage() {
   const [cover_letter, setCoverLetter] = useState('')
   const [linkedin_url, setLinkedinUrl] = useState('')
   const [portfolio_url, setPortfolioUrl] = useState('')
+  const [customAttrValues, setCustomAttrValues] = useState<Record<string, unknown>>({})
 
   useEffect(() => {
     if (!token) {
@@ -47,6 +49,18 @@ export default function PublicJobApplyPage() {
       cancelled = true
     }
   }, [token])
+
+  useEffect(() => {
+    if (!job?.custom_attribute_definitions?.length) {
+      setCustomAttrValues({})
+      return
+    }
+    const init: Record<string, unknown> = {}
+    for (const d of job.custom_attribute_definitions) {
+      if (d.field_type === 'boolean') init[d.attribute_key] = false
+    }
+    setCustomAttrValues(init)
+  }, [job])
 
   const fields = job?.application_fields ?? {
     resume: true,
@@ -74,6 +88,7 @@ export default function PublicJobApplyPage() {
         cover_letter: fields.cover_letter ? cover_letter.trim() || undefined : undefined,
         linkedin_url: fields.linkedin ? linkedin_url.trim() || undefined : undefined,
         portfolio_url: fields.portfolio ? portfolio_url.trim() || undefined : undefined,
+        custom_attributes: job.custom_attribute_definitions?.length ? customAttrValues : undefined,
       })
       setDone(true)
     } catch (err: unknown) {
@@ -247,6 +262,18 @@ export default function PublicJobApplyPage() {
                 <span>Cover letter</span>
                 <textarea value={cover_letter} onChange={e => setCoverLetter(e.target.value)} rows={5} />
               </label>
+            )}
+            {job.custom_attribute_definitions && job.custom_attribute_definitions.length > 0 && (
+              <div className="public-apply-field public-apply-custom-attrs">
+                <span className="public-apply-field-label">Additional information</span>
+                <CustomAttributeFields
+                  definitions={job.custom_attribute_definitions}
+                  values={customAttrValues}
+                  onChange={setCustomAttrValues}
+                  disabled={submitting}
+                  idPrefix="pub-cf"
+                />
+              </div>
             )}
             <button type="submit" className="public-apply-submit" disabled={submitting}>
               {submitting ? 'Submitting…' : 'Submit application'}

@@ -6,6 +6,7 @@ from app.models.job import Job
 from app.models.pipeline_stage import PipelineStage
 from app.helpers.logger import get_logger
 from app.services.base_service import BaseService
+from app.services.custom_attribute_service import CustomAttributeService, ENTITY_APPLICATION
 
 logger = get_logger(__name__)
 
@@ -121,6 +122,16 @@ class ApplicationService(BaseService):
         existing = Application.find_by(self.db, job_id=job_id, candidate_email=email)
         if existing and not existing.deleted_at:
             return self.failure("Candidate already applied to this job")
+        cas = CustomAttributeService(self.db)
+        attrs, err = cas.merge_validated(
+            account_id,
+            ENTITY_APPLICATION,
+            data.get("custom_attributes"),
+            {},
+            full_required_check=True,
+        )
+        if err:
+            return self.failure(err)
         now = datetime.now(timezone.utc)
         app = Application(
             account_id=account_id, job_id=job_id,
@@ -138,6 +149,7 @@ class ApplicationService(BaseService):
             linkedin_url=data.get("linkedin_url"),
             portfolio_url=data.get("portfolio_url"),
             custom_answers=data.get("custom_answers", {}),
+            custom_attributes=attrs or {},
             status="applied",
             stage_history=[{"stage": "applied", "changed_at": now.isoformat()}],
             tags=data.get("tags", []),
@@ -267,10 +279,24 @@ class ApplicationService(BaseService):
             "tags",
             "rejection_note",
             "custom_answers",
+            "custom_attributes",
         }
         updates = {k: v for k, v in data.items() if k in allowed}
         if not updates:
             return self.failure("No updatable fields provided")
+        if "custom_attributes" in updates:
+            cas = CustomAttributeService(self.db)
+            base = app.custom_attributes if isinstance(app.custom_attributes, dict) else {}
+            merged, err = cas.merge_validated(
+                account_id,
+                ENTITY_APPLICATION,
+                updates.get("custom_attributes"),
+                base,
+                full_required_check=True,
+            )
+            if err:
+                return self.failure(err)
+            updates["custom_attributes"] = merged
         if "candidate_email" in updates:
             em = (updates["candidate_email"] or "").strip().lower()
             if not em:

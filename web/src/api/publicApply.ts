@@ -1,3 +1,5 @@
+import type { CustomAttributeDefinition } from './customAttributes'
+
 const BASE = '/api/v1'
 
 export interface PublicJobApplyPayload {
@@ -20,6 +22,7 @@ export interface PublicJobApplyPayload {
     portfolio: boolean
     linkedin: boolean
   }
+  custom_attribute_definitions?: CustomAttributeDefinition[]
 }
 
 async function publicReq<T>(path: string, options: RequestInit = {}): Promise<T> {

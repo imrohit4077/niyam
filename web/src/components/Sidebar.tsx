@@ -15,6 +15,7 @@ export type SidebarPage =
   | 'esign-documents'
   | 'team'
   | 'settings-general'
+  | 'settings-custom-fields'
   | 'settings-esign'
 
 interface NavItem {
@@ -37,6 +38,7 @@ const NAV: NavItem[] = [
   { id: 'interviews', label: 'Interviews', icon: 'calendar', group: 'Candidates' },
   { id: 'esign-documents', label: 'Signed documents', icon: 'signature', group: 'Candidates' },
   { id: 'settings-general', label: 'General', icon: 'gear', group: 'Settings' },
+  { id: 'settings-custom-fields', label: 'Custom fields', icon: 'fieldgrid', group: 'Settings' },
   { id: 'settings-esign', label: 'E-sign', icon: 'document', group: 'Settings' },
   { id: 'team', label: 'Team', icon: 'team', group: 'Workspace' },
 ]
@@ -54,6 +56,7 @@ const PATH_SEGMENTS: Record<SidebarPage, string> = {
   'esign-documents': 'esign-documents',
   team: 'team',
   'settings-general': 'settings/general',
+  'settings-custom-fields': 'settings/custom-fields/jobs',
   'settings-esign': 'settings/esign',
 }
 
@@ -91,6 +94,11 @@ const ICONS: Record<string, ReactNode> = {
   gear: (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
       <path d="M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.49.49 0 00-.59-.22l-2.39.96a7.02 7.02 0 00-1.62-.94l-.36-2.54A.484.484 0 0014 2h-4a.484.484 0 00-.48.41l-.36 2.54a7.4 7.4 0 00-1.62.94l-2.39-.96a.48.48 0 00-.59.22L2.74 8.87a.47.47 0 00.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.47.47 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.36 1.04.67 1.62.94l.36 2.54c.05.24.27.41.48.41h4c.24 0 .44-.17.47-.41l.36-2.54a7.4 7.4 0 001.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.47.47 0 00-.12-.61l-2.01-1.58zM12 15.6a3.6 3.6 0 110-7.2 3.6 3.6 0 010 7.2z" />
+    </svg>
+  ),
+  fieldgrid: (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M4 4h7v7H4V4zm9 0h7v7h-7V4zM4 13h7v7H4v-7zm9 0h7v7h-7v-7z" />
     </svg>
   ),
   chevron: (
@@ -184,14 +192,17 @@ export default function Sidebar({ accountId }: Props) {
               const seg = PATH_SEGMENTS[item.id]
               const to = `${base}/${seg}`
               const esignActive = item.id === 'settings-esign' && pathname.includes('/settings/esign')
+              const generalActive = item.id === 'settings-general' && pathname.includes('/settings/general')
+              const customFieldsActive =
+                item.id === 'settings-custom-fields' && pathname.includes('/settings/custom-fields')
               return (
                 <NavLink
                   key={item.id}
                   to={to}
-                  end={item.id === 'profile' || item.id === 'settings-general'}
+                  end={item.id === 'profile' || item.id === 'settings-custom-fields'}
                   title={collapsed ? item.label : undefined}
                   className={({ isActive }) =>
-                    `sidebar-item ${isActive || esignActive ? 'sidebar-item-active' : ''}`
+                    `sidebar-item ${isActive || esignActive || generalActive || customFieldsActive ? 'sidebar-item-active' : ''}`
                   }
                 >
                   <span className="sidebar-item-icon">{ICONS[item.icon]}</span>
