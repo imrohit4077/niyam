@@ -1,3 +1,5 @@
+import type { TemplateDocument } from '../esign/templateDocument'
+
 const BASE = '/api/v1'
 
 export interface EsignTemplate {
@@ -6,6 +8,7 @@ export interface EsignTemplate {
   name: string
   description: string | null
   content_html: string
+  content_blocks?: TemplateDocument | null
   created_at: string
   updated_at: string
 }
@@ -99,10 +102,23 @@ async function req<T>(path: string, token: string, options: RequestInit = {}): P
 
 export const esignApi = {
   listTemplates: (token: string) => req<EsignTemplate[]>('/esign_templates', token),
-  createTemplate: (token: string, data: { name: string; description?: string; content_html: string }) =>
-    req<EsignTemplate>('/esign_templates', token, { method: 'POST', body: JSON.stringify(data) }),
-  updateTemplate: (token: string, id: number, data: Partial<{ name: string; description: string | null; content_html: string }>) =>
-    req<EsignTemplate>(`/esign_templates/${id}`, token, { method: 'PUT', body: JSON.stringify(data) }),
+  getTemplate: (token: string, id: number) => req<EsignTemplate>(`/esign_templates/${id}`, token),
+  createTemplate: (
+    token: string,
+    data:
+      | { name: string; description?: string; content_blocks: TemplateDocument }
+      | { name: string; description?: string; content_html: string },
+  ) => req<EsignTemplate>('/esign_templates', token, { method: 'POST', body: JSON.stringify(data) }),
+  updateTemplate: (
+    token: string,
+    id: number,
+    data: Partial<{
+      name: string
+      description: string | null
+      content_html: string
+      content_blocks: TemplateDocument | null
+    }>,
+  ) => req<EsignTemplate>(`/esign_templates/${id}`, token, { method: 'PUT', body: JSON.stringify(data) }),
   deleteTemplate: (token: string, id: number) =>
     req<{ deleted: boolean }>(`/esign_templates/${id}`, token, { method: 'DELETE' }),
 

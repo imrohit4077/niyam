@@ -1,7 +1,9 @@
 """Reusable HTML document templates with merge-field placeholders (tenant-scoped)."""
 from datetime import datetime
-from typing import Optional
+from typing import Any, Optional
+
 from sqlalchemy import BigInteger, String, DateTime, Text, ForeignKey
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 from app.models.base_model import BaseModel
 
@@ -14,6 +16,7 @@ class EsignTemplate(BaseModel):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
     content_html: Mapped[str] = mapped_column(Text, nullable=False)
+    content_blocks: Mapped[Optional[dict[str, Any]]] = mapped_column(JSONB, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 

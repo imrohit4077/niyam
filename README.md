@@ -262,7 +262,7 @@ python manage.py db:seed
 |--------|-------------|
 | `python manage.py runserver` | Start API (Uvicorn, reload) |
 | `python manage.py runserver --port=8080` | Custom port |
-| `python manage.py worker` | Celery worker (default queue) |
+| `python manage.py worker` | Celery worker (**gevent** pool, default 1000 greenlets; `--pool prefork --concurrency 8` for processes) |
 | `python manage.py worker --queue=mailers` | Worker for specific queue |
 | `python manage.py scheduler` | Celery Beat |
 | `python manage.py shell` | REPL with `db` and all `app.models` |
@@ -274,7 +274,13 @@ python manage.py db:seed
 python manage.py worker
 ```
 
-If Redis or enqueue fails, e-sign rules still run **inline** in the API process (slower responses). Optional HTML snapshots: set `ESIGN_ARTIFACTS_DIR` in `.env` to write merged documents to disk under `{dir}/{account_id}/{request_id}.html`.
+The worker defaults to the **gevent** pool (one OS process, many **greenlets** — not prefork). Concurrency defaults to **1000** greenlets via `CELERY_WORKER_CONCURRENCY` in settings. Override with e.g. `python manage.py worker --pool prefork --concurrency 8` if you need separate processes.
+
+**Note:** Gevent patches the stdlib for cooperative I/O. Heavy **psycopg2** / SQLAlchemy work can still block the hub; for DB-bound workloads consider lower concurrency, connection pooling, or `psycogreen`. Redis I/O cooperates well under gevent.
+
+Pipeline moves call `PATCH /applications/:id/stage` (see `ApplicationService.update_stage`), which enqueues **`forge.esign_on_stage_transition`**. That task creates `esign_requests` rows, then enqueues one **`forge.esign_deliver_request`** per row to merge HTML and set the signing link (all on the default queue).
+
+If Redis or enqueue fails, the API falls back to **inline** queue+deliver in the same process (slower responses). Optional HTML snapshots: set `ESIGN_ARTIFACTS_DIR` in `.env` to write merged documents to disk under `{dir}/{account_id}/{request_id}.html`.
 
 **Signed downloads** are stored and served as **PDF**. The API tries [WeasyPrint](https://weasyprint.org/) first (best layout/CSS); if native libraries are missing (typical macOS error: `cannot load library 'libgobject-2.0-0'`), it automatically falls back to **fpdf2** (pip-only: Pillow + fonttools, no Pango/Cairo). For best fidelity you can still install WeasyPrint’s system deps: `brew install pango cairo gdk-pixbuf libffi` (Linux: distro packages for `pango`, `cairo`, etc.).
 

@@ -43,6 +43,10 @@ class Settings(BaseSettings):
     # Celery broker DB index (Rails/Sidekiq style). Requested default: Redis DB 2.
     CELERY_BROKER_URL: str = "redis://localhost:6379/2"
     CELERY_RESULT_BACKEND: str = "redis://localhost:6379/2"
+    # Worker process: gevent = many concurrent greenlets on one OS process (not prefork).
+    # Override with CELERY_WORKER_POOL=prefork and low CELERY_WORKER_CONCURRENCY if needed.
+    CELERY_WORKER_POOL: str = "gevent"
+    CELERY_WORKER_CONCURRENCY: int = 1000
 
     # Pagination
     DEFAULT_PAGE_SIZE: int = 20

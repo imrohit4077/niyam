@@ -18,7 +18,10 @@ from app.models.job import Job
 from app.models.pipeline_stage import PipelineStage
 from app.services.base_service import BaseService
 from app.services.esign_settings_service import merged_esign_config
+from app.helpers.logger import get_logger
 from config.settings import get_settings
+
+logger = get_logger(__name__)
 
 
 _ACTIVE_STATUSES = frozenset({"queued", "sent", "viewed", "signed"})
@@ -135,29 +138,45 @@ class EsignAutomationService(BaseService):
         req = self.db.get(EsignRequest, request_id)
         if not req:
             return
+        if req.status in ("sent", "viewed", "signed"):
+            return
         account = Account.find_by(self.db, id=req.account_id)
         if not account:
             return
         self._deliver_internal_mutate(req, account)
         req.save(self.db)
 
-    def handle_stage_transition(
+    def queue_matching_esign_requests(
         self,
         account_id: int,
         application_id: int,
-        new_pipeline_stage_id: int | None,
-    ) -> None:
-        if new_pipeline_stage_id is None:
-            return
+        new_pipeline_stage_id: int,
+    ) -> list[int]:
+        """
+        Create EsignRequest rows in ``queued`` state for every active rule matching the new stage.
+        Does not merge HTML or assign signing URLs — use ``deliver_request`` (often via Celery).
+        """
         app = Application.find_by(self.db, id=application_id, account_id=account_id)
         if not app or app.deleted_at:
-            return
+            return []
         account = Account.find_by(self.db, id=account_id)
         if not account:
-            return
+            return []
 
         rules = self.find_matching_rules(account_id, app.job_id, new_pipeline_stage_id)
+        if not rules:
+            logger.info(
+                "esign queue: no matching rules",
+                extra={
+                    "account_id": account_id,
+                    "application_id": application_id,
+                    "new_pipeline_stage_id": new_pipeline_stage_id,
+                },
+            )
+            return []
+
         now = datetime.now(timezone.utc)
+        ids: list[int] = []
         for rule in rules:
             if self._has_open_request(application_id, rule.template_id):
                 continue
@@ -175,91 +194,33 @@ class EsignAutomationService(BaseService):
             self.db.add(req)
             self.db.flush()
             self._append_event(req, "queued", {"rule_id": rule.id})
-            self._deliver_internal_mutate(req, account)
             req.save(self.db)
+            ids.append(int(req.id))
 
-    def manual_generate_documents(
+        logger.info(
+            "esign queue: created %s request(s) for stage transition",
+            len(ids),
+            extra={
+                "account_id": account_id,
+                "application_id": application_id,
+                "new_pipeline_stage_id": new_pipeline_stage_id,
+                "esign_request_ids": ids,
+            },
+        )
+        return ids
+
+    def handle_stage_transition(
         self,
         account_id: int,
         application_id: int,
-        template_id: int | None = None,
-    ) -> dict:
-        """
-        Recruiter-triggered generation: one specific template, or all active rules matching the
-        application's current pipeline column (same as automation, without a stage change).
-        """
-        app = Application.find_by(self.db, id=application_id, account_id=account_id)
-        if not app or app.deleted_at:
-            return self.failure("Application not found")
-        account = Account.find_by(self.db, id=account_id)
-        if not account:
-            return self.failure("Account not found")
-
-        now = datetime.now(timezone.utc)
-        created: list[EsignRequest] = []
-
-        if template_id is not None:
-            tpl = EsignTemplate.find_by(self.db, id=template_id, account_id=account_id)
-            if not tpl:
-                return self.failure("Template not found")
-            if self._has_open_request(application_id, template_id):
-                return self.failure("An open signing request already exists for this template")
-            req = EsignRequest(
-                account_id=account_id,
-                application_id=application_id,
-                template_id=template_id,
-                rule_id=None,
-                provider="internal",
-                status="queued",
-                candidate_sign_token=secrets.token_urlsafe(32),
-                created_at=now,
-                updated_at=now,
-            )
-            self.db.add(req)
-            self.db.flush()
-            self._append_event(req, "queued", {"manual": True})
-            self._deliver_internal_mutate(req, account)
-            req.save(self.db)
-            created.append(req)
-            return self.success([r.to_dict() for r in created])
-
-        if app.pipeline_stage_id is None:
-            return self.failure(
-                "Assign a pipeline column first, or choose a specific template to generate."
-            )
-
-        rules = self.find_matching_rules(account_id, app.job_id, app.pipeline_stage_id)
-        if not rules:
-            return self.failure(
-                "No active e-sign rules match this pipeline column. Add rules under Settings → E-sign or pick a template."
-            )
-
-        for rule in rules:
-            if self._has_open_request(application_id, rule.template_id):
-                continue
-            req = EsignRequest(
-                account_id=account_id,
-                application_id=application_id,
-                template_id=rule.template_id,
-                rule_id=rule.id,
-                provider="internal",
-                status="queued",
-                candidate_sign_token=secrets.token_urlsafe(32),
-                created_at=now,
-                updated_at=now,
-            )
-            self.db.add(req)
-            self.db.flush()
-            self._append_event(req, "queued", {"rule_id": rule.id, "manual": True})
-            self._deliver_internal_mutate(req, account)
-            req.save(self.db)
-            created.append(req)
-
-        if not created:
-            return self.failure(
-                "All matching templates already have an open signing request for this candidate."
-            )
-        return self.success([r.to_dict() for r in created])
+        new_pipeline_stage_id: int | None,
+    ) -> None:
+        """Synchronous path: queue rows + deliver immediately (API fallback when Celery is down)."""
+        if new_pipeline_stage_id is None:
+            return
+        ids = self.queue_matching_esign_requests(account_id, application_id, new_pipeline_stage_id)
+        for rid in ids:
+            self.deliver_request(rid)
 
     def manual_generate_documents(
         self,
