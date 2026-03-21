@@ -30,6 +30,8 @@ celery_app.conf.update(
     enable_utc=True,
     task_track_started=True,
     task_default_queue="default",
+    # Do not set worker_pool=gevent here — Celery requires `-P gevent` on the CLI so patches run early.
+    # Defaults live in settings (CELERY_WORKER_*) and manage.py passes -P / -c.
     # Production-grade worker behavior (smooth reliability)
     task_acks_late=True,  # ack after task completes
     task_reject_on_worker_lost=True,

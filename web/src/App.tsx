@@ -21,8 +21,13 @@ import {
   TeamView,
 } from './components/PageViews'
 import SettingsLayout from './layouts/SettingsLayout'
+import EsignSettingsLayout from './layouts/EsignSettingsLayout'
 import GeneralSettingsView from './components/GeneralSettingsView'
-import { EsignSettingsView } from './components/EsignSettingsView'
+import EsignOverviewPage from './pages/esign/EsignOverviewPage'
+import EsignTemplatesListPage from './pages/esign/EsignTemplatesListPage'
+import EsignTemplateEditorPage from './pages/esign/EsignTemplateEditorPage'
+import EsignRulesPage from './pages/esign/EsignRulesPage'
+import EsignAdvancedPage from './pages/esign/EsignAdvancedPage'
 import './App.css'
 
 function Splash() {
@@ -93,7 +98,15 @@ function AppRoutes() {
             <Route path="settings" element={<SettingsLayout />}>
               <Route index element={<Navigate to="general" replace />} />
               <Route path="general" element={<GeneralSettingsView />} />
-              <Route path="esign" element={<EsignSettingsView />} />
+              <Route path="esign" element={<EsignSettingsLayout />}>
+                <Route index element={<Navigate to="overview" replace />} />
+                <Route path="overview" element={<EsignOverviewPage />} />
+                <Route path="templates" element={<EsignTemplatesListPage />} />
+                <Route path="templates/new" element={<EsignTemplateEditorPage />} />
+                <Route path="templates/:templateId/edit" element={<EsignTemplateEditorPage />} />
+                <Route path="rules" element={<EsignRulesPage />} />
+                <Route path="advanced" element={<EsignAdvancedPage />} />
+              </Route>
             </Route>
           </Route>
         </Route>

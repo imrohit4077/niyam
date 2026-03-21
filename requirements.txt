@@ -22,6 +22,7 @@ passlib[bcrypt]==1.7.4
 # Background jobs
 celery[redis]==5.4.0
 redis==5.2.1
+gevent==24.11.1
 
 # Environment & CLI
 python-dotenv==1.0.1

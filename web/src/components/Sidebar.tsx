@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { ReactNode } from 'react'
-import { NavLink } from 'react-router-dom'
+import { NavLink, useLocation } from 'react-router-dom'
 
 export type SidebarPage =
   | 'profile'
@@ -142,6 +142,7 @@ interface Props {
 
 export default function Sidebar({ accountId }: Props) {
   const [collapsed, setCollapsed] = useState(readSidebarCollapsed)
+  const { pathname } = useLocation()
 
   const groups = NAV.reduce<Record<string, NavItem[]>>((acc, item) => {
     const g = item.group ?? 'Other'
@@ -182,18 +183,15 @@ export default function Sidebar({ accountId }: Props) {
             {items.map(item => {
               const seg = PATH_SEGMENTS[item.id]
               const to = `${base}/${seg}`
+              const esignActive = item.id === 'settings-esign' && pathname.includes('/settings/esign')
               return (
                 <NavLink
                   key={item.id}
                   to={to}
-                  end={
-                    item.id === 'profile' ||
-                    item.id === 'settings-general' ||
-                    item.id === 'settings-esign'
-                  }
+                  end={item.id === 'profile' || item.id === 'settings-general'}
                   title={collapsed ? item.label : undefined}
                   className={({ isActive }) =>
-                    `sidebar-item ${isActive ? 'sidebar-item-active' : ''}`
+                    `sidebar-item ${isActive || esignActive ? 'sidebar-item-active' : ''}`
                   }
                 >
                   <span className="sidebar-item-icon">{ICONS[item.icon]}</span>

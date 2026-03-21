@@ -372,10 +372,47 @@ def routes() -> None:
 
 @cli.command()
 @click.option("--queue", default="default", help="Queue to consume.")
-def worker(queue: str) -> None:
-    """Start Celery worker. Like sidekiq."""
+@click.option(
+    "--pool",
+    type=click.Choice(["gevent", "prefork", "solo", "threads"], case_sensitive=False),
+    default=None,
+    help="Worker pool (default: CELERY_WORKER_POOL / gevent). Use prefork only with low --concurrency.",
+)
+@click.option(
+    "--concurrency",
+    "-c",
+    default=None,
+    type=int,
+    help="Greenlets (gevent) or child processes (prefork). Default: CELERY_WORKER_CONCURRENCY (1000 for gevent).",
+)
+def worker(queue: str, pool: str | None, concurrency: int | None) -> None:
+    """Start Celery worker. Default: gevent pool with high greenlet concurrency (not prefork)."""
+    from config.settings import get_settings
+
+    s = get_settings()
+    pool_name = (pool or s.CELERY_WORKER_POOL or "gevent").lower()
+    conc = concurrency if concurrency is not None else int(s.CELERY_WORKER_CONCURRENCY)
+    if pool_name == "prefork" and conc > 64:
+        raise click.ClickException(
+            f"Unsafe prefork concurrency ({conc} OS processes). "
+            "Use the default gevent pool for high concurrency, or pass e.g. --pool prefork --concurrency 8."
+        )
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
-    subprocess.run(["celery", "-A", "config.celery", "worker", "-Q", queue, "-l", "info"], check=True)
+    cmd = [
+        "celery",
+        "-A",
+        "config.celery",
+        "worker",
+        "-Q",
+        queue,
+        "-l",
+        "info",
+        "-P",
+        pool_name,
+        "-c",
+        str(conc),
+    ]
+    subprocess.run(cmd, check=True)
 
 
 @cli.command()

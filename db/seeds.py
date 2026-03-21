@@ -11,36 +11,195 @@ from datetime import datetime, timezone
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
-OFFER_LETTER_HTML = """
-<div style="font-family: system-ui, -apple-system, sans-serif; line-height: 1.6; color: #1a1a1a;">
-  <h2 style="margin-top:0;">Offer of employment</h2>
-  <p>Dear {candidate_name},</p>
-  <p>We are pleased to offer you the position of <strong>{job_title}</strong> at <strong>{company_name}</strong>.</p>
-  <p>This letter uses merge fields — for example your team is listed as <strong>{department}</strong> and the role is based in <strong>{location}</strong>.</p>
-  <p>Please review and sign electronically using the link we sent you.</p>
-  <p style="margin-top:2rem;">Sincerely,<br/>{company_name}</p>
-  <p style="font-size:12px;color:#666;margin-top:2rem;">Generated {today}</p>
-</div>
-""".strip()
+def _esign_block_templates():
+    """Rich ATS block JSON + matching HTML for new accounts (see app.helpers.esign_blocks)."""
+    from app.helpers.esign_blocks import document_to_html, normalize_document
 
-NDA_HTML = """
-<div style="font-family: system-ui, -apple-system, sans-serif; line-height: 1.6; color: #1a1a1a;">
-  <h2 style="margin-top:0;">Mutual confidentiality</h2>
-  <p>This agreement is between <strong>{company_name}</strong> and <strong>{candidate_name}</strong> regarding discussions for the <strong>{job_title}</strong> opportunity.</p>
-  <p>Both parties agree not to disclose proprietary information shared during the hiring process.</p>
-  <p style="margin-top:2rem;">Date: {today}</p>
-</div>
-""".strip()
-
-LOE_HTML = """
-<div style="font-family: system-ui, -apple-system, sans-serif; line-height: 1.6; color: #1a1a1a;">
-  <h2 style="margin-top:0;">Letter of employment</h2>
-  <p>Dear {candidate_name},</p>
-  <p>This letter confirms an offer of employment for <strong>{job_title}</strong> at <strong>{company_name}</strong>, subject to completion of any pre-employment checks.</p>
-  <p>Compensation and role details are set out in your separate offer letter. Please sign both documents when prompted.</p>
-  <p style="margin-top:2rem;">{company_name}<br/>{today}</p>
-</div>
-""".strip()
+    offer_raw = {
+        "version": 1,
+        "blocks": [
+            {
+                "type": "text",
+                "content": "Offer of employment",
+                "fontSize": 22,
+                "color": "#0f172a",
+                "align": "left",
+            },
+            {
+                "type": "text",
+                "content": "Dear {candidate_name},",
+                "fontSize": 15,
+                "color": "#111827",
+                "align": "left",
+            },
+            {
+                "type": "text",
+                "content": (
+                    "We are pleased to offer you the position of {job_title} at {company_name}. "
+                    "This offer is contingent on satisfactory completion of any background checks."
+                ),
+                "fontSize": 15,
+                "color": "#111827",
+                "align": "left",
+            },
+            {
+                "type": "section",
+                "title": "Role details",
+                "content": (
+                    "Department: {department}\n"
+                    "Work location: {location}\n"
+                    "Requisition: {requisition_id}"
+                ),
+                "bodyFontSize": 14,
+                "bodyColor": "#374151",
+                "bodyAlign": "left",
+            },
+            {
+                "type": "section",
+                "title": "Compensation",
+                "content": (
+                    "The compensation band discussed for this role is {salary_range}. "
+                    "Final amounts and equity (if any) appear in your written offer packet."
+                ),
+                "bodyFontSize": 14,
+                "bodyColor": "#374151",
+                "bodyAlign": "left",
+            },
+            {
+                "type": "text",
+                "content": (
+                    "Please review this letter and sign electronically when you receive the secure link.\n\n"
+                    "Sincerely,\n{company_name}"
+                ),
+                "fontSize": 15,
+                "color": "#111827",
+                "align": "left",
+            },
+            {"type": "button", "label": "Sign electronically", "href": "#", "align": "center"},
+            {
+                "type": "text",
+                "content": "Generated {today}",
+                "fontSize": 12,
+                "color": "#6b7280",
+                "align": "left",
+            },
+        ],
+    }
+    nda_raw = {
+        "version": 1,
+        "blocks": [
+            {
+                "type": "text",
+                "content": "Mutual non-disclosure",
+                "fontSize": 20,
+                "color": "#0f172a",
+                "align": "left",
+            },
+            {
+                "type": "text",
+                "content": (
+                    "This mutual confidentiality agreement is between {company_name} and {candidate_name} "
+                    "in connection with the {job_title} opportunity."
+                ),
+                "fontSize": 15,
+                "color": "#111827",
+                "align": "left",
+            },
+            {
+                "type": "section",
+                "title": "Obligations",
+                "content": (
+                    "Each party agrees to hold in confidence any non-public information shared during interviews, "
+                    "assignments, or offer discussions, and to use such information solely for evaluating the role.\n\n"
+                    "This does not restrict either party from using general skills or publicly known information."
+                ),
+                "bodyFontSize": 14,
+                "bodyColor": "#374151",
+                "bodyAlign": "left",
+            },
+            {
+                "type": "text",
+                "content": "If you agree, sign when prompted. Questions? Reply to your recruiting contact at {company_name}.",
+                "fontSize": 14,
+                "color": "#111827",
+                "align": "left",
+            },
+            {"type": "button", "label": "Review & sign", "href": "#", "align": "center"},
+            {
+                "type": "text",
+                "content": "Effective date: {today}",
+                "fontSize": 12,
+                "color": "#6b7280",
+                "align": "left",
+            },
+        ],
+    }
+    loe_raw = {
+        "version": 1,
+        "blocks": [
+            {
+                "type": "text",
+                "content": "Letter of employment",
+                "fontSize": 20,
+                "color": "#0f172a",
+                "align": "left",
+            },
+            {
+                "type": "text",
+                "content": "Dear {candidate_name},",
+                "fontSize": 15,
+                "color": "#111827",
+                "align": "left",
+            },
+            {
+                "type": "text",
+                "content": (
+                    "This letter confirms that {company_name} intends to employ you in the role of {job_title}, "
+                    "subject to completion of any pre-employment requirements."
+                ),
+                "fontSize": 15,
+                "color": "#111827",
+                "align": "left",
+            },
+            {
+                "type": "section",
+                "title": "Next steps",
+                "content": (
+                    "• Complete any outstanding checks listed by HR.\n"
+                    "• Sign your formal offer letter and this confirmation when you receive the e-sign link.\n"
+                    "• Target start date and reporting manager will be confirmed by HR."
+                ),
+                "bodyFontSize": 14,
+                "bodyColor": "#374151",
+                "bodyAlign": "left",
+            },
+            {
+                "type": "text",
+                "content": (
+                    "Compensation specifics remain as stated in your offer letter ({salary_range} where applicable)."
+                ),
+                "fontSize": 14,
+                "color": "#111827",
+                "align": "left",
+            },
+            {"type": "button", "label": "Confirm & sign", "href": "#", "align": "center"},
+            {
+                "type": "text",
+                "content": "{company_name}\n{today}",
+                "fontSize": 13,
+                "color": "#6b7280",
+                "align": "left",
+            },
+        ],
+    }
+    offer_doc = normalize_document(offer_raw)
+    nda_doc = normalize_document(nda_raw)
+    loe_doc = normalize_document(loe_raw)
+    return (
+        (document_to_html(offer_doc), offer_doc),
+        (document_to_html(nda_doc), nda_doc),
+        (document_to_html(loe_doc), loe_doc),
+    )
 
 
 def _ensure_esign_seed(db, account_id: int, now: datetime) -> bool:
@@ -66,11 +225,14 @@ def _ensure_esign_seed(db, account_id: int, now: datetime) -> bool:
     if int(n or 0) > 0:
         return False
 
+    (offer_html, offer_doc), (nda_html, nda_doc), (loe_html, loe_doc) = _esign_block_templates()
+
     t_offer = EsignTemplate(
         account_id=account_id,
         name="Sample offer letter",
         description="Seeded example — safe to edit or delete.",
-        content_html=OFFER_LETTER_HTML,
+        content_html=offer_html,
+        content_blocks=offer_doc,
         created_at=now,
         updated_at=now,
     )
@@ -78,7 +240,8 @@ def _ensure_esign_seed(db, account_id: int, now: datetime) -> bool:
         account_id=account_id,
         name="Simple NDA",
         description="Seeded confidentiality snippet for interviews or offers.",
-        content_html=NDA_HTML,
+        content_html=nda_html,
+        content_blocks=nda_doc,
         created_at=now,
         updated_at=now,
     )
@@ -86,7 +249,8 @@ def _ensure_esign_seed(db, account_id: int, now: datetime) -> bool:
         account_id=account_id,
         name="Letter of employment (LOE)",
         description="Seeded employment confirmation — pairs with offer letter at offer stage.",
-        content_html=LOE_HTML,
+        content_html=loe_html,
+        content_blocks=loe_doc,
         created_at=now,
         updated_at=now,
     )
@@ -134,11 +298,13 @@ def _ensure_loe_template_and_offer_rule(db, account_id: int, now: datetime) -> b
 
     changed = False
     if loe is None:
+        *_, (loe_html, loe_doc) = _esign_block_templates()
         loe = EsignTemplate(
             account_id=account_id,
             name="Letter of employment (LOE)",
             description="Seeded employment confirmation — pairs with offer letter at offer stage.",
-            content_html=LOE_HTML,
+            content_html=loe_html,
+            content_blocks=loe_doc,
             created_at=now,
             updated_at=now,
         )
