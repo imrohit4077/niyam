@@ -9,7 +9,9 @@ import { useToast } from '../contexts/ToastContext'
 import type { DashboardOutletContext } from '../layouts/DashboardOutletContext'
 import RichTextEditor from '../components/RichTextEditor'
 import CustomAttributeFields from '../components/CustomAttributeFields'
+import LabelMultiSelect from '../components/LabelMultiSelect'
 import { customAttributesApi, type CustomAttributeDefinition } from '../api/customAttributes'
+import { labelsApi, type AccountLabelRow } from '../api/labels'
 
 type JobStepId =
   | 'basic_info'
@@ -1109,6 +1111,8 @@ export default function JobEditorPage() {
   const editJobId = !isNew && jobIdParam ? Number(jobIdParam) : NaN
 
   const [job, setJob] = useState<Job | null>(null)
+  const [labelCatalog, setLabelCatalog] = useState<AccountLabelRow[]>([])
+  const [savingJobLabels, setSavingJobLabels] = useState(false)
   const [controlVersionId, setControlVersionId] = useState<number | null>(null)
   const [loadErr, setLoadErr] = useState('')
   const [members, setMembers] = useState<AccountMember[]>([])
@@ -1188,6 +1192,14 @@ export default function JobEditorPage() {
       .list(token, 'job')
       .then(setJobAttrDefs)
       .catch(() => setJobAttrDefs([]))
+  }, [token])
+
+  useEffect(() => {
+    if (!token) return
+    labelsApi
+      .list(token)
+      .then(setLabelCatalog)
+      .catch(() => setLabelCatalog([]))
   }, [token])
 
   useEffect(() => {
@@ -1296,6 +1308,23 @@ export default function JobEditorPage() {
   }, [token, isNew, editJobId])
 
   const set = (k: string, v: string | boolean) => setForm(f => ({ ...f, [k]: v }))
+
+  const toggleJobLabel = async (labelId: number, next: boolean) => {
+    if (!token || isNew || !job) return
+    const cur = new Set((job.labels ?? []).map(l => l.id))
+    if (next) cur.add(labelId)
+    else cur.delete(labelId)
+    setSavingJobLabels(true)
+    try {
+      const { labels } = await labelsApi.setJobLabels(token, job.id, Array.from(cur).sort((a, b) => a - b))
+      setJob(j => (j ? { ...j, labels } : j))
+      toast.success('Labels updated')
+    } catch (e: unknown) {
+      toast.error('Could not update labels', e instanceof Error ? e.message : undefined)
+    } finally {
+      setSavingJobLabels(false)
+    }
+  }
 
   const setInterviewDefaults = (p: NonNullable<JobConfig['interview_defaults']>) => {
     setJobConfig(c => ({ ...c, interview_defaults: p }))
@@ -1586,6 +1615,20 @@ export default function JobEditorPage() {
                         onChange={setJobCustomFields}
                         disabled={saving}
                         idPrefix="job-cf"
+                      />
+                    </JobEditorField>
+                  )}
+                  {!isNew && job && (
+                    <JobEditorField
+                      label="Labels"
+                      hint="Workspace labels (Settings → Labels). Search text is refreshed by the background worker."
+                    >
+                      <LabelMultiSelect
+                        catalog={labelCatalog}
+                        selectedIds={new Set((job.labels ?? []).map(l => l.id))}
+                        disabled={savingJobLabels || saving}
+                        emptyHint="No labels yet — add them under Settings → Labels."
+                        onToggle={(id, checked) => void toggleJobLabel(id, checked)}
                       />
                     </JobEditorField>
                   )}

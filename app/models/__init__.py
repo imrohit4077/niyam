@@ -30,6 +30,8 @@ from app.models.interview_scorecard import InterviewScorecard
 from app.models.esign_template import EsignTemplate
 from app.models.esign_stage_rule import EsignStageRule
 from app.models.esign_request import EsignRequest
+from app.models.account_label import AccountLabel
+from app.models.label_assignment import LabelAssignment
 
 __all__ = [
     "BaseModel", "Timestampable", "SoftDeletable", "Sluggable",
@@ -38,4 +40,5 @@ __all__ = [
     "HiringPlan", "PipelineStage",
     "InterviewPlan", "InterviewKit", "InterviewAssignment", "InterviewScorecard",
     "EsignTemplate", "EsignStageRule", "EsignRequest",
+    "AccountLabel", "LabelAssignment",
 ]

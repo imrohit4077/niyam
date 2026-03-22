@@ -16,8 +16,15 @@ from app.helpers.logger import get_logger
 from app.helpers.scorecard_criteria import normalize_job_criteria
 from app.services.base_service import BaseService
 from app.services.custom_attribute_service import CustomAttributeService, ENTITY_JOB
+from app.services.label_service import LABELABLE_JOB, LabelService
 
 logger = get_logger(__name__)
+
+
+def _job_dict_with_labels(db: Session, account_id: int, job: Job) -> dict:
+    d = job.to_dict()
+    d["labels"] = LabelService(db).labels_payload_for_entity(account_id, LABELABLE_JOB, job.id)
+    return d
 
 
 def _slugify(text: str) -> str:
@@ -84,7 +91,10 @@ class JobService(BaseService):
         stmt = stmt.order_by(Job.created_at.desc())
         jobs = list(self.db.execute(stmt).scalars().all())
         logger.info(f"JobService.list_jobs — account={account_id} count={len(jobs)}")
-        return self.success([j.to_dict() for j in jobs])
+        ids = [j.id for j in jobs]
+        lbl_map = LabelService.labels_map_for_entities(self.db, account_id, LABELABLE_JOB, ids)
+        out = [{**j.to_dict(), "labels": lbl_map.get(j.id, [])} for j in jobs]
+        return self.success(out)
 
     def get_job(self, account_id: int, job_id: int) -> dict:
         job = Job.find_by(self.db, id=job_id, account_id=account_id)
@@ -92,7 +102,7 @@ class JobService(BaseService):
             return self.failure("Job not found")
         # Include versions
         versions = JobVersion.where(self.db, job_id=job_id)
-        data = job.to_dict()
+        data = _job_dict_with_labels(self.db, account_id, job)
         data["versions"] = [v.to_dict() for v in versions]
         atts = JobAttachment.where(self.db, job_id=job_id, account_id=account_id)
         data["attachments"] = [a.to_dict() for a in atts]
@@ -151,7 +161,7 @@ class JobService(BaseService):
         if description:
             self._create_version(job.id, account_id, user_id, "A", description, data, is_control=True)
         logger.info(f"JobService.create_job — created id={job.id} title={job.title}")
-        return self.success(job.to_dict())
+        return self.success(_job_dict_with_labels(self.db, account_id, job))
 
     def update_job(self, account_id: int, job_id: int, data: dict) -> dict:
         job = Job.find_by(self.db, id=job_id, account_id=account_id)
@@ -198,7 +208,7 @@ class JobService(BaseService):
         job.updated_at = datetime.now(timezone.utc)
         job.save(self.db)
         logger.info(f"JobService.update_job — updated id={job_id}")
-        return self.success(job.to_dict())
+        return self.success(_job_dict_with_labels(self.db, account_id, job))
 
     def delete_job(self, account_id: int, job_id: int) -> dict:
         job = Job.find_by(self.db, id=job_id, account_id=account_id)

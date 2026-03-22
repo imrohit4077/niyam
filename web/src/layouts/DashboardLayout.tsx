@@ -33,6 +33,7 @@ function deriveTitle(pathname: string): string {
   if (pathname.includes('/settings/custom-fields/candidates')) return 'Candidate fields'
   if (pathname.includes('/settings/custom-fields/jobs')) return 'Job fields'
   if (pathname.includes('/settings/custom-fields')) return 'Custom fields'
+  if (pathname.includes('/settings/labels')) return 'Labels'
   if (pathname.includes('/settings')) return 'Settings'
   if (pathname.includes('/profile')) return 'My Profile'
   return 'ForgeAPI'

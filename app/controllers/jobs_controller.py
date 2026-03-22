@@ -15,6 +15,7 @@ from app.controllers.concerns.authenticatable import Authenticatable
 from app.helpers.logger import get_logger
 from app.models.account_user import AccountUser
 from app.services.job_service import JobService
+from app.services.label_service import LABELABLE_JOB, LabelService
 from sqlalchemy import select
 
 logger = get_logger(__name__)
@@ -75,6 +76,22 @@ class JobsController(BaseController, Authenticatable):
         if not result["ok"]:
             return self.render_error(result["error"], status=404)
         return self.render_json(result["data"])
+
+    async def update_labels(self):
+        account_id = self._account_id()
+        job_id = int(self.request.path_params["id"])
+        body = await self._get_body_json()
+        raw = body.get("label_ids")
+        if not isinstance(raw, list):
+            return self.render_error("label_ids must be an array of numeric ids", status=422)
+        try:
+            label_ids = [int(x) for x in raw]
+        except (TypeError, ValueError):
+            return self.render_error("label_ids must be an array of numeric ids", status=422)
+        r = LabelService(self.db).set_entity_labels(account_id, LABELABLE_JOB, job_id, label_ids)
+        if not r["ok"]:
+            return self.render_error(r["error"], status=422)
+        return self.render_json(r["data"])
 
     def analytics(self):
         account_id = self._account_id()

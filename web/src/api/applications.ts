@@ -1,3 +1,5 @@
+import type { AccountLabelRow } from './labels'
+
 const BASE = '/api/v1'
 
 export interface Application {
@@ -24,6 +26,7 @@ export interface Application {
   rejection_note: string | null
   created_at: string
   updated_at: string
+  labels?: AccountLabelRow[]
 }
 
 function authHeaders(token: string) {

@@ -1,3 +1,5 @@
+import type { AccountLabelRow } from './labels'
+
 const BASE = '/api/v1'
 
 /** Job-wide attributes interviewers must score (1–scale_max). Drives scorecard validation. */
@@ -103,6 +105,8 @@ export interface Job {
   updated_at: string
   versions?: JobVersion[]
   attachments?: JobAttachment[]
+  /** Workspace labels (Settings → Labels); persisted via PATCH /jobs/:id/labels. */
+  labels?: AccountLabelRow[]
 }
 
 export interface JobVersion {

@@ -47,6 +47,8 @@ class Application(BaseModel):
     score: Mapped[Optional[Decimal]] = mapped_column(Numeric(5, 2), nullable=True)
     score_breakdown: Mapped[dict] = mapped_column(JSON, nullable=False, server_default="{}")
     tags: Mapped[list] = mapped_column(JSON, nullable=False, server_default="[]")
+    # Denormalized for scalable search; refreshed by Celery after label changes.
+    label_search_document: Mapped[str] = mapped_column(Text, nullable=False, server_default="")
 
     deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
@@ -54,6 +56,7 @@ class Application(BaseModel):
 
     def to_dict(self):
         d = super().to_dict()
+        d.pop("label_search_document", None)
         for k in ("created_at", "updated_at", "deleted_at"):
             if isinstance(d.get(k), datetime):
                 d[k] = d[k].isoformat()

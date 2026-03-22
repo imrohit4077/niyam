@@ -8,7 +8,9 @@ import { scorecardsApi, type ScorecardRow } from '../api/scorecards'
 import type { DashboardOutletContext } from '../layouts/DashboardOutletContext'
 import { useToast } from '../contexts/ToastContext'
 import CustomAttributeFields from '../components/CustomAttributeFields'
+import LabelMultiSelect from '../components/LabelMultiSelect'
 import { customAttributesApi, type CustomAttributeDefinition } from '../api/customAttributes'
+import { labelsApi, type AccountLabelRow } from '../api/labels'
 
 const STAGES = ['applied', 'screening', 'interview', 'offer', 'hired', 'rejected', 'withdrawn'] as const
 
@@ -73,6 +75,8 @@ export default function ApplicationDetailPage() {
   const appId = appIdParam ? Number(appIdParam) : NaN
 
   const [app, setApp] = useState<Application | null>(null)
+  const [labelCatalog, setLabelCatalog] = useState<AccountLabelRow[]>([])
+  const [savingAppLabels, setSavingAppLabels] = useState(false)
   const [job, setJob] = useState<Job | null>(null)
   const [stages, setStages] = useState<PipelineStage[]>([])
   const [esignRows, setEsignRows] = useState<EsignRequestRow[]>([])
@@ -187,6 +191,35 @@ export default function ApplicationDetailPage() {
   useEffect(() => {
     void load()
   }, [load])
+
+  useEffect(() => {
+    if (!token) return
+    labelsApi
+      .list(token)
+      .then(setLabelCatalog)
+      .catch(() => setLabelCatalog([]))
+  }, [token])
+
+  const toggleAppLabel = async (labelId: number, next: boolean) => {
+    if (!token || !app) return
+    const cur = new Set((app.labels ?? []).map(l => l.id))
+    if (next) cur.add(labelId)
+    else cur.delete(labelId)
+    setSavingAppLabels(true)
+    try {
+      const { labels } = await labelsApi.setApplicationLabels(
+        token,
+        app.id,
+        Array.from(cur).sort((a, b) => a - b),
+      )
+      setApp(a => (a ? { ...a, labels } : a))
+      toast.success('Labels updated')
+    } catch (e: unknown) {
+      toast.error('Could not update labels', e instanceof Error ? e.message : undefined)
+    } finally {
+      setSavingAppLabels(false)
+    }
+  }
 
   const saveProfile = async () => {
     if (!token || !app) return
@@ -434,6 +467,18 @@ export default function ApplicationDetailPage() {
                       value={tagsText}
                       onChange={e => setTagsText(e.target.value)}
                       placeholder="referral, priority, …"
+                    />
+                  </Field>
+                  <Field
+                    label="Labels"
+                    hint="Workspace labels (Settings → Labels). Search sync runs in the background worker."
+                  >
+                    <LabelMultiSelect
+                      catalog={labelCatalog}
+                      selectedIds={new Set((app?.labels ?? []).map(l => l.id))}
+                      disabled={savingAppLabels || savingProfile || !app}
+                      emptyHint="No labels yet — create them under Settings → Labels."
+                      onToggle={(id, checked) => void toggleAppLabel(id, checked)}
                     />
                   </Field>
                   {custDefs.length > 0 && (

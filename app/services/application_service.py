@@ -9,8 +9,18 @@ from app.models.pipeline_stage import PipelineStage
 from app.helpers.logger import get_logger
 from app.services.base_service import BaseService
 from app.services.custom_attribute_service import CustomAttributeService, ENTITY_APPLICATION
+from app.services.label_service import LABELABLE_APPLICATION, LabelService
 
 logger = get_logger(__name__)
+
+
+def _application_dict_with_labels(db, account_id: int, app: Application) -> dict:
+    d = app.to_dict()
+    d["labels"] = LabelService(db).labels_payload_for_entity(
+        account_id, LABELABLE_APPLICATION, app.id
+    )
+    return d
+
 
 _STAGES_FROM_TYPE = {
     "applied": "applied",
@@ -123,13 +133,16 @@ class ApplicationService(BaseService):
             )
         stmt = stmt.order_by(Application.created_at.desc())
         apps = list(self.db.execute(stmt).scalars().all())
-        return self.success([a.to_dict() for a in apps])
+        ids = [a.id for a in apps]
+        lbl_map = LabelService.labels_map_for_entities(self.db, account_id, LABELABLE_APPLICATION, ids)
+        out = [{**a.to_dict(), "labels": lbl_map.get(a.id, [])} for a in apps]
+        return self.success(out)
 
     def get_application(self, account_id: int, app_id: int) -> dict:
         app = Application.find_by(self.db, id=app_id, account_id=account_id)
         if not app or app.deleted_at:
             return self.failure("Application not found")
-        return self.success(app.to_dict())
+        return self.success(_application_dict_with_labels(self.db, account_id, app))
 
     def create_application(self, account_id: int, data: dict) -> dict:
         job_id = data.get("job_id")
@@ -177,7 +190,7 @@ class ApplicationService(BaseService):
         )
         app.save(self.db)
         logger.info(f"ApplicationService.create — id={app.id} job={job_id} email={email}")
-        return self.success(app.to_dict())
+        return self.success(_application_dict_with_labels(self.db, account_id, app))
 
     def update_stage(
         self,
@@ -281,7 +294,7 @@ class ApplicationService(BaseService):
             f"ApplicationService.update_stage — id={app_id} status={app.status} "
             f"pipeline_stage_id={app.pipeline_stage_id}"
         )
-        return self.success(app.to_dict())
+        return self.success(_application_dict_with_labels(self.db, account_id, app))
 
     def update_application(self, account_id: int, app_id: int, data: dict) -> dict:
         app = Application.find_by(self.db, id=app_id, account_id=account_id)
@@ -335,7 +348,7 @@ class ApplicationService(BaseService):
         app.updated_at = datetime.now(timezone.utc)
         app.save(self.db)
         logger.info(f"ApplicationService.update_application — id={app_id}")
-        return self.success(app.to_dict())
+        return self.success(_application_dict_with_labels(self.db, account_id, app))
 
     def delete_application(self, account_id: int, app_id: int) -> dict:
         app = Application.find_by(self.db, id=app_id, account_id=account_id)

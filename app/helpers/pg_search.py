@@ -56,6 +56,7 @@ def application_search_predicate(
     trgm_param: str = "app_trgm_q",
     fts_param: str = "app_fts_q",
     tags_ilike_param: str = "app_tags_ilike",
+    label_trgm_param: str = "app_label_trgm_q",
 ) -> ColumnElement[bool]:
     """
     Fuzzy names/emails/URLs, FTS on long text, substring on JSON tags, job title trigram.
@@ -74,9 +75,10 @@ def application_search_predicate(
         param_name=trgm_param,
     )
     tags_sub = ilike_contains(A.tags, q, param_name=tags_ilike_param)
+    label_trgm = trigram_match(A.label_search_document, q, param_name=label_trgm_param)
     doc_vec = tsvector_concat(A.cover_letter, A.rejection_note)
     fts = fts_match_vector(doc_vec, q, param_name=fts_param)
-    return or_(trgm, tags_sub, fts)
+    return or_(trgm, tags_sub, label_trgm, fts)
 
 
 def job_search_predicate(job_model, job_version_model, *, q: str, account_id: int) -> ColumnElement[bool]:
@@ -110,4 +112,5 @@ def job_search_predicate(job_model, job_version_model, *, q: str, account_id: in
             )
         )
     )
-    return or_(trgm, ver_match)
+    label_trgm = trigram_match(J.label_search_document, q, param_name="job_label_trgm_q")
+    return or_(trgm, ver_match, label_trgm)

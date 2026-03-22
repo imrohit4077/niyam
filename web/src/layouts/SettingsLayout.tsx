@@ -7,11 +7,12 @@ export default function SettingsLayout() {
   const isEsignSection = location.pathname.includes('/settings/esign')
   const isGeneralNested = location.pathname.includes('/settings/general')
   const isCustomFieldsSection = location.pathname.includes('/settings/custom-fields')
+  const isLabelsSection = location.pathname.includes('/settings/labels')
   const isEsignTemplateEditor = /\/settings\/esign\/templates\/(new|\d+\/edit)/.test(location.pathname)
 
   return (
     <div
-      className={`settings-layout${isEsignSection || isGeneralNested || isCustomFieldsSection ? ' settings-layout--wide' : ''}${isEsignTemplateEditor ? ' settings-layout--esign-editor' : ''}`}
+      className={`settings-layout${isEsignSection || isGeneralNested || isCustomFieldsSection || isLabelsSection ? ' settings-layout--wide' : ''}${isEsignTemplateEditor ? ' settings-layout--esign-editor' : ''}`}
     >
       <nav className="settings-subnav" aria-label="Settings sections">
         <NavLink
@@ -27,6 +28,13 @@ export default function SettingsLayout() {
           end={false}
         >
           Custom fields
+        </NavLink>
+        <NavLink
+          to={`${base}/labels`}
+          className={({ isActive }) => `settings-subnav-link ${isActive ? 'settings-subnav-link--active' : ''}`}
+          end
+        >
+          Labels
         </NavLink>
         <NavLink
           to={`${base}/esign`}

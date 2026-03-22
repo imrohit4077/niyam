@@ -29,6 +29,7 @@ import WorkspaceSettingsPage from './pages/settings/WorkspaceSettingsPage'
 import AppearanceSettingsPage from './pages/settings/AppearanceSettingsPage'
 import CustomFieldsSettingsLayout from './layouts/CustomFieldsSettingsLayout'
 import CustomFieldsEntityPage from './pages/settings/CustomFieldsEntityPage'
+import LabelsSettingsPage from './pages/settings/LabelsSettingsPage'
 import EsignOverviewPage from './pages/esign/EsignOverviewPage'
 import EsignTemplatesListPage from './pages/esign/EsignTemplatesListPage'
 import EsignTemplateEditorPage from './pages/esign/EsignTemplateEditorPage'
@@ -114,6 +115,7 @@ function AppRoutes() {
                 <Route path="jobs" element={<CustomFieldsEntityPage entityType="job" />} />
                 <Route path="candidates" element={<CustomFieldsEntityPage entityType="application" />} />
               </Route>
+              <Route path="labels" element={<LabelsSettingsPage />} />
               <Route path="esign" element={<EsignSettingsLayout />}>
                 <Route index element={<Navigate to="overview" replace />} />
                 <Route path="overview" element={<EsignOverviewPage />} />

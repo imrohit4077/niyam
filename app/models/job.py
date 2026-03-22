@@ -53,6 +53,8 @@ class Job(BaseModel):
     seo_metadata: Mapped[dict] = mapped_column(JSON, nullable=False, server_default="{}")
     custom_fields: Mapped[dict] = mapped_column(JSON, nullable=False, server_default="{}")
     tags: Mapped[list] = mapped_column(JSON, nullable=False, server_default="[]")
+    # Denormalized for scalable search; refreshed by Celery after label changes.
+    label_search_document: Mapped[str] = mapped_column(Text, nullable=False, server_default="")
     scorecard_criteria: Mapped[list] = mapped_column(
         JSONB, nullable=False, server_default=text("'[]'::jsonb")
     )
@@ -63,6 +65,7 @@ class Job(BaseModel):
 
     def to_dict(self):
         d = super().to_dict()
+        d.pop("label_search_document", None)
         for k in ("created_at", "updated_at", "published_at", "closes_at", "deleted_at"):
             if isinstance(d.get(k), datetime):
                 d[k] = d[k].isoformat()

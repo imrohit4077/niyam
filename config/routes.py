@@ -118,6 +118,7 @@ def draw_routes(app: "FastAPI") -> None:
     from app.controllers.account_organization_settings_controller import AccountOrganizationSettingsController
     from app.controllers.account_appearance_settings_controller import AccountAppearanceSettingsController
     from app.controllers.custom_attribute_definitions_controller import CustomAttributeDefinitionsController
+    from app.controllers.labels_controller import LabelsController
     from app.controllers.public_esign_controller import PublicEsignController
     from app.controllers.esign_webhooks_controller import EsignWebhooksController
 
@@ -228,11 +229,37 @@ def draw_routes(app: "FastAPI") -> None:
         methods=["DELETE"],
     )
 
+    router.add_api_route(
+        "/labels",
+        _wrap(LabelsController, "index", lambda c: c.index()),
+        methods=["GET"],
+    )
+    router.add_api_route(
+        "/labels",
+        _wrap(LabelsController, "create", lambda c: c.create()),
+        methods=["POST"],
+    )
+    router.add_api_route(
+        "/labels/{id:int}",
+        _wrap(LabelsController, "update", lambda c: c.update()),
+        methods=["PATCH"],
+    )
+    router.add_api_route(
+        "/labels/{id:int}",
+        _wrap(LabelsController, "destroy", lambda c: c.destroy()),
+        methods=["DELETE"],
+    )
+
     resources(router, "/esign_templates", EsignTemplatesController)
     resources(router, "/esign_stage_rules", EsignStageRulesController)
 
     # Jobs CRUD
     resources(router, "/jobs", JobsController)
+    router.add_api_route(
+        "/jobs/{id:int}/labels",
+        _wrap(JobsController, "update_labels", lambda c: c.update_labels()),
+        methods=["PATCH"],
+    )
 
     router.add_api_route(
         "/jobs/{job_id:int}/analytics",
@@ -377,6 +404,11 @@ def draw_routes(app: "FastAPI") -> None:
     router.add_api_route(
         "/applications/{id:int}",
         _wrap(ApplicationsController, "update", lambda c: c.update()),
+        methods=["PATCH"],
+    )
+    router.add_api_route(
+        "/applications/{id:int}/labels",
+        _wrap(ApplicationsController, "update_labels", lambda c: c.update_labels()),
         methods=["PATCH"],
     )
 
