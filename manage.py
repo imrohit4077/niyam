@@ -429,6 +429,10 @@ def scheduler() -> None:
 @cli.command()
 def shell() -> None:
     """Python REPL with app context (db and all models from app.models)."""
+    from config.logging_setup import configure_logging
+
+    configure_logging(process_name="shell")
+
     from config.database import SessionLocal
     from app import models as app_models
     db = SessionLocal()

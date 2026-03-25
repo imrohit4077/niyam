@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import base64
 import html as html_module
-import logging
 import re
 from datetime import datetime, timezone
 from io import BytesIO
@@ -12,10 +11,11 @@ from pathlib import Path
 from app.models.application import Application
 from app.models.esign_request import EsignRequest
 from app.models.esign_template import EsignTemplate
+from app.helpers.logger import get_logger
 from app.services.base_service import BaseService
 from config.settings import get_settings
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def _normalize_name(s: str) -> str:

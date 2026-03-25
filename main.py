@@ -6,6 +6,10 @@ Creates the FastAPI app, registers middleware, draws routes,
 and defines startup/shutdown events. Includes health check endpoint.
 """
 
+from config.logging_setup import configure_logging
+
+configure_logging(process_name="web")
+
 from contextlib import asynccontextmanager
 import logging
 from typing import Any
@@ -69,7 +73,7 @@ def create_app() -> FastAPI:
     @app.exception_handler(SQLAlchemyError)
     async def sqlalchemy_exception_handler(_request: Request, exc: SQLAlchemyError) -> JSONResponse:
         """Return JSON (not HTML/plain) so API clients don't break on res.json()."""
-        logging.exception("Database error: %s", exc)
+        logging.getLogger("app.database").exception("Database error: %s", exc)
         hint = (
             "Database error. If you just pulled new code, run: python manage.py db migrate"
         )

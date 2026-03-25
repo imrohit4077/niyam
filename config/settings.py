@@ -25,6 +25,14 @@ class Settings(BaseSettings):
     DEBUG: bool = True
     SECRET_KEY: str = "change-me-in-production"
 
+    # Logging (central config — see config/logging_setup.py)
+    LOG_LEVEL: str = "INFO"
+    LOG_COLOR: bool = True
+    # Celery worker/beat: use ANSI colors even when stdout is not a TTY (Docker/K8s). Set false for raw log shipping.
+    LOG_COLOR_WORKER: bool = True
+    # Rails-style: print SQL in dev by default; set LOG_SQL=false in production if too noisy.
+    LOG_SQL: bool = True
+
     # Database
     DATABASE_URL: str = "postgresql://postgres:postgres@localhost:5432/myapp"
     DB_POOL_SIZE: int = 10

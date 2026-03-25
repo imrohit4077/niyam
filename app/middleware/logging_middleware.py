@@ -10,6 +10,10 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
 
+from app.helpers.logger import get_logger
+
+logger = get_logger(__name__)
+
 
 class LoggingMiddleware(BaseHTTPMiddleware):
     """Log each request method, path, and response status + duration."""
@@ -18,5 +22,11 @@ class LoggingMiddleware(BaseHTTPMiddleware):
         start = time.perf_counter()
         response = await call_next(request)
         elapsed = time.perf_counter() - start
-        print(f"{request.method} {request.url.path} {response.status_code} {elapsed:.3f}s")
+        logger.info(
+            "%s %s → %s %.3fs",
+            request.method,
+            request.url.path,
+            response.status_code,
+            elapsed,
+        )
         return response

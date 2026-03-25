@@ -10,7 +10,18 @@ from pathlib import Path
 
 from celery import Celery
 from celery.schedules import crontab
+from celery.signals import after_setup_logger, beat_init, worker_init, worker_process_init
 
+from config.logging_setup import configure_logging
+
+
+def _celery_process_name_from_argv() -> str:
+    """`celery … beat` vs `celery … worker` — used so logs show [worker] vs [beat]."""
+    import sys
+
+    if "beat" in sys.argv:
+        return "beat"
+    return "worker"
 from config.settings import get_settings, CELERY_BEAT_SCHEDULE
 
 settings = get_settings()
@@ -80,3 +91,26 @@ def _import_job_modules() -> None:
 
 
 _import_job_modules()
+
+
+# ── Logging: same Forge formatter / colors / SQL as the web app (one config file) ──
+@worker_init.connect
+def _forge_logging_worker(**_kwargs: object) -> None:
+    configure_logging(process_name="worker", force=True)
+
+
+@worker_process_init.connect
+def _forge_logging_worker_child(**_kwargs: object) -> None:
+    """Prefork pool: each child process needs Forge logging re-applied after Celery setup."""
+    configure_logging(process_name="worker", force=True)
+
+
+@after_setup_logger.connect
+def _forge_after_celery_root_logger(logger=None, **_kwargs: object) -> None:
+    """Runs after Celery configures the root logger — re-attach colored Forge handler."""
+    configure_logging(process_name=_celery_process_name_from_argv(), force=True)
+
+
+@beat_init.connect
+def _forge_logging_beat(**_kwargs: object) -> None:
+    configure_logging(process_name="beat", force=True)
