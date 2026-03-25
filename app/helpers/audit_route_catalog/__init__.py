@@ -45,6 +45,7 @@ def describe_request(method: str, path: str) -> dict[str, Any]:
         out["technical_path"] = path
         out["http_method"] = method_u
         out["action_type"] = out.get("action_type") or k
+        out.setdefault("sensitive", False)
         out["action_kind_label"] = _action_kind_label(out["action_type"])
         return out
 
@@ -57,6 +58,7 @@ def describe_request(method: str, path: str) -> dict[str, Any]:
         "action_code": f"api.{k}.{short.replace('/', '.')[:60]}",
         "technical_path": path,
         "http_method": method_u,
+        "sensitive": False,
         "action_kind_label": _action_kind_label(k),
     }
 

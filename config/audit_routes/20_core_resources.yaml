@@ -16,6 +16,7 @@ rules:
 
   - id: job_boards_single
     pattern: '^/api/v1/job-boards/(\d+)/?$'
+    sensitive: true
     feature_area: Job boards
     feature_label: Job boards
     summary:
@@ -41,6 +42,7 @@ rules:
 
   - id: applications_single
     pattern: '^/api/v1/applications/(\d+)/?$'
+    sensitive: true
     feature_area: Applications
     feature_label: Applications
     summary:
@@ -53,6 +55,7 @@ rules:
 
   - id: candidates
     pattern: '^/api/v1/candidates'
+    sensitive: true
     feature_area: Candidates
     feature_label: Candidates
     summary: 'Viewed candidates'
@@ -60,6 +63,7 @@ rules:
 
   - id: interviews
     pattern: '^/api/v1/interviews'
+    sensitive: true
     feature_area: Interviews
     feature_label: Interviews
     summary: 'Viewed interviews'

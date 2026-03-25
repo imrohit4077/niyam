@@ -15,6 +15,7 @@ rules:
 
   - id: job_single
     pattern: '^/api/v1/jobs/(\d+)/?$'
+    sensitive: true
     feature_area: Jobs
     feature_label: Job
     summary:

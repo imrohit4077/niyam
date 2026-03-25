@@ -31,7 +31,14 @@ export default function AuditComplianceOverviewPage() {
 
   const at = doc?.audit_trail
 
-  const patchPrefs = async (partial: { track_read_requests?: boolean; track_mutations?: boolean }) => {
+  const patchPrefs = async (
+    partial: Partial<{
+      track_mutations: boolean
+      track_sensitive_reads: boolean
+      track_all_reads: boolean
+      track_read_requests: boolean
+    }>,
+  ) => {
     if (!token) return
     setSaving(true)
     try {
@@ -42,8 +49,10 @@ export default function AuditComplianceOverviewPage() {
               ...prev,
               audit_trail: {
                 ...prev.audit_trail,
-                track_read_requests: r.track_read_requests,
                 track_mutations: r.track_mutations,
+                track_sensitive_reads: r.track_sensitive_reads,
+                track_all_reads: r.track_all_reads,
+                track_read_requests: r.track_read_requests,
               },
             }
           : prev,
@@ -59,11 +68,12 @@ export default function AuditComplianceOverviewPage() {
   return (
     <div className="settings-org-page audit-compliance-overview-page">
       <section className="audit-overview-hero">
-        <h1 className="settings-org-title">Audit trails &amp; what we record</h1>
+        <h1 className="settings-org-title">Audit trails &amp; compliance design</h1>
         <p className="settings-lead">
-          The log is built for <strong>accountability</strong> and <strong>compliance</strong>: who did what, in which
-          part of the product, and whether it succeeded. Below you can choose whether to include read traffic (Info) or
-          only changes (Create / Update / Delete).
+          Aligns with common ATS practice: <strong>writes</strong> for accountability,{' '}
+          <strong>sensitive reads</strong> for PII/confidential access (not every GET), optional{' '}
+          <strong>full read capture</strong> for deep activity review, and separate <strong>log streams</strong>{' '}
+          (audit vs activity) for reporting and future SIEM export.
         </p>
       </section>
 
@@ -75,7 +85,8 @@ export default function AuditComplianceOverviewPage() {
             What to track for this workspace
           </h2>
           <p className="settings-muted">
-            Applies to new events only. Disabling a category stops enqueueing those rows (worker skips them).
+            Policy is enforced in the audit worker. Before/after payloads on writes can be attached from application
+            code where needed (not from generic middleware).
           </p>
           <div className="audit-trail-toggle-grid">
             <label className="audit-trail-toggle">
@@ -86,25 +97,53 @@ export default function AuditComplianceOverviewPage() {
                 onChange={e => void patchPrefs({ track_mutations: e.target.checked })}
               />
               <span className="audit-trail-toggle-body">
-                <span className="audit-trail-toggle-title">Record changes (Create / Update / Delete)</span>
-                <span className="audit-trail-toggle-sub">POST, PUT, PATCH, DELETE — recommended for compliance.</span>
+                <span className="audit-trail-toggle-title">Record all writes (POST / PUT / PATCH / DELETE)</span>
+                <span className="audit-trail-toggle-sub">Minimum for SOC 2–style change accountability.</span>
               </span>
             </label>
             <label className="audit-trail-toggle">
               <input
                 type="checkbox"
-                checked={at.track_read_requests}
+                checked={at.track_sensitive_reads}
                 disabled={saving}
-                onChange={e => void patchPrefs({ track_read_requests: e.target.checked })}
+                onChange={e => void patchPrefs({ track_sensitive_reads: e.target.checked })}
               />
               <span className="audit-trail-toggle-body">
-                <span className="audit-trail-toggle-title">Record reads (Info / GET)</span>
+                <span className="audit-trail-toggle-title">Record sensitive reads (PII / confidential GET)</span>
                 <span className="audit-trail-toggle-sub">
-                  Useful for access reviews; can be noisy on busy accounts.
+                  Routes flagged in the audit catalog (e.g. applications, profile, candidates). Recommended on.
+                </span>
+              </span>
+            </label>
+            <label className="audit-trail-toggle">
+              <input
+                type="checkbox"
+                checked={at.track_all_reads}
+                disabled={saving}
+                onChange={e => void patchPrefs({ track_all_reads: e.target.checked, track_read_requests: e.target.checked })}
+              />
+              <span className="audit-trail-toggle-body">
+                <span className="audit-trail-toggle-title">Record all reads (every GET)</span>
+                <span className="audit-trail-toggle-sub">
+                  Full activity-style capture; can be noisy. Emits mostly under the Activity stream.
                 </span>
               </span>
             </label>
           </div>
+
+          {at.log_streams?.length ? (
+            <>
+              <h3 className="audit-log-subheading audit-log-subheading--spaced">Log streams</h3>
+              <ul className="audit-action-type-list audit-log-stream-list">
+                {at.log_streams.map(s => (
+                  <li key={s.code} className="audit-action-type-item audit-log-stream-item">
+                    <span className="audit-log-stream-code">{s.label}</span>
+                    <span className="audit-action-type-desc">{s.description}</span>
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : null}
 
           <h3 className="audit-log-subheading audit-log-subheading--spaced">Action types</h3>
           <ul className="audit-action-type-list">
@@ -124,10 +163,10 @@ export default function AuditComplianceOverviewPage() {
           Examples
         </h2>
         <ul className="audit-log-bullet-list">
-          <li>Create or update a job</li>
-          <li>Move an application in the pipeline</li>
-          <li>Change permissions or workspace settings</li>
-          <li>Open sensitive lists (when Info tracking is on)</li>
+          <li>Permission and workspace settings changes (audit stream)</li>
+          <li>Candidate / application views (sensitive read, audit stream)</li>
+          <li>Pipeline moves and job edits (writes)</li>
+          <li>Broad UI browsing (activity stream, only if “all reads” is on)</li>
         </ul>
       </section>
 
@@ -153,7 +192,7 @@ export default function AuditComplianceOverviewPage() {
           <p className="audit-log-info-foot">
             Stored audit rows for this workspace: <strong>{doc.stats.total_entries}</strong>. Use{' '}
             <strong>Audit logs</strong> for the feed; <strong>Delivery failures</strong> lists events that could not be
-            persisted after retries.
+            persisted after retries. Export to SIEM/warehouse can reuse the same append-only feed.
           </p>
         </section>
       ) : null}

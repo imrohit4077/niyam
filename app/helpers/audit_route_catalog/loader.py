@@ -169,13 +169,21 @@ def _build_simple_dict(rule: dict[str, Any], method: str, match: re.Match[str], 
         summary = _read_summary(_interpolate(rule["read_summary_feature"], method, ctx))
     action_code = _pick_action_code(rule, method, ctx)
     action_type = _pick_action_type(rule, method)
-    return {
+    out: dict[str, Any] = {
         "action_type": action_type,
         "feature_area": feature_area,
         "feature_label": feature_label,
         "summary": summary,
         "action_code": action_code,
     }
+    if rule.get("sensitive"):
+        out["sensitive"] = True
+        out["sensitivity"] = str(rule.get("sensitivity") or "pii")
+    else:
+        out["sensitive"] = False
+    if rule.get("event_subtype"):
+        out["event_subtype"] = str(rule["event_subtype"])
+    return out
 
 
 def _make_nested_handler(rule: dict[str, Any]) -> tuple[re.Pattern[str], Callable[[re.Match[str], str], dict[str, Any] | None]]:

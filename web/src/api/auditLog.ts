@@ -13,6 +13,11 @@ export interface AuditLogEntry {
   metadata: Record<string, unknown>
   ip_address: string | null
   user_agent: string | null
+  request_id?: string | null
+  log_category?: string | null
+  event_source?: string | null
+  old_value?: Record<string, unknown> | null
+  new_value?: Record<string, unknown> | null
   created_at: string | null
 }
 
@@ -33,10 +38,20 @@ export interface AuditTrailActionType {
   description: string
 }
 
+export interface AuditLogStreamInfo {
+  code: string
+  label: string
+  description: string
+}
+
 export interface AuditTrailSettingsPayload {
-  track_read_requests: boolean
   track_mutations: boolean
+  track_sensitive_reads: boolean
+  track_all_reads: boolean
+  /** @deprecated maps to track_all_reads */
+  track_read_requests: boolean
   action_types: AuditTrailActionType[]
+  log_streams: AuditLogStreamInfo[]
 }
 
 export interface AuditComplianceDoc {
@@ -66,8 +81,18 @@ export async function getAuditCompliance(token: string): Promise<AuditCompliance
 
 export async function patchAuditTrailSettings(
   token: string,
-  body: Partial<Pick<AuditTrailSettingsPayload, 'track_read_requests' | 'track_mutations'>>,
-): Promise<{ track_read_requests: boolean; track_mutations: boolean }> {
+  body: Partial<
+    Pick<
+      AuditTrailSettingsPayload,
+      'track_read_requests' | 'track_mutations' | 'track_sensitive_reads' | 'track_all_reads'
+    >
+  >,
+): Promise<{
+  track_mutations: boolean
+  track_sensitive_reads: boolean
+  track_all_reads: boolean
+  track_read_requests: boolean
+}> {
   const res = await fetch(`${BASE}/account/audit_trail_settings`, {
     method: 'PATCH',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -75,17 +100,23 @@ export async function patchAuditTrailSettings(
   })
   const json = await res.json()
   if (!json.success) throw new Error(json.error || 'Request failed')
-  return json.data as { track_read_requests: boolean; track_mutations: boolean }
+  return json.data as {
+    track_mutations: boolean
+    track_sensitive_reads: boolean
+    track_all_reads: boolean
+    track_read_requests: boolean
+  }
 }
 
 export async function getAuditLog(
   token: string,
-  params: { page?: number; per_page?: number; q?: string } = {},
+  params: { page?: number; per_page?: number; q?: string; log_category?: string } = {},
 ): Promise<{ entries: AuditLogEntry[]; meta: AuditLogMeta }> {
   const sp = new URLSearchParams()
   if (params.page) sp.set('page', String(params.page))
   if (params.per_page) sp.set('per_page', String(params.per_page))
   if (params.q) sp.set('path_contains', params.q)
+  if (params.log_category) sp.set('log_category', params.log_category)
   const q = sp.toString()
   const res = await fetch(`${BASE}/account/audit_log${q ? `?${q}` : ''}`, {
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },

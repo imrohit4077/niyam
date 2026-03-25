@@ -40,11 +40,13 @@ rules:
           conditions:
             - { type: contains, value: interview_plans }
             - { type: contains, value: kit }
+        sensitive: true
         feature_area: Interviews
         feature_label: Interview plan / kit
         summary_template: 'Interview plan: job #{id}'
         action_code: job.interview_plan
       - match: { type: prefix, value: 'referral_link' }
+        sensitive: true
         feature_area: Referrals
         feature_label: Referral link
         summary:

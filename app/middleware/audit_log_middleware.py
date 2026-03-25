@@ -6,6 +6,7 @@ Mutations: POST/PUT/PATCH/DELETE — always subject to account audit_trail.track
 Reads: GET — only when account allows track_read_requests (enforced in worker); skips self-audit endpoints.
 """
 
+import uuid
 from typing import Callable
 
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -25,7 +26,12 @@ class AuditLogMiddleware(BaseHTTPMiddleware):
     )
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
+        rid = request.headers.get("x-request-id") or request.headers.get("x-correlation-id")
+        if not rid:
+            rid = str(uuid.uuid4())
+        request.state.request_id = rid
         response = await call_next(request)
+        response.headers.setdefault("X-Request-ID", rid)
         try:
             self._maybe_enqueue(request, response)
         except Exception:
@@ -57,6 +63,7 @@ class AuditLogMiddleware(BaseHTTPMiddleware):
         client = request.client
         ip = client.host if client else None
         ua = request.headers.get("user-agent")
+        rid = getattr(request.state, "request_id", None)
         enqueue_api_audit(
             actor_user_id=uid,
             http_method=request.method,
@@ -64,4 +71,5 @@ class AuditLogMiddleware(BaseHTTPMiddleware):
             status_code=response.status_code,
             ip_address=ip,
             user_agent=ua,
+            request_id=rid if isinstance(rid, str) else None,
         )

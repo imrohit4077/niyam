@@ -37,9 +37,15 @@ class AuditLogService(BaseService):
         metadata: Optional[dict[str, Any]] = None,
         ip_address: Optional[str] = None,
         user_agent: Optional[str] = None,
+        request_id: Optional[str] = None,
+        event_source: Optional[str] = None,
+        log_category: Optional[str] = None,
     ) -> None:
         """
         Fire-and-forget insert via Celery. Drops keys with None so create() only sets real columns.
+
+        For compliance-grade before/after on mutations, pass ``old_value`` / ``new_value`` (small JSON
+        snapshots) from the controller when safe — HTTP middleware does not capture bodies by default.
         """
         payload: dict[str, Any] = {"account_id": account_id}
         optional: dict[str, Any] = {
@@ -56,6 +62,9 @@ class AuditLogService(BaseService):
             "new_value": new_value,
             "ip_address": ip_address,
             "user_agent": user_agent,
+            "request_id": request_id,
+            "event_source": event_source,
+            "log_category": log_category,
         }
         for key, val in optional.items():
             if val is not None:
@@ -71,7 +80,16 @@ class AuditLogService(BaseService):
             select(func.count()).select_from(AuditLogEntry).where(AuditLogEntry.account_id == account_id)
         )
         acc = Account.find_by(self.db, id=account_id)
-        prefs = merge_account_audit_prefs(acc) if acc else {"track_read_requests": True, "track_mutations": True}
+        prefs = (
+            merge_account_audit_prefs(acc)
+            if acc
+            else {
+                "track_mutations": True,
+                "track_sensitive_reads": True,
+                "track_all_reads": False,
+                "track_read_requests": False,
+            }
+        )
         return {
             "title": "Write-only audit log",
             "summary": (
@@ -99,19 +117,25 @@ class AuditLogService(BaseService):
                 "heading": "How ForgeAPI applies this",
                 "bullets": [
                     "Writes are enqueued to a background worker (not inline in the request) so APIs stay fast.",
-                    "Events are labeled by product area and action type (Info / Create / Update / Delete), not raw database jargon.",
-                    "HTTP method, path, and status are stored for support and compliance review when relevant.",
+                    "Events are labeled by product area and action type; sensitive GETs are catalog-driven, not all GETs.",
+                    "Each row can carry request_id (correlation), IP, user-agent, log stream (audit vs activity), and optional before/after JSON from app code.",
+                    "The append-only table can be replicated to a SIEM, warehouse, or log platform for compliance programs.",
                 ],
             },
             "audit_trail": {
-                "track_read_requests": prefs["track_read_requests"],
                 "track_mutations": prefs["track_mutations"],
+                "track_sensitive_reads": prefs["track_sensitive_reads"],
+                "track_all_reads": prefs["track_all_reads"],
+                "track_read_requests": prefs["track_read_requests"],
                 "action_types": [
                     {
                         "code": "read",
                         "label": "Info",
                         "http_verbs": ["GET"],
-                        "description": "Views and lookups (who opened which screen or list). Can be chatty; disable if you only need changes.",
+                        "description": (
+                            "Use \"Sensitive data access\" for PII/confidential views (recommended). "
+                            "\"Log all reads\" captures every GET and is noisy on busy accounts."
+                        ),
                     },
                     {
                         "code": "create",
@@ -132,6 +156,23 @@ class AuditLogService(BaseService):
                         "description": "Removals and destructive actions.",
                     },
                 ],
+                "log_streams": [
+                    {
+                        "code": "audit",
+                        "label": "Audit",
+                        "description": "Compliance stream: writes, permission changes, and sensitive reads (PII access).",
+                    },
+                    {
+                        "code": "activity",
+                        "label": "Activity",
+                        "description": "Routine browsing (GET) when \"Log all reads\" is on — not a full compliance access log.",
+                    },
+                    {
+                        "code": "system",
+                        "label": "System",
+                        "description": "Reserved for workers, webhooks, and exports (future use).",
+                    },
+                ],
             },
             "stats": {"total_entries": int(total or 0)},
         }
@@ -143,12 +184,15 @@ class AuditLogService(BaseService):
         page: int = 1,
         per_page: int = 20,
         path_contains: Optional[str] = None,
+        log_category: Optional[str] = None,
     ) -> dict[str, Any]:
         per_page = min(max(per_page, 1), 100)
         page = max(page, 1)
         offset = (page - 1) * per_page
 
         filters: list[Any] = [AuditLogEntry.account_id == account_id]
+        if log_category and log_category.strip() in ("audit", "activity", "system"):
+            filters.append(AuditLogEntry.log_category == log_category.strip())
         if path_contains:
             term = path_contains.strip()[:500]
             if term:

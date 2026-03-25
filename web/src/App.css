@@ -5984,6 +5984,33 @@ textarea.esign-pro-input {
   align-items: center;
   gap: 10px;
 }
+.audit-log-stream-select {
+  min-width: 130px;
+}
+.audit-log-stream-cell {
+  text-transform: capitalize;
+  font-size: 12px;
+  font-weight: 600;
+}
+.audit-log-stream-list {
+  margin-top: 8px;
+}
+.audit-log-stream-item {
+  grid-template-columns: 120px 1fr;
+}
+.audit-log-stream-code {
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary, #475569);
+}
+.audit-detail-h4 {
+  font-size: 12px;
+  font-weight: 600;
+  margin: 12px 0 8px;
+  color: var(--text-muted, #64748b);
+}
 .audit-log-filter-input {
   min-width: 200px;
   padding: 8px 12px;

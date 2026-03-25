@@ -31,6 +31,7 @@ class AuditLogController(BaseController, Authenticatable):
         self.require_admin()
         account_id = self._account_id()
         path = str(self.request.url.path)
+        rid = getattr(self.request.state, "request_id", None)
         AuditLogService.enqueue(
             account_id=account_id,
             actor_user_id=self._user_id(),
@@ -40,6 +41,9 @@ class AuditLogController(BaseController, Authenticatable):
             http_method="GET",
             path=path,
             status_code=200,
+            request_id=rid if isinstance(rid, str) else None,
+            event_source="ui",
+            log_category="audit",
             metadata={
                 "source": "settings_ui",
                 "settings_ui": True,
@@ -48,6 +52,7 @@ class AuditLogController(BaseController, Authenticatable):
                 "summary": "Opened Audit & compliance (overview)",
                 "action_type": "read",
                 "action_kind_label": "Info",
+                "event_source": "ui",
             },
             ip_address=self._client_ip(),
         )
@@ -77,11 +82,13 @@ class AuditLogController(BaseController, Authenticatable):
         except (TypeError, ValueError):
             per_page = 20
         path_contains = q.get("path_contains") or q.get("q")
+        log_category = q.get("log_category")
         r = AuditLogService(self.db).list_for_account(
             account_id,
             page=page,
             per_page=per_page,
             path_contains=path_contains,
+            log_category=log_category if isinstance(log_category, str) else None,
         )
         if not r["ok"]:
             return self.render_error(r.get("error") or "Failed", status=500)

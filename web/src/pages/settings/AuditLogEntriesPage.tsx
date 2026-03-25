@@ -14,13 +14,19 @@ export default function AuditLogEntriesPage() {
   const [page, setPage] = useState(1)
   const [filterInput, setFilterInput] = useState('')
   const [appliedFilter, setAppliedFilter] = useState('')
+  const [logCategory, setLogCategory] = useState<'all' | 'audit' | 'activity' | 'system'>('all')
   const [detail, setDetail] = useState<AuditLogEntry | null>(null)
 
   const load = useCallback(async () => {
     if (!token) return
     setLoading(true)
     try {
-      const r = await getAuditLog(token, { page, per_page: 25, q: appliedFilter.trim() || undefined })
+      const r = await getAuditLog(token, {
+        page,
+        per_page: 25,
+        q: appliedFilter.trim() || undefined,
+        log_category: logCategory === 'all' ? undefined : logCategory,
+      })
       setRows(r.entries)
       setMeta(r.meta)
     } catch (e) {
@@ -30,7 +36,7 @@ export default function AuditLogEntriesPage() {
     } finally {
       setLoading(false)
     }
-  }, [token, page, appliedFilter, showError])
+  }, [token, page, appliedFilter, logCategory, showError])
 
   useEffect(() => {
     void load()
@@ -48,9 +54,9 @@ export default function AuditLogEntriesPage() {
   return (
     <div className="settings-org-page audit-log-settings-page">
       <p className="settings-lead">
-        Each row describes what happened in the product (area, summary, outcome). Technical request fields are available
-        in <strong>Details</strong>. Entries are written by the background worker so APIs stay fast; delivery problems
-        appear under <strong>Delivery failures</strong>.
+        <strong>Audit</strong> stream: writes, permission-style routes, and sensitive reads. <strong>Activity</strong>{' '}
+        stream: routine GETs when “log all reads” is enabled. Request correlation uses <code className="audit-log-code">X-Request-ID</code>. See{' '}
+        <strong>Overview</strong> for policy toggles.
       </p>
 
       <div className="settings-org-toolbar audit-log-toolbar">
@@ -63,6 +69,23 @@ export default function AuditLogEntriesPage() {
             setPage(1)
           }}
         >
+          <label htmlFor="audit-stream" className="visually-hidden">
+            Log stream
+          </label>
+          <select
+            id="audit-stream"
+            className="audit-log-filter-input audit-log-stream-select"
+            value={logCategory}
+            onChange={e => {
+              setLogCategory(e.target.value as typeof logCategory)
+              setPage(1)
+            }}
+          >
+            <option value="all">All streams</option>
+            <option value="audit">Audit</option>
+            <option value="activity">Activity</option>
+            <option value="system">System</option>
+          </select>
           <label htmlFor="audit-filter" className="visually-hidden">
             Filter by summary, feature, or path
           </label>
@@ -96,6 +119,7 @@ export default function AuditLogEntriesPage() {
                 <th>Summary</th>
                 <th>Feature</th>
                 <th>Action</th>
+                <th>Stream</th>
                 <th>Outcome</th>
                 <th>Actor</th>
                 <th />
@@ -113,6 +137,7 @@ export default function AuditLogEntriesPage() {
                 const outcome =
                   (typeof m.outcome === 'string' && m.outcome) ||
                   (row.status_code != null ? httpOutcome(row.status_code) : '—')
+                const stream = row.log_category || '—'
                 return (
                   <tr key={row.id}>
                     <td className="audit-log-cell-time">{row.created_at ? formatTime(row.created_at) : '—'}</td>
@@ -123,6 +148,7 @@ export default function AuditLogEntriesPage() {
                         {kind}
                       </span>
                     </td>
+                    <td className="audit-log-cell-muted audit-log-stream-cell">{stream}</td>
                     <td>
                       <span
                         className={
@@ -223,6 +249,12 @@ function AuditDetailSections({ row }: { row: AuditLogEntry }) {
   if (typeof m.entity_id === 'number') technicalPairs.push(['Entity id', String(m.entity_id)])
   if (row.severity) technicalPairs.push(['Severity', row.severity])
   if (row.ip_address) technicalPairs.push(['IP', row.ip_address])
+  if (row.user_agent) technicalPairs.push(['User agent', row.user_agent])
+  if (row.request_id) technicalPairs.push(['Request ID', row.request_id])
+  if (row.log_category) technicalPairs.push(['Log stream', row.log_category])
+  if (row.event_source) technicalPairs.push(['Source', row.event_source])
+  if (typeof m.access_kind === 'string') technicalPairs.push(['Access class', m.access_kind])
+  if (typeof m.event_subtype === 'string') technicalPairs.push(['Event subtype', m.event_subtype])
 
   return (
     <>
@@ -297,6 +329,24 @@ function AuditDetailSections({ row }: { row: AuditLogEntry }) {
           ))}
         </dl>
       </section>
+
+      {row.old_value || row.new_value ? (
+        <section className="audit-detail-section">
+          <h3 className="audit-detail-h3">Before / after (when provided)</h3>
+          {row.old_value ? (
+            <>
+              <h4 className="audit-detail-h4">Previous</h4>
+              <pre className="audit-detail-json">{JSON.stringify(row.old_value, null, 2)}</pre>
+            </>
+          ) : null}
+          {row.new_value ? (
+            <>
+              <h4 className="audit-detail-h4">New</h4>
+              <pre className="audit-detail-json">{JSON.stringify(row.new_value, null, 2)}</pre>
+            </>
+          ) : null}
+        </section>
+      ) : null}
 
       <section className="audit-detail-section">
         <h3 className="audit-detail-h3">Raw metadata (complete)</h3>

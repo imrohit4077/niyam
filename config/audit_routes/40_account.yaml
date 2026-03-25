@@ -2,6 +2,7 @@ version: 1
 rules:
   - id: profile
     pattern: '^/api/v1/profile$'
+    sensitive: true
     feature_area: Account
     feature_label: My profile
     summary:
@@ -14,6 +15,8 @@ rules:
 
   - id: account_members
     pattern: '^/api/v1/account/members$'
+    sensitive: true
+    event_subtype: permission
     feature_area: Team
     feature_label: Team members
     summary: 'Viewed team members'
@@ -21,6 +24,7 @@ rules:
 
   - id: account_workspace_settings
     pattern: '^/api/v1/account/(organization_settings|appearance_settings|referral_settings|esign_settings)'
+    event_subtype: permission
     feature_area: Settings
     feature_label_from_group: 1
     feature_label_transform: snake_title

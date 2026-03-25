@@ -5,7 +5,7 @@ Resolve entity display names for audit rows (worker-only; keeps HTTP path fast).
 from __future__ import annotations
 
 import re
-from typing import Any, Optional
+from typing import Any
 
 from sqlalchemy.orm import Session
 
@@ -16,14 +16,73 @@ from app.models.job_board import JobBoard
 
 
 def merge_account_audit_prefs(account: Account) -> dict[str, Any]:
+    """
+    Workspace audit policy (stored in accounts.settings['audit_trail']).
+
+    - track_mutations: POST/PUT/PATCH/DELETE (recommended on).
+    - track_sensitive_reads: GET on routes catalogued as PII/sensitive (Greenhouse-style access log).
+    - track_all_reads: every GET (noisy; off by default for new workspaces).
+    Legacy key track_read_requests maps to track_all_reads when track_all_reads is unset.
+    """
     raw = account.settings if isinstance(account.settings, dict) else {}
     at = raw.get("audit_trail")
     if not isinstance(at, dict):
         at = {}
+    if "track_all_reads" in at:
+        track_all_reads = bool(at["track_all_reads"])
+    elif "track_read_requests" in at:
+        track_all_reads = bool(at["track_read_requests"])
+    else:
+        track_all_reads = False
     return {
-        "track_read_requests": at.get("track_read_requests", True),
         "track_mutations": at.get("track_mutations", True),
+        "track_sensitive_reads": at.get("track_sensitive_reads", True),
+        "track_all_reads": track_all_reads,
+        # Backward compat for older UIs / API clients
+        "track_read_requests": track_all_reads,
     }
+
+
+def should_record_http_audit(*, method: str, meta: dict[str, Any], prefs: dict[str, Any]) -> bool:
+    """Whether the worker should persist this HTTP-derived row (policy gate)."""
+    m = method.upper()
+    if m in ("POST", "PUT", "PATCH", "DELETE"):
+        return bool(prefs.get("track_mutations", True))
+    if m == "GET":
+        if not prefs.get("track_sensitive_reads") and not prefs.get("track_all_reads"):
+            return False
+        sensitive = bool(meta.get("sensitive")) or meta.get("sensitivity") == "pii"
+        if prefs.get("track_all_reads"):
+            return True
+        return bool(prefs.get("track_sensitive_reads")) and sensitive
+    return True
+
+
+def assign_log_category(*, method: str, meta: dict[str, Any]) -> str:
+    """
+    audit — compliance/security (mutations, permission changes, sensitive reads).
+    activity — routine GET browsing when track_all_reads is enabled.
+    system — reserved for jobs/cron (not HTTP middleware).
+    """
+    m = method.upper()
+    if m in ("POST", "PUT", "PATCH", "DELETE"):
+        return "audit"
+    if m == "GET":
+        sensitive = bool(meta.get("sensitive")) or meta.get("sensitivity") == "pii"
+        if sensitive:
+            return "audit"
+        return "activity"
+    return "audit"
+
+
+def assign_access_kind(*, method: str, meta: dict[str, Any]) -> str:
+    m = method.upper()
+    if m in ("POST", "PUT", "PATCH", "DELETE"):
+        return "mutate"
+    if m == "GET":
+        sensitive = bool(meta.get("sensitive")) or meta.get("sensitivity") == "pii"
+        return "sensitive_read" if sensitive else "routine_read"
+    return "other"
 
 
 def enrich_metadata(
@@ -87,6 +146,7 @@ def enrich_metadata(
             meta["summary"] = f"Removed {meta['feature_label'].lower()} — {meta['entity_name']}"
         else:
             meta["summary"] = summary
+    meta["access_kind"] = assign_access_kind(method=method, meta=meta)
     return meta
 
 

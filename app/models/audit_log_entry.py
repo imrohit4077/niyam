@@ -48,4 +48,7 @@ class AuditLogEntry(BaseModel):
     severity: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
     old_value: Mapped[Optional[dict[str, Any]]] = mapped_column(JSONB, nullable=True)
     new_value: Mapped[Optional[dict[str, Any]]] = mapped_column(JSONB, nullable=True)
+    request_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    log_category: Mapped[str] = mapped_column(String(24), nullable=False, server_default="audit")
+    event_source: Mapped[str] = mapped_column(String(16), nullable=False, server_default="api")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

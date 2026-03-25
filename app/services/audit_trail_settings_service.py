@@ -1,4 +1,4 @@
-"""Account-level preferences for what the audit trail records (GET vs mutations)."""
+"""Account-level preferences for what the audit trail records (mutations vs sensitive GET vs all GET)."""
 
 from __future__ import annotations
 
@@ -8,6 +8,16 @@ from typing import Any
 from app.models.account import Account
 from app.services.audit_enrichment_service import merge_account_audit_prefs
 from app.services.base_service import BaseService
+
+
+_BOOL_KEYS = frozenset(
+    {
+        "track_mutations",
+        "track_sensitive_reads",
+        "track_all_reads",
+        "track_read_requests",  # legacy alias → track_all_reads
+    }
+)
 
 
 class AuditTrailSettingsService(BaseService):
@@ -21,14 +31,16 @@ class AuditTrailSettingsService(BaseService):
         raw = deepcopy(acc.settings) if isinstance(acc.settings, dict) else {}
         at = dict(raw.get("audit_trail") or {}) if isinstance(raw.get("audit_trail"), dict) else {}
 
-        if "track_read_requests" in patch:
-            v = patch["track_read_requests"]
-            if isinstance(v, bool):
-                at["track_read_requests"] = v
-        if "track_mutations" in patch:
-            v = patch["track_mutations"]
-            if isinstance(v, bool):
-                at["track_mutations"] = v
+        for key in _BOOL_KEYS:
+            if key not in patch:
+                continue
+            v = patch[key]
+            if not isinstance(v, bool):
+                continue
+            if key == "track_read_requests":
+                at["track_all_reads"] = v
+            else:
+                at[key] = v
 
         raw["audit_trail"] = at
         acc.settings = raw

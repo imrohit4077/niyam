@@ -30,6 +30,7 @@ def enqueue_api_audit(
     status_code: int,
     ip_address: str | None,
     user_agent: str | None,
+    request_id: str | None = None,
 ) -> None:
     try:
         from app.jobs.audit_log_append_job import audit_log_append
@@ -43,21 +44,26 @@ def enqueue_api_audit(
         for k, v in desc.items():
             meta[k] = v
         meta["from_catalog"] = True
+        meta["event_source"] = "api"
+        if request_id:
+            meta["request_id"] = request_id
 
-        audit_log_append.apply_async(
-            kwargs={
-                "actor_user_id": actor_user_id,
-                "http_method": http_method,
-                "path": path,
-                "status_code": status_code,
-                "ip_address": ip_address,
-                "user_agent": user_agent,
-                "action": desc["action_code"],
-                "resource": desc.get("feature_area", "workspace"),
-                "severity": severity_for_http_status(status_code),
-                "metadata_": meta,
-            },
-            queue="default",
-        )
+        payload: dict = {
+            "actor_user_id": actor_user_id,
+            "http_method": http_method,
+            "path": path,
+            "status_code": status_code,
+            "ip_address": ip_address,
+            "user_agent": user_agent,
+            "action": desc["action_code"],
+            "resource": desc.get("feature_area", "workspace"),
+            "severity": severity_for_http_status(status_code),
+            "metadata_": meta,
+            "event_source": "api",
+        }
+        if request_id:
+            payload["request_id"] = request_id
+
+        audit_log_append.apply_async(kwargs=payload, queue="default")
     except Exception:
         logger.exception("enqueue_api_audit failed (non-fatal)")
