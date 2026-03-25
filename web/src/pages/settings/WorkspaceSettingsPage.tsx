@@ -1,69 +1,72 @@
-import { Link, useOutletContext } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../../auth/AuthContext'
-import type { DashboardOutletContext } from '../../layouts/DashboardOutletContext'
 
 export default function WorkspaceSettingsPage() {
   const { user } = useAuth()
-  const { accountId } = useOutletContext<DashboardOutletContext>()
+  const { accountId } = useParams<{ accountId: string }>()
   const acc = user?.account
 
   return (
-    <div className="settings-general">
+    <div className="settings-org-page settings-workspace-page">
       <p className="settings-lead">
         Workspace identifiers and shortcuts. Edit company details under <strong>Organization</strong> in the left menu.
       </p>
 
-      <div className="settings-cards">
-        <section className="settings-card">
-          <h2 className="settings-card-title">Workspace</h2>
-          <dl className="settings-dl">
-            <div>
-              <dt>Name</dt>
-              <dd>{acc?.name ?? '—'}</dd>
-            </div>
-            <div>
-              <dt>Slug</dt>
-              <dd>
-                <code>{acc?.slug ?? '—'}</code>
-              </dd>
-            </div>
-            {acc?.plan && (
-              <div>
-                <dt>Plan</dt>
-                <dd>{acc.plan}</dd>
-              </div>
-            )}
-          </dl>
-        </section>
-
-        <section className="settings-card">
-          <h2 className="settings-card-title">Your account</h2>
-          <dl className="settings-dl">
-            <div>
-              <dt>Signed in as</dt>
-              <dd>{user?.email}</dd>
-            </div>
-            <div>
-              <dt>Profile</dt>
-              <dd>
-                <Link to={`/account/${accountId}/profile`} className="settings-inline-link">
-                  Edit profile & role →
-                </Link>
-              </dd>
-            </div>
-          </dl>
-        </section>
-
-        <section className="settings-card settings-card--accent">
-          <h2 className="settings-card-title">E-sign (built-in)</h2>
-          <p className="settings-card-body">
-            Send offer letters and agreements when someone moves on the pipeline — candidates sign in your app, no
-            external provider.
+      <div className="settings-org-toolbar">
+        <h2 className="settings-org-title">Workspace</h2>
+      </div>
+      <div className="settings-org-grid">
+        <div className="esign-field-block">
+          <label htmlFor="ws-name">Name</label>
+          <p id="ws-name" className="settings-workspace-value">
+            {acc?.name ?? '—'}
           </p>
-          <Link to={`/account/${accountId}/settings/esign`} className="btn-primary settings-card-cta">
-            Open E-sign setup
-          </Link>
-        </section>
+        </div>
+        <div className="esign-field-block">
+          <label htmlFor="ws-slug">Slug</label>
+          <code id="ws-slug" className="settings-workspace-code">
+            {acc?.slug ?? '—'}
+          </code>
+        </div>
+        {acc?.plan && (
+          <div className="esign-field-block">
+            <label htmlFor="ws-plan">Plan</label>
+            <p id="ws-plan" className="settings-workspace-value">
+              {acc.plan}
+            </p>
+          </div>
+        )}
+      </div>
+
+      <div className="settings-org-toolbar settings-workspace-toolbar-spaced">
+        <h2 className="settings-org-title">Your account</h2>
+      </div>
+      <div className="settings-org-grid">
+        <div className="esign-field-block">
+          <label htmlFor="ws-email">Signed in as</label>
+          <p id="ws-email" className="settings-workspace-value">
+            {user?.email ?? '—'}
+          </p>
+        </div>
+        <div className="esign-field-block">
+          <label htmlFor="ws-profile">Profile</label>
+          <p id="ws-profile" className="settings-workspace-value">
+            <Link to={`/account/${accountId}/profile`} className="settings-inline-link">
+              Edit profile & role →
+            </Link>
+          </p>
+        </div>
+      </div>
+
+      <div className="settings-workspace-esign">
+        <h3 className="settings-workspace-esign-title">E-sign (built-in)</h3>
+        <p className="settings-field-hint settings-field-hint--emphasis settings-workspace-esign-desc">
+          Send offer letters and agreements when someone moves on the pipeline — candidates sign in your app, no
+          external provider.
+        </p>
+        <Link to={`/account/${accountId}/settings/esign`} className="btn-primary btn-primary--inline">
+          Open E-sign setup
+        </Link>
       </div>
     </div>
   )
