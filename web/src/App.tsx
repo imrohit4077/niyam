@@ -27,6 +27,8 @@ import GeneralSettingsLayout from './layouts/GeneralSettingsLayout'
 import OrganizationSettingsPage from './pages/settings/OrganizationSettingsPage'
 import WorkspaceSettingsPage from './pages/settings/WorkspaceSettingsPage'
 import AppearanceSettingsPage from './pages/settings/AppearanceSettingsPage'
+import ReferralProgramSettingsPage from './pages/settings/ReferralProgramSettingsPage'
+import ReferralsHubPage from './pages/ReferralsHubPage'
 import CustomFieldsSettingsLayout from './layouts/CustomFieldsSettingsLayout'
 import CustomFieldsEntityPage from './pages/settings/CustomFieldsEntityPage'
 import LabelsSettingsPage from './pages/settings/LabelsSettingsPage'
@@ -102,6 +104,7 @@ function AppRoutes() {
             <Route path="interviews" element={<InterviewsView />} />
             <Route path="esign-documents" element={<EsignDocumentsPage />} />
             <Route path="team" element={<TeamView />} />
+            <Route path="referrals" element={<ReferralsHubPage />} />
             <Route path="settings" element={<SettingsLayout />}>
               <Route index element={<Navigate to="general" replace />} />
               <Route path="general" element={<GeneralSettingsLayout />}>
@@ -109,6 +112,7 @@ function AppRoutes() {
                 <Route path="organization" element={<OrganizationSettingsPage />} />
                 <Route path="workspace" element={<WorkspaceSettingsPage />} />
                 <Route path="appearance" element={<AppearanceSettingsPage />} />
+                <Route path="referrals" element={<ReferralProgramSettingsPage />} />
               </Route>
               <Route path="custom-fields" element={<CustomFieldsSettingsLayout />}>
                 <Route index element={<Navigate to="jobs" replace />} />

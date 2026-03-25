@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { publicApplyApi, type PublicJobApplyPayload } from '../api/publicApply'
 import CustomAttributeFields from '../components/CustomAttributeFields'
 import './PublicJobApplyPage.css'
@@ -15,6 +15,7 @@ function formatSalary(s: PublicJobApplyPayload['salary']) {
 
 export default function PublicJobApplyPage() {
   const { token } = useParams<{ token: string }>()
+  const [searchParams] = useSearchParams()
   const [job, setJob] = useState<PublicJobApplyPayload | null>(null)
   const [loadErr, setLoadErr] = useState('')
   const [submitErr, setSubmitErr] = useState('')
@@ -79,6 +80,15 @@ export default function PublicJobApplyPage() {
     }
     setSubmitting(true)
     try {
+      const refTok =
+        searchParams.get('ref')?.trim() ||
+        searchParams.get('referral_token')?.trim() ||
+        undefined
+      const utm: Record<string, string> = {}
+      for (const k of ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term']) {
+        const v = searchParams.get(k)?.trim()
+        if (v) utm[k] = v
+      }
       await publicApplyApi.submit(token, {
         candidate_name: candidate_name.trim() || undefined,
         candidate_email: candidate_email.trim(),
@@ -89,6 +99,13 @@ export default function PublicJobApplyPage() {
         linkedin_url: fields.linkedin ? linkedin_url.trim() || undefined : undefined,
         portfolio_url: fields.portfolio ? portfolio_url.trim() || undefined : undefined,
         custom_attributes: job.custom_attribute_definitions?.length ? customAttrValues : undefined,
+        ...(refTok
+          ? {
+              ref: refTok,
+              utm: Object.keys(utm).length ? utm : undefined,
+              referral_source: searchParams.get('referral_source')?.trim() || utm.utm_source || undefined,
+            }
+          : {}),
       })
       setDone(true)
     } catch (err: unknown) {
@@ -191,6 +208,11 @@ export default function PublicJobApplyPage() {
                 ))}
               </div>
             </div>
+          )}
+          {job.referral_program_enabled && (
+            <p className="public-apply-referral-note">
+              This employer may track referrals when you apply through an employee link (<code>?ref=</code>).
+            </p>
           )}
           {job.bonus_incentives && (
             <p className="public-apply-bonus">

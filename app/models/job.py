@@ -40,6 +40,9 @@ class Job(BaseModel):
     job_config: Mapped[dict] = mapped_column(
         JSONB, nullable=False, server_default=text("'{}'::jsonb")
     )
+    referral_settings: Mapped[dict] = mapped_column(
+        JSONB, nullable=False, server_default=text("'{}'::jsonb")
+    )
     salary_min: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2), nullable=True)
     salary_max: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2), nullable=True)
     salary_currency: Mapped[str] = mapped_column(String(10), nullable=False, server_default="USD")

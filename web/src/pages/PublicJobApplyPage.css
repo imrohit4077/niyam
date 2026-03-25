@@ -141,6 +141,20 @@
   color: #2563eb;
 }
 
+.public-apply-referral-note {
+  font-size: 13px;
+  color: #475569;
+  margin: 0 0 12px;
+  line-height: 1.5;
+}
+
+.public-apply-referral-note code {
+  font-size: 12px;
+  background: #f1f5f9;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
 .public-apply-bonus {
   font-size: 14px;
   color: #334155;

@@ -117,10 +117,14 @@ def draw_routes(app: "FastAPI") -> None:
     from app.controllers.account_esign_settings_controller import AccountEsignSettingsController
     from app.controllers.account_organization_settings_controller import AccountOrganizationSettingsController
     from app.controllers.account_appearance_settings_controller import AccountAppearanceSettingsController
+    from app.controllers.account_referral_settings_controller import AccountReferralSettingsController
     from app.controllers.custom_attribute_definitions_controller import CustomAttributeDefinitionsController
     from app.controllers.labels_controller import LabelsController
     from app.controllers.public_esign_controller import PublicEsignController
     from app.controllers.esign_webhooks_controller import EsignWebhooksController
+    from app.controllers.referral_bonuses_controller import ReferralBonusesController
+    from app.controllers.referrals_analytics_controller import ReferralsAnalyticsController
+    from app.controllers.referrals_admin_controller import ReferralsAdminController
 
     router = APIRouter(prefix="/api/v1")
 
@@ -209,6 +213,17 @@ def draw_routes(app: "FastAPI") -> None:
     )
 
     router.add_api_route(
+        "/account/referral_settings",
+        _wrap(AccountReferralSettingsController, "show", lambda c: c.show()),
+        methods=["GET"],
+    )
+    router.add_api_route(
+        "/account/referral_settings",
+        _wrap(AccountReferralSettingsController, "update", lambda c: c.update()),
+        methods=["PATCH"],
+    )
+
+    router.add_api_route(
         "/custom_attribute_definitions",
         _wrap(CustomAttributeDefinitionsController, "index", lambda c: c.index()),
         methods=["GET"],
@@ -255,6 +270,11 @@ def draw_routes(app: "FastAPI") -> None:
 
     # Jobs CRUD
     resources(router, "/jobs", JobsController)
+    router.add_api_route(
+        "/jobs/{job_id:int}/referral_link",
+        _wrap(JobsController, "referral_link", lambda c: c.referral_link()),
+        methods=["GET"],
+    )
     router.add_api_route(
         "/jobs/{id:int}/labels",
         _wrap(JobsController, "update_labels", lambda c: c.update_labels()),
@@ -417,6 +437,39 @@ def draw_routes(app: "FastAPI") -> None:
         "/applications/{id:int}/stage",
         _wrap(ApplicationsController, "update_stage", lambda c: c.update_stage()),
         methods=["PATCH"],
+    )
+
+    router.add_api_route(
+        "/referral_bonuses",
+        _wrap(ReferralBonusesController, "index", lambda c: c.index()),
+        methods=["GET"],
+    )
+    router.add_api_route(
+        "/referral_bonuses/export",
+        _wrap(ReferralBonusesController, "export_csv", lambda c: c.export_csv()),
+        methods=["GET"],
+    )
+    router.add_api_route(
+        "/referral_bonuses/{id:int}",
+        _wrap(ReferralBonusesController, "update", lambda c: c.update()),
+        methods=["PATCH"],
+    )
+
+    router.add_api_route(
+        "/referrals/leaderboard",
+        _wrap(ReferralsAnalyticsController, "leaderboard", lambda c: c.leaderboard()),
+        methods=["GET"],
+    )
+    router.add_api_route(
+        "/referrals/my",
+        _wrap(ReferralsAnalyticsController, "my_referrals", lambda c: c.my_referrals()),
+        methods=["GET"],
+    )
+
+    router.add_api_route(
+        "/referrals/admin/overview",
+        _wrap(ReferralsAdminController, "overview", lambda c: c.overview()),
+        methods=["GET"],
     )
 
     router.add_api_route(

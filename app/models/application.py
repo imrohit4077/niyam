@@ -21,6 +21,12 @@ class Application(BaseModel):
     source_posting_id: Mapped[Optional[int]] = mapped_column(BigInteger, ForeignKey("job_postings.id", ondelete="SET NULL"), nullable=True)
     source_type: Mapped[str] = mapped_column(String(50), nullable=False, server_default="direct")
     referral_user_id: Mapped[Optional[int]] = mapped_column(BigInteger, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    referral_link_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger, ForeignKey("referral_links.id", ondelete="SET NULL"), nullable=True
+    )
+    referral_source: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
+    referral_utm: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default=text("'{}'::jsonb"))
+    referral_risk_flags: Mapped[list] = mapped_column(JSONB, nullable=False, server_default=text("'[]'::jsonb"))
 
     candidate_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     candidate_email: Mapped[str] = mapped_column(String(255), nullable=False)

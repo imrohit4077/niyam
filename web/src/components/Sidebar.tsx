@@ -13,6 +13,7 @@ export type SidebarPage =
   | 'candidates'
   | 'interviews'
   | 'esign-documents'
+  | 'referrals'
   | 'team'
   | 'settings-general'
   | 'settings-custom-fields'
@@ -37,6 +38,7 @@ const NAV: NavItem[] = [
   { id: 'candidates', label: 'Candidates', icon: 'people', group: 'Candidates' },
   { id: 'interviews', label: 'Interviews', icon: 'calendar', group: 'Candidates' },
   { id: 'esign-documents', label: 'Signed documents', icon: 'signature', group: 'Candidates' },
+  { id: 'referrals', label: 'Referrals', icon: 'referral', group: 'Candidates' },
   { id: 'settings-general', label: 'General', icon: 'gear', group: 'Settings' },
   { id: 'settings-custom-fields', label: 'Custom fields', icon: 'fieldgrid', group: 'Settings' },
   { id: 'settings-esign', label: 'E-sign', icon: 'document', group: 'Settings' },
@@ -54,6 +56,7 @@ const PATH_SEGMENTS: Record<SidebarPage, string> = {
   candidates: 'candidates',
   interviews: 'interviews',
   'esign-documents': 'esign-documents',
+  referrals: 'referrals',
   team: 'team',
   'settings-general': 'settings/general',
   'settings-custom-fields': 'settings/custom-fields/jobs',
@@ -130,6 +133,11 @@ const ICONS: Record<string, ReactNode> = {
     <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
       <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm-1 8H7v2h6v-2zm0 4H7v2h6v-2zM13 9V3.5L18.5 9H13z" />
       <path d="M3 20h18v2H3z" opacity="0.85" />
+    </svg>
+  ),
+  referral: (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" />
     </svg>
   ),
 }

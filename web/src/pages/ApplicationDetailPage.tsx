@@ -11,6 +11,7 @@ import CustomAttributeFields from '../components/CustomAttributeFields'
 import LabelMultiSelect from '../components/LabelMultiSelect'
 import { customAttributesApi, type CustomAttributeDefinition } from '../api/customAttributes'
 import { labelsApi, type AccountLabelRow } from '../api/labels'
+import { accountMembersApi, type AccountMember } from '../api/accountMembers'
 
 const STAGES = ['applied', 'screening', 'interview', 'offer', 'hired', 'rejected', 'withdrawn'] as const
 
@@ -98,6 +99,7 @@ export default function ApplicationDetailPage() {
   const [savingProfile, setSavingProfile] = useState(false)
   const [custDefs, setCustDefs] = useState<CustomAttributeDefinition[]>([])
   const [custAttr, setCustAttr] = useState<Record<string, unknown>>({})
+  const [teamMembers, setTeamMembers] = useState<AccountMember[]>([])
 
   const [stageStatus, setStageStatus] = useState<string>('applied')
   const [pipelineStageId, setPipelineStageId] = useState<number | ''>('')
@@ -199,6 +201,17 @@ export default function ApplicationDetailPage() {
       .then(setLabelCatalog)
       .catch(() => setLabelCatalog([]))
   }, [token])
+
+  useEffect(() => {
+    if (!token || !app?.referral_user_id) {
+      setTeamMembers([])
+      return
+    }
+    accountMembersApi
+      .list(token)
+      .then(setTeamMembers)
+      .catch(() => setTeamMembers([]))
+  }, [token, app?.referral_user_id])
 
   const toggleAppLabel = async (labelId: number, next: boolean) => {
     if (!token || !app) return
@@ -409,6 +422,51 @@ export default function ApplicationDetailPage() {
                 <p className="app-cand-card-desc">Contact and application materials—saved to your ATS.</p>
               </header>
               <div className="app-cand-card-body">
+                {(app?.referral_user_id || app?.source_type === 'referral') && (
+                  <div
+                    className="app-cand-referral-banner"
+                    style={{
+                      marginBottom: 16,
+                      padding: '12px 14px',
+                      borderRadius: 8,
+                      background: 'rgba(37, 99, 235, 0.08)',
+                      border: '1px solid rgba(37, 99, 235, 0.2)',
+                      fontSize: 13,
+                    }}
+                  >
+                    <span
+                      style={{
+                        display: 'inline-block',
+                        marginRight: 8,
+                        padding: '2px 8px',
+                        borderRadius: 999,
+                        fontSize: 11,
+                        fontWeight: 600,
+                        background: 'rgba(37, 99, 235, 0.15)',
+                        color: '#1d4ed8',
+                      }}
+                    >
+                      Referral
+                    </span>
+                    {app.referral_user_id ? (
+                      <span>
+                        Referred by{' '}
+                        <strong>
+                          {teamMembers.find(m => m.id === app.referral_user_id)?.name ??
+                            `user #${app.referral_user_id}`}
+                        </strong>
+                      </span>
+                    ) : null}
+                    {app.referral_source ? (
+                      <span style={{ marginLeft: 8, color: 'var(--text-muted)' }}>· {app.referral_source}</span>
+                    ) : null}
+                    {app.source_type ? (
+                      <span style={{ marginLeft: 8, color: 'var(--text-muted)', fontSize: 12 }}>
+                        Source: {app.source_type}
+                      </span>
+                    ) : null}
+                  </div>
+                )}
                 <div className="app-cand-fields">
                   <Field label="Full name">
                     <input className="app-cand-input" value={candidateName} onChange={e => setCandidateName(e.target.value)} />

@@ -58,6 +58,17 @@ class JobsController(BaseController, Authenticatable):
             return self.render_error(result["error"], status=404)
         return self.render_json(result["data"])
 
+    async def referral_link(self):
+        account_id = self._account_id()
+        user_id = self._user_id()
+        job_id = int(self.request.path_params["job_id"])
+        from app.services.referral_service import ReferralLinkService
+
+        result = ReferralLinkService(self.db).get_or_create_for_job(account_id, user_id, job_id)
+        if not result["ok"]:
+            return self.render_error(result["error"], status=422)
+        return self.render_json(result["data"])
+
     async def create(self):
         account_id = self._account_id()
         user_id = self._user_id()

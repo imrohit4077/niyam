@@ -80,4 +80,10 @@ CELERY_TASK_QUEUES = ["default", "mailers", "critical", "low_priority"]
 CELERY_DEFAULT_QUEUE = "default"
 
 # Celery Beat schedule (periodic tasks) — add your scheduled jobs here
-CELERY_BEAT_SCHEDULE: dict = {}
+CELERY_BEAT_SCHEDULE: dict = {
+    "referral-bonus-eligibility-daily": {
+        "task": "forge.referral_bonus_eligibility_scan",
+        "schedule": {"hour": 2, "minute": 17},
+        "options": {"queue": "low_priority"},
+    },
+}

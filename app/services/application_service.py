@@ -47,6 +47,34 @@ def _first_column_matching_stage_type(db, account_id: int, job_id: int, stage_ty
     return db.execute(stmt).scalars().first()
 
 
+def _enqueue_referral_bonus_on_hire(account_id: int, application_id: int) -> None:
+    try:
+        from app.jobs.referral_bonus_on_hire_job import referral_bonus_on_hire
+
+        referral_bonus_on_hire.delay(account_id=account_id, application_id=application_id)
+    except Exception:
+        logger.warning(
+            "Could not enqueue referral bonus on hire",
+            exc_info=True,
+            extra={"account_id": account_id, "application_id": application_id},
+        )
+
+
+def _enqueue_referral_milestone_notify(account_id: int, application_id: int, new_status: str) -> None:
+    try:
+        from app.jobs.referral_milestone_notify_job import referral_milestone_notify
+
+        referral_milestone_notify.delay(
+            account_id=account_id, application_id=application_id, new_status=new_status
+        )
+    except Exception:
+        logger.warning(
+            "Could not enqueue referral milestone notify",
+            exc_info=True,
+            extra={"application_id": application_id},
+        )
+
+
 def _enqueue_hiring_plan_refresh(account_id: int, job_id: int) -> None:
     try:
         from app.jobs.refresh_hiring_plan_hires_job import refresh_hiring_plan_hires_made
@@ -166,6 +194,13 @@ class ApplicationService(BaseService):
         if err:
             return self.failure(err)
         now = datetime.now(timezone.utc)
+        ref_utm = data.get("referral_utm")
+        if ref_utm is not None and not isinstance(ref_utm, dict):
+            return self.failure("referral_utm must be an object when provided")
+        risk = data.get("referral_risk_flags")
+        if risk is not None and not isinstance(risk, list):
+            return self.failure("referral_risk_flags must be an array when provided")
+
         app = Application(
             account_id=account_id, job_id=job_id,
             candidate_id=data.get("candidate_id"),
@@ -173,6 +208,11 @@ class ApplicationService(BaseService):
             source_version_id=data.get("source_version_id"),
             source_posting_id=data.get("source_posting_id"),
             source_type=data.get("source_type", "direct"),
+            referral_user_id=data.get("referral_user_id"),
+            referral_link_id=data.get("referral_link_id"),
+            referral_source=data.get("referral_source"),
+            referral_utm=ref_utm if isinstance(ref_utm, dict) else {},
+            referral_risk_flags=risk if isinstance(risk, list) else [],
             candidate_name=data.get("candidate_name"),
             candidate_email=email,
             candidate_phone=data.get("candidate_phone"),
@@ -190,6 +230,8 @@ class ApplicationService(BaseService):
         )
         app.save(self.db)
         logger.info(f"ApplicationService.create — id={app.id} job={job_id} email={email}")
+        if app.referral_user_id:
+            _enqueue_referral_milestone_notify(account_id, app.id, app.status)
         return self.success(_application_dict_with_labels(self.db, account_id, app))
 
     def update_stage(
@@ -289,6 +331,12 @@ class ApplicationService(BaseService):
 
         if old_status != app.status and (app.status == "hired" or old_status == "hired"):
             _enqueue_hiring_plan_refresh(account_id, app.job_id)
+
+        if old_status != app.status and app.referral_user_id:
+            _enqueue_referral_milestone_notify(account_id, app.id, app.status)
+
+        if old_status != app.status and app.status == "hired":
+            _enqueue_referral_bonus_on_hire(account_id, app.id)
 
         logger.info(
             f"ApplicationService.update_stage — id={app_id} status={app.status} "

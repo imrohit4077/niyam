@@ -59,6 +59,15 @@ export interface JobAttachment {
   updated_at: string
 }
 
+/** Per-job referral bonus rules (API: jobs.referral_settings JSONB). */
+export interface JobReferralSettings {
+  enabled?: boolean
+  bonus_amount?: number | null
+  currency?: string
+  probation_days?: number
+  min_referrer_tenure_days?: number
+}
+
 export interface JobAnalytics {
   total_applicants: number
   by_status: Record<string, number>
@@ -90,6 +99,7 @@ export interface Job {
   recruiter_user_id?: number | null
   requisition_id?: string | null
   job_config?: JobConfig
+  referral_settings?: JobReferralSettings
   salary_min: number | null
   salary_max: number | null
   salary_currency: string
@@ -161,7 +171,7 @@ export const jobsApi = {
   create: (token: string, data: Partial<Job> & { description?: string }) =>
     req<Job>('/jobs', token, { method: 'POST', body: JSON.stringify(data) }),
 
-  update: (token: string, id: number, data: Partial<Job> & { job_config?: JobConfig }) =>
+  update: (token: string, id: number, data: Partial<Job> & { job_config?: JobConfig; referral_settings?: JobReferralSettings }) =>
     req<Job>(`/jobs/${id}`, token, { method: 'PUT', body: JSON.stringify(data) }),
 
   analytics: (token: string, jobId: number) =>

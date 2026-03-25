@@ -15,6 +15,10 @@ export interface Application {
   linkedin_url: string | null
   portfolio_url: string | null
   source_type: string
+  referral_user_id?: number | null
+  referral_link_id?: number | null
+  referral_source?: string | null
+  referral_utm?: Record<string, unknown>
   status: string
   pipeline_stage_id?: number | null
   stage_history: { stage: string; changed_at: string; changed_by?: number; pipeline_stage_id?: number | null }[]

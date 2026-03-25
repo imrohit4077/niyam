@@ -19,6 +19,8 @@ from app.models.job_attachment import JobAttachment
 from app.models.job_version import JobVersion
 from app.models.job_board import JobBoard
 from app.models.job_posting import JobPosting
+from app.models.referral_link import ReferralLink
+from app.models.referral_bonus import ReferralBonus
 from app.models.application import Application
 from app.models.custom_attribute_definition import CustomAttributeDefinition
 from app.models.hiring_plan import HiringPlan
@@ -41,4 +43,5 @@ __all__ = [
     "InterviewPlan", "InterviewKit", "InterviewAssignment", "InterviewScorecard",
     "EsignTemplate", "EsignStageRule", "EsignRequest",
     "AccountLabel", "LabelAssignment",
+    "ReferralLink", "ReferralBonus",
 ]

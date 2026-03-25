@@ -4,6 +4,7 @@ const NAV = [
   { path: 'organization', label: 'Organization', desc: 'Company, locale & timezone' },
   { path: 'workspace', label: 'Workspace', desc: 'Slug, plan & shortcuts' },
   { path: 'appearance', label: 'Typography', desc: 'Font family & base size for the app' },
+  { path: 'referrals', label: 'Referral program', desc: 'Links, notifications & HRIS webhook' },
 ] as const
 
 export default function GeneralSettingsLayout() {
@@ -28,7 +29,15 @@ export default function GeneralSettingsLayout() {
                 end
               >
                 <span className="esign-sidenav-link-icon" aria-hidden>
-                  {item.path === 'organization' ? <IconOrg /> : item.path === 'workspace' ? <IconWorkspace /> : <IconTypography />}
+                  {item.path === 'organization' ? (
+                    <IconOrg />
+                  ) : item.path === 'workspace' ? (
+                    <IconWorkspace />
+                  ) : item.path === 'referrals' ? (
+                    <IconReferral />
+                  ) : (
+                    <IconTypography />
+                  )}
                 </span>
                 <span className="esign-sidenav-link-text">
                   <span className="esign-sidenav-link-label">{item.label}</span>
@@ -70,6 +79,16 @@ function IconTypography() {
   return (
     <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6}>
       <path d="M4 7V5h16v2M9 20h6M12 5v15" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function IconReferral() {
+  return (
+    <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6}>
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" strokeLinecap="round" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" strokeLinecap="round" />
     </svg>
   )
 }

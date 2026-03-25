@@ -15,6 +15,7 @@ from app.models.job_version import JobVersion
 from app.helpers.logger import get_logger
 from app.helpers.scorecard_criteria import normalize_job_criteria
 from app.services.base_service import BaseService
+from app.services.referral_service import merged_job_referral_settings
 from app.services.custom_attribute_service import CustomAttributeService, ENTITY_JOB
 from app.services.label_service import LABELABLE_JOB, LabelService
 
@@ -143,6 +144,7 @@ class JobService(BaseService):
             recruiter_user_id=data.get("recruiter_user_id"),
             requisition_id=data.get("requisition_id"),
             job_config=_coerce_job_config(data.get("job_config")),
+            referral_settings=merged_job_referral_settings(data.get("referral_settings")),
             salary_min=data.get("salary_min"),
             salary_max=data.get("salary_max"),
             salary_currency=data.get("salary_currency", "USD"),
@@ -186,12 +188,18 @@ class JobService(BaseService):
             "requisition_id", "job_config",
             "salary_min", "salary_max", "salary_currency",
             "salary_visible", "status", "video_embed_url", "seo_metadata",
-            "custom_fields", "tags", "closes_at", "scorecard_criteria",
+            "custom_fields", "tags", "closes_at", "scorecard_criteria", "referral_settings",
         ]
         for k in allowed:
             if k in data:
                 if k == "scorecard_criteria":
                     job.scorecard_criteria = normalize_job_criteria(data[k])
+                elif k == "referral_settings":
+                    cur = merged_job_referral_settings(
+                        job.referral_settings if isinstance(job.referral_settings, dict) else {}
+                    )
+                    patch = data[k] if isinstance(data[k], dict) else {}
+                    job.referral_settings = merged_job_referral_settings({**cur, **patch})
                 elif k == "job_config":
                     job.job_config = _coerce_job_config(data[k])
                 elif k == "open_positions":

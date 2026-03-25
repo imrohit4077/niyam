@@ -15,6 +15,7 @@ export interface PublicJobApplyPayload {
   skills_required: string[]
   skills_nice: string[]
   bonus_incentives: string | null
+  referral_program_enabled?: boolean
   salary: { min: number | null; max: number | null; currency: string } | null
   application_fields: {
     resume: boolean

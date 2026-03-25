@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type KeyboardEvent } from 'react'
 import { useNavigate, useOutletContext, useParams, useLocation, useSearchParams } from 'react-router-dom'
-import { jobsApi, type Job, type JobAnalytics, type JobAttachment, type JobConfig } from '../api/jobs'
+import { jobsApi, type Job, type JobAnalytics, type JobAttachment, type JobConfig, type JobReferralSettings } from '../api/jobs'
+import { referralsApi } from '../api/referrals'
 import { accountMembersApi, type AccountMember } from '../api/accountMembers'
 import { boardsApi, type JobBoard } from '../api/boards'
 import { pipelineStagesApi, type PipelineStage } from '../api/pipelineStages'
@@ -17,6 +18,7 @@ type JobStepId =
   | 'basic_info'
   | 'skills'
   | 'compensation'
+  | 'referral'
   | 'hiring_team'
   | 'pipeline'
   | 'interview'
@@ -64,6 +66,14 @@ const ALL_STEP_DEFS: {
     short: 'Salary, bonus, finance IDs',
     railTitle: 'Finance alignment',
     railBody: 'Salary bands and budget metadata help approvals and cost tracking.',
+  },
+  {
+    id: 'referral',
+    label: 'Employee referrals',
+    short: 'Bonus rules & share link',
+    railTitle: 'Referral program',
+    railBody:
+      'Bonus amount, probation window, and minimum referrer tenure. Employees copy a unique ?ref= link for this job.',
   },
   {
     id: 'hiring_team',
@@ -1146,6 +1156,15 @@ export default function JobEditorPage() {
   const [skillsNice, setSkillsNice] = useState<string[]>([])
   const [jobAttrDefs, setJobAttrDefs] = useState<CustomAttributeDefinition[]>([])
   const [jobCustomFields, setJobCustomFields] = useState<Record<string, unknown>>({})
+  const [referralSettings, setReferralSettings] = useState({
+    enabled: true,
+    bonus_amount: '',
+    currency: 'USD',
+    probation_days: '90',
+    min_referrer_tenure_days: '90',
+  })
+  const [referralShareUrl, setReferralShareUrl] = useState<string | null>(null)
+  const [referralLinkLoading, setReferralLinkLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState('')
 
@@ -1255,6 +1274,14 @@ export default function JobEditorPage() {
         requisition_id: '',
         tagsStr: '',
       })
+      setReferralSettings({
+        enabled: true,
+        bonus_amount: '',
+        currency: 'USD',
+        probation_days: '90',
+        min_referrer_tenure_days: '90',
+      })
+      setReferralShareUrl(null)
       return
     }
     if (Number.isNaN(editJobId) || editJobId <= 0) {
@@ -1298,6 +1325,16 @@ export default function JobEditorPage() {
           requisition_id: j.requisition_id ?? '',
           tagsStr: (j.tags || []).join(', '),
         })
+        const rs = (j.referral_settings || {}) as JobReferralSettings
+        setReferralSettings({
+          enabled: rs.enabled !== false,
+          bonus_amount:
+            rs.bonus_amount != null && !Number.isNaN(Number(rs.bonus_amount)) ? String(rs.bonus_amount) : '',
+          currency: rs.currency || 'USD',
+          probation_days: String(rs.probation_days ?? 90),
+          min_referrer_tenure_days: String(rs.min_referrer_tenure_days ?? 90),
+        })
+        setReferralShareUrl(null)
       } catch (e: unknown) {
         if (!cancelled) setLoadErr(e instanceof Error ? e.message : 'Failed to load job')
       }
@@ -1328,6 +1365,23 @@ export default function JobEditorPage() {
 
   const setInterviewDefaults = (p: NonNullable<JobConfig['interview_defaults']>) => {
     setJobConfig(c => ({ ...c, interview_defaults: p }))
+  }
+
+  const fetchMyReferralLink = async () => {
+    if (!token || !numericId) return
+    setReferralLinkLoading(true)
+    try {
+      const r = await referralsApi.getJobReferralLink(token, numericId)
+      const url =
+        r.referral_url?.trim() ||
+        `${typeof window !== 'undefined' ? window.location.origin : ''}/apply/${r.apply_token}${r.path_with_query || ''}`
+      setReferralShareUrl(url)
+      toast.success('Referral link ready', 'Copy and share with candidates.')
+    } catch (e: unknown) {
+      toast.error('Could not get referral link', e instanceof Error ? e.message : undefined)
+    } finally {
+      setReferralLinkLoading(false)
+    }
   }
 
   const persistDescription = async (jobId: number, html: string) => {
@@ -1384,6 +1438,14 @@ export default function JobEditorPage() {
       .filter(Boolean),
     job_config: buildJobConfigForSave(),
     custom_fields: jobCustomFields,
+    referral_settings: {
+      enabled: referralSettings.enabled,
+      bonus_amount:
+        referralSettings.bonus_amount.trim() === '' ? null : Number(referralSettings.bonus_amount),
+      currency: referralSettings.currency.trim() || 'USD',
+      probation_days: Math.max(0, parseInt(referralSettings.probation_days, 10) || 90),
+      min_referrer_tenure_days: Math.max(0, parseInt(referralSettings.min_referrer_tenure_days, 10) || 90),
+    },
   })
 
   const refreshJob = async (jobId: number) => {
@@ -1740,6 +1802,110 @@ export default function JobEditorPage() {
                       />
                     </JobEditorField>
                   </div>
+                </section>
+              )}
+
+              {stepId === 'referral' && (
+                <section className="job-step-pane" aria-labelledby="step-referral">
+                  <h2 id="step-referral" className="visually-hidden">
+                    Employee referrals
+                  </h2>
+                  <p className="job-editor-step-lead" style={{ marginTop: 0 }}>
+                    Configure referral bonus rules for this job. Workspace defaults (notifications, HRIS webhook, public URL
+                    base) live in <strong>Settings → General → Referral program</strong>.
+                  </p>
+                  <label className="job-checkbox-label" style={{ marginBottom: 16 }}>
+                    <input
+                      type="checkbox"
+                      checked={referralSettings.enabled}
+                      onChange={e => setReferralSettings(s => ({ ...s, enabled: e.target.checked }))}
+                    />
+                    Referrals enabled for this job
+                  </label>
+                  <div className="job-editor-grid-2">
+                    <JobEditorField label="Referral bonus amount (leave empty for no automatic bonus row)">
+                      <input
+                        className="job-editor-input"
+                        type="number"
+                        min={0}
+                        step="0.01"
+                        value={referralSettings.bonus_amount}
+                        onChange={e => setReferralSettings(s => ({ ...s, bonus_amount: e.target.value }))}
+                        placeholder="5000"
+                      />
+                    </JobEditorField>
+                    <JobEditorField label="Currency">
+                      <input
+                        className="job-editor-input"
+                        value={referralSettings.currency}
+                        onChange={e => setReferralSettings(s => ({ ...s, currency: e.target.value.toUpperCase() }))}
+                        placeholder="USD"
+                      />
+                    </JobEditorField>
+                    <JobEditorField label="Probation days (after hire before bonus eligible)">
+                      <input
+                        className="job-editor-input"
+                        type="number"
+                        min={0}
+                        value={referralSettings.probation_days}
+                        onChange={e => setReferralSettings(s => ({ ...s, probation_days: e.target.value }))}
+                      />
+                    </JobEditorField>
+                    <JobEditorField label="Min. referrer tenure (days at company)">
+                      <input
+                        className="job-editor-input"
+                        type="number"
+                        min={0}
+                        value={referralSettings.min_referrer_tenure_days}
+                        onChange={e => setReferralSettings(s => ({ ...s, min_referrer_tenure_days: e.target.value }))}
+                      />
+                    </JobEditorField>
+                  </div>
+                  {hasPostCreateSteps && (
+                    <div className="job-editor-card" style={{ marginTop: 16 }}>
+                      <h3 className="job-editor-card-title">Your referral link</h3>
+                      <p className="job-editor-step-lead" style={{ marginTop: 4 }}>
+                        Generates a unique <code>?ref=</code> token for your account user on this job. Save the job first if
+                        you changed settings above.
+                      </p>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+                        <button
+                          type="button"
+                          className="job-editor-btn-primary"
+                          onClick={() => void fetchMyReferralLink()}
+                          disabled={referralLinkLoading}
+                        >
+                          {referralLinkLoading ? 'Loading…' : 'Get or create my link'}
+                        </button>
+                        {referralShareUrl && (
+                          <input
+                            className="job-editor-input"
+                            readOnly
+                            value={referralShareUrl}
+                            style={{ flex: 1, minWidth: 200 }}
+                            onFocus={e => e.target.select()}
+                          />
+                        )}
+                        {referralShareUrl && (
+                          <button
+                            type="button"
+                            className="job-editor-btn-primary"
+                            style={{
+                              background: 'var(--surface-elevated, #f1f5f9)',
+                              color: 'var(--text)',
+                              boxShadow: 'none',
+                            }}
+                            onClick={() => {
+                              void navigator.clipboard.writeText(referralShareUrl)
+                              toast.success('Copied', 'Referral URL copied to clipboard.')
+                            }}
+                          >
+                            Copy
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </section>
               )}
 
