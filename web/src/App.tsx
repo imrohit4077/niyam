@@ -24,10 +24,14 @@ import {
 import SettingsLayout from './layouts/SettingsLayout'
 import EsignSettingsLayout from './layouts/EsignSettingsLayout'
 import GeneralSettingsLayout from './layouts/GeneralSettingsLayout'
+import AuditComplianceSettingsLayout from './layouts/AuditComplianceSettingsLayout'
 import OrganizationSettingsPage from './pages/settings/OrganizationSettingsPage'
 import WorkspaceSettingsPage from './pages/settings/WorkspaceSettingsPage'
 import AppearanceSettingsPage from './pages/settings/AppearanceSettingsPage'
 import ReferralProgramSettingsPage from './pages/settings/ReferralProgramSettingsPage'
+import AuditComplianceOverviewPage from './pages/settings/AuditComplianceOverviewPage'
+import AuditLogEntriesPage from './pages/settings/AuditLogEntriesPage'
+import AuditDeliveryFailuresPage from './pages/settings/AuditDeliveryFailuresPage'
 import ReferralsHubPage from './pages/ReferralsHubPage'
 import CustomFieldsSettingsLayout from './layouts/CustomFieldsSettingsLayout'
 import CustomFieldsEntityPage from './pages/settings/CustomFieldsEntityPage'
@@ -73,6 +77,22 @@ function AccountRedirect() {
   return <Outlet />
 }
 
+function AuditComplianceAdminGate() {
+  const { accountId } = useParams<{ accountId: string }>()
+  const { user } = useAuth()
+  const slug = user?.role?.slug
+  if (slug !== 'admin' && slug !== 'superadmin') {
+    return <Navigate to={`/account/${accountId}/settings/general/organization`} replace />
+  }
+  return <Outlet />
+}
+
+/** Old URL: /settings/general/audit → new section */
+function RedirectAuditFromGeneralToCompliance() {
+  const { accountId } = useParams<{ accountId: string }>()
+  return <Navigate to={`/account/${accountId}/settings/audit-compliance/overview`} replace />
+}
+
 function RootRedirect() {
   const { user, loading } = useAuth()
   if (loading) return <Splash />
@@ -113,6 +133,15 @@ function AppRoutes() {
                 <Route path="workspace" element={<WorkspaceSettingsPage />} />
                 <Route path="appearance" element={<AppearanceSettingsPage />} />
                 <Route path="referrals" element={<ReferralProgramSettingsPage />} />
+                <Route path="audit" element={<RedirectAuditFromGeneralToCompliance />} />
+              </Route>
+              <Route path="audit-compliance" element={<AuditComplianceAdminGate />}>
+                <Route element={<AuditComplianceSettingsLayout />}>
+                  <Route index element={<Navigate to="overview" replace />} />
+                  <Route path="overview" element={<AuditComplianceOverviewPage />} />
+                  <Route path="audit-logs" element={<AuditLogEntriesPage />} />
+                  <Route path="delivery-failures" element={<AuditDeliveryFailuresPage />} />
+                </Route>
               </Route>
               <Route path="custom-fields" element={<CustomFieldsSettingsLayout />}>
                 <Route index element={<Navigate to="jobs" replace />} />

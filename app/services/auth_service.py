@@ -12,6 +12,7 @@ from app.models.account_user import AccountUser
 from app.models.account_user_role import AccountUserRole
 from app.models.role import Role
 from app.helpers.jwt_helper import JWTHelper
+from app.helpers.role_helper import highest_role_slug
 from app.helpers.logger import get_logger
 from app.services.base_service import BaseService
 
@@ -83,12 +84,16 @@ class AuthService(BaseService):
         return self.success({"access_token": access_token, "token_type": "bearer"})
 
     def _get_primary_role(self, user_id: int) -> str:
-        """Return the slug of the first role assigned to this user, or 'member'."""
+        """Return highest-privilege role slug when multiple roles exist (e.g. superadmin over admin)."""
         au = AccountUser.find_by(self.db, user_id=user_id)
         if not au:
             return "member"
-        aur = AccountUserRole.find_by(self.db, account_user_id=au.id)
-        if not aur:
+        aurs = AccountUserRole.where(self.db, account_user_id=au.id)
+        if not aurs:
             return "member"
-        role = Role.find_by(self.db, id=aur.role_id)
-        return role.slug if role else "member"
+        slugs: list[str] = []
+        for aur in aurs:
+            role = Role.find_by(self.db, id=aur.role_id)
+            if role:
+                slugs.append(role.slug)
+        return highest_role_slug(slugs)

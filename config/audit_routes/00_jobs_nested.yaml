@@ -1,0 +1,64 @@
+# Nested routes under /api/v1/jobs/{id}/... — order of branches matters (first match wins).
+version: 1
+rules:
+  - id: jobs_nested
+    type: nested_rest
+    pattern: '^/api/v1/jobs/(\d+)/(.*)$'
+    groups:
+      id: 1
+      rest: 2
+    branches:
+      - match: { type: prefix, value: 'pipeline_stages/reorder' }
+        feature_area: Pipeline
+        feature_label: Pipeline stages
+        summary_template: 'Reordered pipeline stages: job #{id}'
+        action_code: pipeline.stages.reordered
+      - match: { type: prefix, value: 'pipeline_stages' }
+        feature_area: Pipeline
+        feature_label: Pipeline stages
+        summary:
+          GET: 'Viewed pipeline stages'
+          default: 'Changed pipeline stages: job #{id}'
+        action_code: pipeline.stages
+      - match: { type: prefix, value: 'attachments' }
+        feature_area: Jobs
+        feature_label: Job attachments
+        summary_template: 'Job attachments: job #{id}'
+        action_code: job.attachments
+      - match: { type: prefix, value: 'versions' }
+        feature_area: Jobs
+        feature_label: Job versions
+        summary_template: 'Job versions: job #{id}'
+        action_code: job.versions
+      - match: { type: prefix, value: 'hiring_plan' }
+        feature_area: Hiring
+        feature_label: Hiring plan
+        summary_template: 'Hiring plan: job #{id}'
+        action_code: job.hiring_plan
+      - match:
+          type: any_of
+          conditions:
+            - { type: contains, value: interview_plans }
+            - { type: contains, value: kit }
+        feature_area: Interviews
+        feature_label: Interview plan / kit
+        summary_template: 'Interview plan: job #{id}'
+        action_code: job.interview_plan
+      - match: { type: prefix, value: 'referral_link' }
+        feature_area: Referrals
+        feature_label: Referral link
+        summary:
+          GET: 'Viewed referral link'
+          default: 'Updated referral link: job #{id}'
+        action_code: job.referral_link
+      - match: { type: prefix, value: 'analytics' }
+        action_type: read
+        feature_area: Jobs
+        feature_label: Job analytics
+        summary: 'Viewed job analytics'
+        action_code: job.analytics
+      - match: { type: prefix, value: 'labels' }
+        feature_area: Jobs
+        feature_label: Job labels
+        summary_template: 'Updated labels on job: #{id}'
+        action_code: job.labels

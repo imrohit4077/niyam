@@ -33,10 +33,10 @@ class Authenticatable:
         return getattr(self.current_user, "id", None)
 
     def require_admin(self) -> None:
-        """Raise 403 if current_user is not admin."""
+        """Raise 403 if current_user is not admin or superadmin."""
         if not getattr(self, "current_user", None):
             self.authenticate_user()
-        if self._role() != "admin":
+        if self._role() not in ("admin", "superadmin"):
             raise HTTPException(status_code=403, detail="Admin required")
 
     def require_owner(self, resource: Any) -> None:
@@ -49,6 +49,6 @@ class Authenticatable:
         uid = self._user_id()
         if uid is None:
             raise HTTPException(status_code=403, detail="Not authorized to access this resource")
-        is_admin = self._role() == "admin"
+        is_admin = self._role() in ("admin", "superadmin")
         if owner_id != uid and not is_admin:
             raise HTTPException(status_code=403, detail="Not authorized to access this resource")

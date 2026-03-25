@@ -12,6 +12,7 @@ from app.models.account_user_role import AccountUserRole
 from app.models.role import Role
 from app.models.account import Account
 from app.helpers.logger import get_logger
+from app.helpers.role_helper import highest_role_slug
 from app.services.base_service import BaseService
 
 logger = get_logger(__name__)
@@ -35,8 +36,14 @@ class ProfileService(BaseService):
         au = AccountUser.find_by(self.db, user_id=user_id)
         if au:
             account = Account.find_by(self.db, id=au.account_id)
-            aur = AccountUserRole.find_by(self.db, account_user_id=au.id)
-            role = Role.find_by(self.db, id=aur.role_id) if aur else None
+            aurs = AccountUserRole.where(self.db, account_user_id=au.id)
+            roles = []
+            for aur in aurs:
+                r = Role.find_by(self.db, id=aur.role_id)
+                if r:
+                    roles.append(r)
+            best_slug = highest_role_slug([r.slug for r in roles]) if roles else "member"
+            role = next((r for r in roles if r.slug == best_slug), roles[0] if roles else None)
             profile["account"] = {
                 "id": account.id,
                 "name": account.name,
@@ -48,7 +55,9 @@ class ProfileService(BaseService):
                 "name": role.name,
                 "slug": role.slug,
             } if role else None
-            logger.debug(f"ProfileService.get_profile — account={account.slug if account else None} role={role.slug if role else None}")
+            logger.debug(
+                f"ProfileService.get_profile — account={account.slug if account else None} role={role.slug if role else None}"
+            )
         else:
             profile["account"] = None
             profile["role"] = None

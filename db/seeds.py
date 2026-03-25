@@ -343,6 +343,37 @@ def _ensure_loe_template_and_offer_rule(db, account_id: int, now: datetime) -> b
     return changed
 
 
+def _ensure_superadmin_role_for_admin(db, account_id: int, now: datetime) -> bool:
+    """Idempotent: add superadmin role and assign it to admin@example.com alongside admin."""
+    from app.models.user import User
+    from app.models.role import Role
+    from app.models.account_user import AccountUser
+    from app.models.account_user_role import AccountUserRole
+
+    user = User.find_by(db, email="admin@example.com")
+    if not user:
+        return False
+    au = AccountUser.find_by(db, user_id=user.id, account_id=account_id)
+    if not au:
+        return False
+    role = Role.find_by(db, account_id=account_id, slug="superadmin")
+    if not role:
+        role = Role(
+            account_id=account_id,
+            name="Super Admin",
+            slug="superadmin",
+            description="Highest workspace access",
+            created_at=now,
+        )
+        db.add(role)
+        db.flush()
+    existing = AccountUserRole.find_by(db, account_user_id=au.id, role_id=role.id)
+    if not existing:
+        db.add(AccountUserRole(account_user_id=au.id, role_id=role.id))
+        return True
+    return False
+
+
 def run_seeds() -> None:
     from config.database import SessionLocal
     from app.models.user import User
@@ -357,9 +388,10 @@ def run_seeds() -> None:
             acct = Account.find_by(db, slug="acme-corp")
             if acct:
                 now = datetime.now(timezone.utc)
+                sb = _ensure_superadmin_role_for_admin(db, acct.id, now)
                 added = _ensure_esign_seed(db, acct.id, now)
                 more = _ensure_loe_template_and_offer_rule(db, acct.id, now)
-                if added or more:
+                if added or more or sb:
                     db.commit()
                 if added:
                     print(
@@ -423,6 +455,17 @@ def run_seeds() -> None:
 
         aur = AccountUserRole(account_user_id=au.id, role_id=role.id)
         db.add(aur)
+
+        super_role = Role(
+            account_id=account.id,
+            name="Super Admin",
+            slug="superadmin",
+            description="Highest workspace access",
+            created_at=now,
+        )
+        db.add(super_role)
+        db.flush()
+        db.add(AccountUserRole(account_user_id=au.id, role_id=super_role.id))
 
         _ensure_esign_seed(db, account.id, now)
 

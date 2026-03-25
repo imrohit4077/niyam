@@ -1,0 +1,26 @@
+version: 1
+rules:
+  - id: jobs_list
+    pattern: '^/api/v1/jobs/?$'
+    feature_area: Jobs
+    feature_label: Jobs
+    summary:
+      GET: 'Viewed job list'
+      POST: 'Created job'
+      default: 'Jobs'
+    action_code:
+      GET: jobs.list
+      POST: jobs.create
+      default: jobs.create
+
+  - id: job_single
+    pattern: '^/api/v1/jobs/(\d+)/?$'
+    feature_area: Jobs
+    feature_label: Job
+    summary:
+      GET: 'Viewed job'
+      PUT: 'Updated job: #{g1}'
+      PATCH: 'Updated job: #{g1}'
+      DELETE: 'Deleted job: #{g1}'
+      default: 'Job'
+    action_code_template: 'job.{action_type}'

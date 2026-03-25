@@ -21,6 +21,8 @@ from app.models.job_board import JobBoard
 from app.models.job_posting import JobPosting
 from app.models.referral_link import ReferralLink
 from app.models.referral_bonus import ReferralBonus
+from app.models.audit_log_entry import AuditLogEntry
+from app.models.audit_log_delivery_failure import AuditLogDeliveryFailure
 from app.models.application import Application
 from app.models.custom_attribute_definition import CustomAttributeDefinition
 from app.models.hiring_plan import HiringPlan
@@ -44,4 +46,5 @@ __all__ = [
     "EsignTemplate", "EsignStageRule", "EsignRequest",
     "AccountLabel", "LabelAssignment",
     "ReferralLink", "ReferralBonus",
+    "AuditLogEntry", "AuditLogDeliveryFailure",
 ]

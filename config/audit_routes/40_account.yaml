@@ -1,0 +1,55 @@
+version: 1
+rules:
+  - id: profile
+    pattern: '^/api/v1/profile$'
+    feature_area: Account
+    feature_label: My profile
+    summary:
+      GET: 'Viewed profile'
+      default: 'Updated profile'
+    action_code: profile
+    action_type:
+      GET: read
+      default: from_method
+
+  - id: account_members
+    pattern: '^/api/v1/account/members$'
+    feature_area: Team
+    feature_label: Team members
+    summary: 'Viewed team members'
+    action_code: account.members
+
+  - id: account_workspace_settings
+    pattern: '^/api/v1/account/(organization_settings|appearance_settings|referral_settings|esign_settings)'
+    feature_area: Settings
+    feature_label_from_group: 1
+    feature_label_transform: snake_title
+    summary:
+      GET: 'Viewed workspace settings'
+      default: 'Updated workspace settings'
+    action_code_template: 'settings.{g1}'
+
+  - id: account_audit_self
+    pattern: '^/api/v1/account/audit_(log|compliance|log_failures)'
+    feature_area: Audit
+    feature_label: Audit & compliance
+    summary: 'Viewed audit tools'
+    action_code: audit.self
+
+  - id: custom_fields
+    pattern: '^/api/v1/custom_attribute_definitions'
+    feature_area: Settings
+    feature_label: Custom fields
+    summary:
+      GET: 'Viewed custom field definitions'
+      default: 'Changed custom field definition'
+    action_code: settings.custom_fields
+
+  - id: labels
+    pattern: '^/api/v1/labels'
+    feature_area: Settings
+    feature_label: Labels
+    summary:
+      GET: 'Viewed labels'
+      default: 'Changed labels'
+    action_code: settings.labels

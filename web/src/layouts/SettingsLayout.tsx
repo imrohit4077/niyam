@@ -1,18 +1,23 @@
 import { NavLink, Outlet, useLocation, useParams } from 'react-router-dom'
+import { useAuth } from '../auth/AuthContext'
 
 export default function SettingsLayout() {
   const { accountId } = useParams<{ accountId: string }>()
+  const { user } = useAuth()
   const location = useLocation()
   const base = `/account/${accountId}/settings`
   const isEsignSection = location.pathname.includes('/settings/esign')
   const isGeneralNested = location.pathname.includes('/settings/general')
   const isCustomFieldsSection = location.pathname.includes('/settings/custom-fields')
   const isLabelsSection = location.pathname.includes('/settings/labels')
+  const isAuditComplianceSection = location.pathname.includes('/settings/audit-compliance')
   const isEsignTemplateEditor = /\/settings\/esign\/templates\/(new|\d+\/edit)/.test(location.pathname)
+  const showAuditNav =
+    user?.role?.slug === 'admin' || user?.role?.slug === 'superadmin'
 
   return (
     <div
-      className={`settings-layout${isEsignSection || isGeneralNested || isCustomFieldsSection || isLabelsSection ? ' settings-layout--wide' : ''}${isEsignTemplateEditor ? ' settings-layout--esign-editor' : ''}`}
+      className={`settings-layout${isEsignSection || isGeneralNested || isCustomFieldsSection || isLabelsSection || isAuditComplianceSection ? ' settings-layout--wide' : ''}${isEsignTemplateEditor ? ' settings-layout--esign-editor' : ''}`}
     >
       <nav className="settings-subnav" aria-label="Settings sections">
         <NavLink
@@ -36,6 +41,15 @@ export default function SettingsLayout() {
         >
           Labels
         </NavLink>
+        {showAuditNav ? (
+          <NavLink
+            to={`${base}/audit-compliance`}
+            className={({ isActive }) => `settings-subnav-link ${isActive ? 'settings-subnav-link--active' : ''}`}
+            end
+          >
+            Audit & compliance
+          </NavLink>
+        ) : null}
         <NavLink
           to={`${base}/esign`}
           className={({ isActive }) => `settings-subnav-link ${isActive ? 'settings-subnav-link--active' : ''}`}

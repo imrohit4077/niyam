@@ -1,0 +1,26 @@
+version: 1
+rules:
+  - id: esign_templates
+    pattern: '^/api/v1/esign_templates'
+    feature_area: E-sign
+    feature_label: E-sign templates
+    summary:
+      GET: 'Viewed e-sign templates'
+      default: 'Changed e-sign template'
+    action_code: esign.templates
+
+  - id: esign_rules
+    pattern: '^/api/v1/esign_stage_rules'
+    feature_area: E-sign
+    feature_label: E-sign automation
+    summary:
+      GET: 'Viewed e-sign rules'
+      default: 'Changed e-sign rule'
+    action_code: esign.rules
+
+  - id: esign_requests
+    pattern: '^/api/v1/esign_requests'
+    feature_area: E-sign
+    feature_label: E-sign requests
+    summary: 'Viewed e-sign requests'
+    action_code: esign.requests

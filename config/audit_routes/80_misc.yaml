@@ -1,0 +1,22 @@
+version: 1
+rules:
+  - id: referrals
+    pattern: '^/api/v1/referrals/'
+    feature_area: Referrals
+    feature_label: Referrals
+    summary: 'Viewed referrals'
+    action_code: referrals
+
+  - id: job_postings
+    pattern: '^/api/v1/job_postings'
+    feature_area: Postings
+    feature_label: Job postings
+    summary: 'Viewed job postings'
+    action_code: job_postings
+
+  - id: job_applications_alt
+    pattern: '^/api/v1/job-applications'
+    feature_area: Applications
+    feature_label: Applications
+    summary: 'Viewed applications list'
+    action_code: applications.alt

@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
+import { useAuth } from '../auth/AuthContext'
 
 export type SidebarPage =
   | 'profile'
@@ -17,6 +18,8 @@ export type SidebarPage =
   | 'team'
   | 'settings-general'
   | 'settings-custom-fields'
+  | 'settings-labels'
+  | 'settings-audit-compliance'
   | 'settings-esign'
 
 interface NavItem {
@@ -41,6 +44,8 @@ const NAV: NavItem[] = [
   { id: 'referrals', label: 'Referrals', icon: 'referral', group: 'Candidates' },
   { id: 'settings-general', label: 'General', icon: 'gear', group: 'Settings' },
   { id: 'settings-custom-fields', label: 'Custom fields', icon: 'fieldgrid', group: 'Settings' },
+  { id: 'settings-labels', label: 'Labels', icon: 'tag', group: 'Settings' },
+  { id: 'settings-audit-compliance', label: 'Audit & compliance', icon: 'shield', group: 'Settings' },
   { id: 'settings-esign', label: 'E-sign', icon: 'document', group: 'Settings' },
   { id: 'team', label: 'Team', icon: 'team', group: 'Workspace' },
 ]
@@ -60,6 +65,8 @@ const PATH_SEGMENTS: Record<SidebarPage, string> = {
   team: 'team',
   'settings-general': 'settings/general',
   'settings-custom-fields': 'settings/custom-fields/jobs',
+  'settings-labels': 'settings/labels',
+  'settings-audit-compliance': 'settings/audit-compliance',
   'settings-esign': 'settings/esign',
 }
 
@@ -140,6 +147,16 @@ const ICONS: Record<string, ReactNode> = {
       <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" />
     </svg>
   ),
+  tag: (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z" />
+    </svg>
+  ),
+  shield: (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z" />
+    </svg>
+  ),
 }
 
 const SIDEBAR_COLLAPSED_KEY = 'forge.sidebarCollapsed'
@@ -159,8 +176,17 @@ interface Props {
 export default function Sidebar({ accountId }: Props) {
   const [collapsed, setCollapsed] = useState(readSidebarCollapsed)
   const { pathname } = useLocation()
+  const { user } = useAuth()
 
-  const groups = NAV.reduce<Record<string, NavItem[]>>((acc, item) => {
+  const navItems = useMemo(() => {
+    const slug = user?.role?.slug?.toLowerCase()
+    const isAdmin = slug === 'admin' || slug === 'superadmin'
+    return NAV.filter(
+      item => item.id !== 'settings-audit-compliance' || isAdmin,
+    )
+  }, [user?.role?.slug])
+
+  const groups = navItems.reduce<Record<string, NavItem[]>>((acc, item) => {
     const g = item.group ?? 'Other'
     if (!acc[g]) acc[g] = []
     acc[g].push(item)
@@ -203,14 +229,22 @@ export default function Sidebar({ accountId }: Props) {
               const generalActive = item.id === 'settings-general' && pathname.includes('/settings/general')
               const customFieldsActive =
                 item.id === 'settings-custom-fields' && pathname.includes('/settings/custom-fields')
+              const labelsActive = item.id === 'settings-labels' && pathname.includes('/settings/labels')
+              const auditActive =
+                item.id === 'settings-audit-compliance' && pathname.includes('/settings/audit-compliance')
               return (
                 <NavLink
                   key={item.id}
                   to={to}
-                  end={item.id === 'profile' || item.id === 'settings-custom-fields'}
+                  end={
+                    item.id === 'profile' ||
+                    item.id === 'settings-custom-fields' ||
+                    item.id === 'settings-labels' ||
+                    item.id === 'settings-audit-compliance'
+                  }
                   title={collapsed ? item.label : undefined}
                   className={({ isActive }) =>
-                    `sidebar-item ${isActive || esignActive || generalActive || customFieldsActive ? 'sidebar-item-active' : ''}`
+                    `sidebar-item ${isActive || esignActive || generalActive || customFieldsActive || labelsActive || auditActive ? 'sidebar-item-active' : ''}`
                   }
                 >
                   <span className="sidebar-item-icon">{ICONS[item.icon]}</span>

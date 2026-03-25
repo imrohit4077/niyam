@@ -1,0 +1,87 @@
+# Job boards, applications, candidates, interviews, hiring, pipeline, postings
+version: 1
+rules:
+  - id: job_boards_collection
+    pattern: '^/api/v1/job-boards/?$'
+    feature_area: Job boards
+    feature_label: Job boards
+    summary:
+      GET: 'Viewed job boards directory'
+      POST: 'Created job board'
+      default: 'Job boards'
+    action_code:
+      GET: job_boards.list
+      POST: job_boards.create
+      default: job_boards.create
+
+  - id: job_boards_single
+    pattern: '^/api/v1/job-boards/(\d+)/?$'
+    feature_area: Job boards
+    feature_label: Job boards
+    summary:
+      GET: 'Viewed job board'
+      PUT: 'Updated job board: #{g1}'
+      PATCH: 'Updated job board: #{g1}'
+      DELETE: 'Removed job board: #{g1}'
+      default: 'Job board'
+    action_code_template: 'job_board.{action_type}'
+
+  - id: applications_collection
+    pattern: '^/api/v1/applications/?$'
+    feature_area: Applications
+    feature_label: Applications
+    summary:
+      GET: 'Viewed applications'
+      POST: 'Created application'
+      default: 'Applications'
+    action_code:
+      GET: applications.list
+      POST: applications.list
+      default: applications.list
+
+  - id: applications_single
+    pattern: '^/api/v1/applications/(\d+)/?$'
+    feature_area: Applications
+    feature_label: Applications
+    summary:
+      GET: 'Viewed application'
+      PUT: 'Updated application: #{g1}'
+      PATCH: 'Updated application: #{g1}'
+      DELETE: 'Removed application: #{g1}'
+      default: 'Changed application: #{g1}'
+    action_code_template: 'application.{action_type}'
+
+  - id: candidates
+    pattern: '^/api/v1/candidates'
+    feature_area: Candidates
+    feature_label: Candidates
+    summary: 'Viewed candidates'
+    action_code: candidates
+
+  - id: interviews
+    pattern: '^/api/v1/interviews'
+    feature_area: Interviews
+    feature_label: Interviews
+    summary: 'Viewed interviews'
+    action_code: interviews
+
+  - id: hiring_plans
+    pattern: '^/api/v1/hiring-plans'
+    feature_area: Hiring plans
+    feature_label: Hiring plans
+    summary: 'Viewed hiring plans'
+    action_code: hiring_plans
+
+  - id: pipeline
+    pattern: '^/api/v1/pipeline'
+    feature_area: Pipeline
+    feature_label: Pipeline
+    summary: 'Viewed pipeline'
+    action_code: pipeline
+
+  - id: postings
+    pattern: '^/api/v1/postings'
+    feature_area: Postings
+    feature_label: Postings
+    summary: 'Viewed postings'
+    action_code: postings

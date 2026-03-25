@@ -371,7 +371,11 @@ def routes() -> None:
 
 
 @cli.command()
-@click.option("--queue", default="default", help="Queue to consume.")
+@click.option(
+    "--queue",
+    default="default,low_priority",
+    help="Comma-separated Celery queues to consume (default + low_priority covers audit + referral-style jobs).",
+)
 @click.option(
     "--pool",
     type=click.Choice(["gevent", "prefork", "solo", "threads"], case_sensitive=False),

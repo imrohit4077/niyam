@@ -125,6 +125,7 @@ def draw_routes(app: "FastAPI") -> None:
     from app.controllers.referral_bonuses_controller import ReferralBonusesController
     from app.controllers.referrals_analytics_controller import ReferralsAnalyticsController
     from app.controllers.referrals_admin_controller import ReferralsAdminController
+    from app.controllers.audit_log_controller import AuditLogController
 
     router = APIRouter(prefix="/api/v1")
 
@@ -469,6 +470,27 @@ def draw_routes(app: "FastAPI") -> None:
     router.add_api_route(
         "/referrals/admin/overview",
         _wrap(ReferralsAdminController, "overview", lambda c: c.overview()),
+        methods=["GET"],
+    )
+
+    router.add_api_route(
+        "/account/audit_compliance",
+        _wrap(AuditLogController, "compliance", lambda c: c.compliance()),
+        methods=["GET"],
+    )
+    router.add_api_route(
+        "/account/audit_trail_settings",
+        _wrap(AuditLogController, "update_audit_trail", lambda c: c.update_audit_trail()),
+        methods=["PATCH"],
+    )
+    router.add_api_route(
+        "/account/audit_log",
+        _wrap(AuditLogController, "index", lambda c: c.index()),
+        methods=["GET"],
+    )
+    router.add_api_route(
+        "/account/audit_log_failures",
+        _wrap(AuditLogController, "failures", lambda c: c.failures()),
         methods=["GET"],
     )
 

@@ -19,6 +19,7 @@ from config.settings import get_settings
 from config.database import engine
 from config.routes import draw_routes
 from app.middleware.auth_middleware import AuthMiddleware
+from app.middleware.audit_log_middleware import AuditLogMiddleware
 from app.middleware.logging_middleware import LoggingMiddleware
 
 
@@ -54,6 +55,7 @@ def create_app() -> FastAPI:
     # Custom middleware (order: last added = first to run on request)
     app.add_middleware(LoggingMiddleware)
     app.add_middleware(AuthMiddleware)
+    app.add_middleware(AuditLogMiddleware)
 
     # Health check - no auth required
     @app.get("/health", tags=["Health"])
