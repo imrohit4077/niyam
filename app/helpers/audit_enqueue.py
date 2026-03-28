@@ -33,7 +33,7 @@ def enqueue_api_audit(
     request_id: str | None = None,
 ) -> None:
     try:
-        from app.jobs.audit_log_append_job import audit_log_append
+        from app.helpers.audit_dispatch import dispatch_audit_payload
 
         method_u = http_method.upper()
         if method_u == "GET" and should_skip_audit_get(path):
@@ -64,6 +64,6 @@ def enqueue_api_audit(
         if request_id:
             payload["request_id"] = request_id
 
-        audit_log_append.apply_async(kwargs=payload, queue="default")
+        dispatch_audit_payload(payload)
     except Exception:
         logger.exception("enqueue_api_audit failed (non-fatal)")

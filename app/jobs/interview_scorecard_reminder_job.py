@@ -1,7 +1,7 @@
 """
 Nudge interviewers when a scorecard is still missing 2+ hours after interview_ends_at.
 
-Register in CELERY_BEAT_SCHEDULE (config/settings.py), e.g. every 15 minutes:
+Register in config/schedule.py (CELERY_BEAT_SCHEDULE), e.g. every 15 minutes:
   "interview_scorecard_reminders": {
       "task": "forge.interview_scorecard_reminders",
       "schedule": {"hour": "*", "minute": "*/15"},

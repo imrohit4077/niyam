@@ -1,12 +1,13 @@
 """
-Audit log: enqueue writes to Celery (no request latency). Admin-only read paths use sync SELECT.
+Audit log: enqueue to Redis buffer (batched DB flush on a schedule) or Celery fallback.
+Admin-only read paths use sync SELECT.
 """
 
 from typing import Any, Optional
 
 from sqlalchemy import String, cast, func, or_, select
 
-from app.jobs.audit_log_append_job import audit_log_append
+from app.helpers.audit_dispatch import dispatch_audit_payload
 from app.models.account import Account
 from app.models.audit_log_delivery_failure import AuditLogDeliveryFailure
 from app.models.audit_log_entry import AuditLogEntry
@@ -72,7 +73,7 @@ class AuditLogService(BaseService):
         if metadata is not None:
             payload["metadata_"] = metadata
 
-        audit_log_append.apply_async(kwargs=payload, queue="default")
+        dispatch_audit_payload(payload)
 
     def compliance_document(self, account_id: int) -> dict[str, Any]:
         """Structured copy for the settings UI + total row count."""

@@ -13,16 +13,8 @@ from celery.schedules import crontab
 from celery.signals import after_setup_logger, beat_init, worker_init, worker_process_init
 
 from config.logging_setup import configure_logging
-
-
-def _celery_process_name_from_argv() -> str:
-    """`celery … beat` vs `celery … worker` — used so logs show [worker] vs [beat]."""
-    import sys
-
-    if "beat" in sys.argv:
-        return "beat"
-    return "worker"
-from config.settings import get_settings, CELERY_BEAT_SCHEDULE
+from config.schedule import CELERY_BEAT_SCHEDULE
+from config.settings import get_settings
 
 settings = get_settings()
 
@@ -57,17 +49,31 @@ celery_app.conf.update(
     },
 )
 
-# Celery Beat: convert hour/minute dict to crontab (empty for framework)
-beat_schedule = {}
+# Celery Beat: single source of truth — config/schedule.py (Rails schedule.rb equivalent)
+beat_schedule: dict = {}
 if CELERY_BEAT_SCHEDULE:
     for name, entry in CELERY_BEAT_SCHEDULE.items():
-        s = entry.get("schedule", {})
+        sched = entry.get("schedule")
+        if isinstance(sched, dict):
+            s = sched
+            sched_obj = crontab(hour=s.get("hour", 2), minute=s.get("minute", 0))
+        else:
+            sched_obj = sched
         beat_schedule[name] = {
             "task": entry["task"],
-            "schedule": crontab(hour=s.get("hour", 2), minute=s.get("minute", 0)),
+            "schedule": sched_obj,
             "options": entry.get("options", {}),
         }
 celery_app.conf.beat_schedule = beat_schedule
+
+
+def _celery_process_name_from_argv() -> str:
+    """`celery … beat` vs `celery … worker` — used so logs show [worker] vs [beat]."""
+    import sys
+
+    if "beat" in sys.argv:
+        return "beat"
+    return "worker"
 
 
 def _import_job_modules() -> None:
