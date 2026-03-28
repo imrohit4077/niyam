@@ -1694,4 +1694,3 @@ export function TeamView() {
     </div>
   )
 }
-
