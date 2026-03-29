@@ -12,7 +12,6 @@ import DashboardLayout from './layouts/DashboardLayout'
 import HiringPlansView from './components/HiringPlansView'
 import PipelineBoardView from './components/PipelineBoardView'
 import {
-  ProfileView,
   JobsView,
   JobBoardsView,
   PostingsView,
@@ -36,6 +35,7 @@ import ReferralsHubPage from './pages/ReferralsHubPage'
 import CustomFieldsSettingsLayout from './layouts/CustomFieldsSettingsLayout'
 import CustomFieldsEntityPage from './pages/settings/CustomFieldsEntityPage'
 import LabelsSettingsPage from './pages/settings/LabelsSettingsPage'
+import HomeDashboardPage from './pages/HomeDashboardPage'
 import EsignOverviewPage from './pages/esign/EsignOverviewPage'
 import EsignTemplatesListPage from './pages/esign/EsignTemplatesListPage'
 import EsignTemplateEditorPage from './pages/esign/EsignTemplateEditorPage'
@@ -110,7 +110,7 @@ function AppRoutes() {
         <Route path="/account/:accountId" element={<AccountRedirect />}>
           <Route element={<DashboardLayout />}>
             <Route index element={<Navigate to="profile" replace />} />
-            <Route path="profile" element={<ProfileView />} />
+            <Route path="profile" element={<HomeDashboardPage />} />
             <Route path="jobs" element={<JobsView />} />
             <Route path="jobs/new" element={<JobEditorPage />} />
             <Route path="jobs/:jobId/edit" element={<JobEditorPage />} />
