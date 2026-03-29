@@ -1,12 +1,13 @@
 """
-Audit log: enqueue writes to Celery (no request latency). Admin-only read paths use sync SELECT.
+Audit log: enqueue to Redis buffer (batched DB flush on a schedule) or Celery fallback.
+Admin-only read paths use sync SELECT.
 """
 
 from typing import Any, Optional
 
 from sqlalchemy import String, cast, func, or_, select
 
-from app.jobs.audit_log_append_job import audit_log_append
+from app.helpers.audit_dispatch import dispatch_audit_payload
 from app.models.account import Account
 from app.models.audit_log_delivery_failure import AuditLogDeliveryFailure
 from app.models.audit_log_entry import AuditLogEntry
@@ -72,7 +73,7 @@ class AuditLogService(BaseService):
         if metadata is not None:
             payload["metadata_"] = metadata
 
-        audit_log_append.apply_async(kwargs=payload, queue="default")
+        dispatch_audit_payload(payload)
 
     def compliance_document(self, account_id: int) -> dict[str, Any]:
         """Structured copy for the settings UI + total row count."""
@@ -106,7 +107,7 @@ class AuditLogService(BaseService):
                     "a time-series log store. Admins should be able to read and filter logs, never edit them."
                 ),
                 "bullets": [
-                    "ForgeAPI uses a dedicated audit_log_entries table with a database trigger that rejects UPDATE and DELETE (append-only at the DB layer).",
+                    "ATS uses a dedicated audit_log_entries table with a database trigger that rejects UPDATE and DELETE (append-only at the DB layer).",
                     "Application inserts are enqueued to a background worker so requests do not wait on log persistence.",
                     "Product surfaces are read-only: privileged admins see entries; there is no API to rewrite history.",
                     "For defense in depth in production: grant the app DB role only SELECT + INSERT on this table; run migrations under a separate role.",
@@ -114,7 +115,7 @@ class AuditLogService(BaseService):
                 ],
             },
             "operations": {
-                "heading": "How ForgeAPI applies this",
+                "heading": "How ATS applies this",
                 "bullets": [
                     "Writes are enqueued to a background worker (not inline in the request) so APIs stay fast.",
                     "Events are labeled by product area and action type; sensitive GETs are catalog-driven, not all GETs.",

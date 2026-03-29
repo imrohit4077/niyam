@@ -1,5 +1,5 @@
 """
-Central logging configuration for ForgeAPI (web server, Celery worker, beat, shell).
+Central logging configuration for ATS (web server, Celery worker, beat, shell).
 
 Rails-style clarity:
   - One place to tune format, colors, levels, and SQL logging.

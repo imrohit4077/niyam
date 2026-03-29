@@ -176,8 +176,11 @@ export default function EsignTemplateEditorPage() {
 
           <section className="esign-editor-workspace" aria-label="Block editor">
             <div className="esign-editor-workspace-head">
-              <h2 className="esign-editor-workspace-title">Content</h2>
-              <p className="esign-editor-workspace-sub">Drag blocks from the library, reorder on the canvas, and edit properties on the right.</p>
+              <h2 className="esign-editor-workspace-title">Document builder</h2>
+              <p className="esign-editor-workspace-sub">
+                A live preview of what candidates see. Drag blocks, reorder, style in the inspector, and paste merge tags
+                from the panel.
+              </p>
             </div>
             <div className="esign-editor-canvas-wrap">
             <EsignTemplateBuilder

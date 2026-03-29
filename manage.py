@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """
 CLI manager. Rails equivalent: bin/rails / rails runner
-Commands: runserver, generate migration|controller|model|job|service, db:migrate|rollback|status|history|seed|reset, routes, worker, scheduler, shell.
+Commands: runserver, generate migration|controller|model|job|service, db:migrate|rollback|status|history|seed|reset, routes, worker (starts Beat by default), scheduler, shell.
 """
 
 import os
-import sys
+import signal
 import subprocess
+import sys
 from datetime import datetime, timezone
 
 import click
@@ -389,8 +390,14 @@ def routes() -> None:
     type=int,
     help="Greenlets (gevent) or child processes (prefork). Default: CELERY_WORKER_CONCURRENCY (1000 for gevent).",
 )
-def worker(queue: str, pool: str | None, concurrency: int | None) -> None:
-    """Start Celery worker. Default: gevent pool with high greenlet concurrency (not prefork)."""
+@click.option(
+    "--with-beat/--no-beat",
+    default=True,
+    help="Also run Celery Beat so tasks in config/schedule.py are enqueued (same as manage.py scheduler). "
+    "Use --no-beat when Beat runs as its own process.",
+)
+def worker(queue: str, pool: str | None, concurrency: int | None, with_beat: bool) -> None:
+    """Start Celery worker. Default: gevent pool; by default also starts Beat so periodic jobs run."""
     from config.settings import get_settings
 
     s = get_settings()
@@ -416,7 +423,35 @@ def worker(queue: str, pool: str | None, concurrency: int | None) -> None:
         "-c",
         str(conc),
     ]
-    subprocess.run(cmd, check=True)
+    beat_proc: subprocess.Popen | None = None
+
+    def _stop_beat() -> None:
+        nonlocal beat_proc
+        if beat_proc is None or beat_proc.poll() is not None:
+            return
+        beat_proc.terminate()
+        try:
+            beat_proc.wait(timeout=15)
+        except subprocess.TimeoutExpired:
+            beat_proc.kill()
+        beat_proc = None
+
+    if with_beat:
+        beat_proc = subprocess.Popen(
+            ["celery", "-A", "config.celery", "beat", "-l", "info"],
+            cwd=os.getcwd(),
+        )
+
+        def _on_term(signum: int, _frame: object) -> None:
+            _stop_beat()
+            sys.exit(128 + signum)
+
+        signal.signal(signal.SIGTERM, _on_term)
+
+    try:
+        subprocess.run(cmd, check=True)
+    finally:
+        _stop_beat()
 
 
 @cli.command()

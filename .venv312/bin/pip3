@@ -1,4 +1,4 @@
-#!/Users/rohitkushwaha/Desktop/ForgeAPI/.venv312/bin/python3.12
+#!/Users/rohitkushwaha/Desktop/ATS/.venv312/bin/python3.12
 import sys
 from pip._internal.cli.main import main
 if __name__ == '__main__':

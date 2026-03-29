@@ -33,6 +33,11 @@ class Settings(BaseSettings):
     # Rails-style: print SQL in dev by default; set LOG_SQL=false in production if too noisy.
     LOG_SQL: bool = True
 
+    # Audit: buffer API audit payloads in Redis; Celery Beat flushes to Postgres on a schedule.
+    AUDIT_LOG_BUFFER_ENABLED: bool = True
+    AUDIT_LOG_REDIS_URL: str = ""  # empty → same as REDIS_URL
+    AUDIT_LOG_BUFFER_KEY: str = "forge:audit_log:buffer:v1"
+
     # Database
     DATABASE_URL: str = "postgresql://postgres:postgres@localhost:5432/myapp"
     DB_POOL_SIZE: int = 10
@@ -87,11 +92,4 @@ CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_QUEUES = ["default", "mailers", "critical", "low_priority"]
 CELERY_DEFAULT_QUEUE = "default"
 
-# Celery Beat schedule (periodic tasks) — add your scheduled jobs here
-CELERY_BEAT_SCHEDULE: dict = {
-    "referral-bonus-eligibility-daily": {
-        "task": "forge.referral_bonus_eligibility_scan",
-        "schedule": {"hour": 2, "minute": 17},
-        "options": {"queue": "low_priority"},
-    },
-}
+# Celery Beat: see config/schedule.py (CELERY_BEAT_SCHEDULE)

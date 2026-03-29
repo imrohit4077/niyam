@@ -119,7 +119,7 @@ export default function PublicJobApplyPage() {
     return (
       <div className="public-apply-page">
         <header className="public-apply-header">
-          <span className="public-apply-brand">ForgeAPI</span>
+          <span className="public-apply-brand">ATS</span>
           <Link to="/login" className="public-apply-header-link">
             Recruiter sign in
           </Link>
@@ -146,7 +146,7 @@ export default function PublicJobApplyPage() {
     return (
       <div className="public-apply-page">
         <header className="public-apply-header">
-          <span className="public-apply-brand">ForgeAPI</span>
+          <span className="public-apply-brand">ATS</span>
         </header>
         <main className="public-apply-main public-apply-main--narrow">
           <div className="public-apply-card public-apply-success">
@@ -166,7 +166,7 @@ export default function PublicJobApplyPage() {
   return (
     <div className="public-apply-page">
       <header className="public-apply-header">
-        <span className="public-apply-brand">ForgeAPI</span>
+        <span className="public-apply-brand">ATS</span>
         <Link to="/login" className="public-apply-header-link">
           Recruiter sign in
         </Link>

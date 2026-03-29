@@ -38,7 +38,7 @@ export default function LoginPage() {
       <div className="auth-body">
         <div className="auth-card">
           <div className="auth-card-header">
-            <h1>Sign in to ForgeAPI</h1>
+            <h1>Sign in to ATS</h1>
             <p>Enter your credentials to access your workspace</p>
           </div>
 
