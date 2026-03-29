@@ -16,7 +16,7 @@ development:
   <<: *default
   database: myapp_development_1
   username: postgres
-  password: anshul
+  password: postgres
   host: localhost
   port: 5432
 
