@@ -5731,12 +5731,14 @@ textarea.esign-pro-input {
   align-items: center;
 }
 .esign-editor-meta-card {
-  border: 1px solid var(--border-light, #e5e7eb);
-  border-radius: 12px;
-  padding: 20px 22px 22px;
-  margin-bottom: 24px;
-  background: linear-gradient(180deg, #fafbfc 0%, #fff 100%);
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 16px;
+  padding: 22px 24px 24px;
+  margin-bottom: 28px;
+  background: linear-gradient(165deg, #ffffff 0%, #f8fafc 55%, #ffffff 100%);
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.04),
+    0 12px 32px -20px rgba(15, 23, 42, 0.08);
 }
 .esign-editor-meta-heading {
   margin: 0 0 16px;
@@ -5808,14 +5810,18 @@ textarea.esign-pro-input {
   color: #334155;
 }
 .esign-editor-canvas-wrap {
-  border: 1px solid #e2e8f0;
-  border-radius: 14px;
-  padding: 20px;
-  background: linear-gradient(145deg, #f1f5f9 0%, #e8eef4 50%, #f8fafc 100%);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 16px;
+  padding: 0;
+  background: radial-gradient(120% 80% at 50% 0%, #e8f4f8 0%, #f1f5f9 42%, #eef2f7 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.85),
+    0 12px 40px -18px rgba(15, 23, 42, 0.12);
+  overflow: hidden;
 }
 .esign-editor-canvas-wrap .esign-tpl-builder {
   margin: 0;
+  padding: 20px;
 }
 
 .settings-general .settings-lead,
@@ -7102,47 +7108,77 @@ textarea.esign-pro-input {
 .esign-tpl-builder {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 14px;
-  margin: 16px 0 18px;
-  min-height: 320px;
+  gap: 16px;
+  margin: 0;
+  min-height: 380px;
 }
 @media (min-width: 1024px) {
   .esign-tpl-builder {
-    grid-template-columns: 200px minmax(0, 1fr) 240px;
-    align-items: start;
+    grid-template-columns: 228px minmax(0, 1fr) 292px;
+    align-items: stretch;
+    gap: 18px;
   }
 }
 .esign-tpl-panel {
-  border-radius: 12px;
-  border: 1px solid #e2e8f0;
-  background: #fff;
-  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: var(--surface);
+  padding: 18px 16px;
   min-height: 200px;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.04),
+    0 8px 24px -12px rgba(15, 23, 42, 0.08);
+}
+.esign-tpl-panel--left {
+  background: linear-gradient(165deg, #f8fafc 0%, #fff 55%, #f1f5f9 100%);
 }
 .esign-tpl-panel--center {
-  background: #fafbfc;
-  min-height: 280px;
-  border-color: #cbd5e1;
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  min-height: 320px;
+  border-color: rgba(100, 116, 139, 0.18);
+  display: flex;
+  flex-direction: column;
+}
+.esign-tpl-panel--right {
+  background: linear-gradient(200deg, #ffffff 0%, #fafbfc 100%);
+}
+.esign-tpl-panel-head {
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.25);
 }
 .esign-tpl-panel-title {
-  margin: 0 0 6px;
-  font-size: 12px;
+  margin: 0 0 4px;
+  font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  color: #64748b;
 }
 .esign-tpl-panel-hint {
-  margin: 0 0 12px;
-  font-size: 11px;
-  color: var(--text-muted);
-  line-height: 1.4;
+  margin: 0;
+  font-size: 12px;
+  color: #64748b;
+  line-height: 1.45;
+}
+.esign-tpl-palette-group {
+  margin-bottom: 16px;
+}
+.esign-tpl-palette-group:last-child {
+  margin-bottom: 0;
+}
+.esign-tpl-palette-group-label {
+  margin: 0 0 8px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #94a3b8;
 }
 .esign-tpl-palette {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 .esign-tpl-palette-row {
   display: flex;
@@ -7151,98 +7187,255 @@ textarea.esign-pro-input {
 }
 .esign-tpl-palette-item {
   width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   padding: 10px 12px;
-  border-radius: var(--radius);
-  border: 1px dashed var(--border);
-  background: var(--gray-50);
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(255, 255, 255, 0.85);
   font-size: 13px;
   font-weight: 600;
-  color: var(--text-primary);
+  color: #0f172a;
   cursor: grab;
   text-align: left;
   font-family: var(--font);
-  transition: border-color var(--transition), background var(--transition);
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.15s ease;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 .esign-tpl-palette-item:hover {
-  border-color: var(--teal);
-  background: var(--teal-light);
+  border-color: rgba(8, 145, 178, 0.45);
+  background: rgba(224, 242, 254, 0.65);
+  box-shadow: 0 4px 14px -6px rgba(8, 145, 178, 0.35);
 }
 .esign-tpl-palette-item.is-dragging {
-  opacity: 0.5;
+  opacity: 0.55;
+  transform: scale(0.98);
+}
+.esign-tpl-palette-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: linear-gradient(145deg, #e0f2fe 0%, #f0f9ff 100%);
+  color: #0284c7;
+  flex-shrink: 0;
+}
+.esign-tpl-palette-label {
+  flex: 1;
+  min-width: 0;
 }
 .esign-tpl-palette-hint {
   font-size: 10px;
-  color: var(--text-muted);
+  color: #64748b;
   line-height: 1.35;
-  padding-left: 2px;
+  padding-left: 44px;
 }
 .esign-tpl-canvas-head {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 10px;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.esign-tpl-canvas-meta {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 500;
+}
+.esign-tpl-canvas-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.esign-tpl-zoom {
+  display: inline-flex;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  overflow: hidden;
+  background: #fff;
+}
+.esign-tpl-zoom-btn {
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  font-family: var(--font);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.esign-tpl-zoom-btn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+.esign-tpl-zoom-btn.is-active {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+.esign-tpl-tool-btn {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  background: #fff;
+  color: #334155;
+  cursor: pointer;
+  font-family: var(--font);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.esign-tpl-tool-btn:hover {
+  border-color: #0891b2;
+  background: #f0fdfa;
+  color: #0f172a;
 }
 .esign-tpl-remove-btn {
   font-size: 12px;
   font-weight: 600;
-  color: var(--danger, #b91c1c);
-  background: none;
-  border: none;
+  color: #b91c1c;
+  background: rgba(254, 242, 242, 0.9);
+  border: 1px solid rgba(252, 165, 165, 0.6);
+  border-radius: 8px;
+  padding: 6px 12px;
   cursor: pointer;
   font-family: var(--font);
+  transition: background 0.15s ease;
 }
 .esign-tpl-remove-btn:hover {
-  text-decoration: underline;
+  background: #fee2e2;
+}
+.esign-tpl-canvas-shell {
+  flex: 1;
+  min-height: 280px;
+  padding: 8px 4px 12px;
+  overflow: auto;
+}
+.esign-tpl-canvas-paper {
+  max-width: 720px;
+  margin: 0 auto;
+  transition: transform 0.2s ease;
 }
 .esign-tpl-canvas-inner {
-  min-height: 220px;
-  padding: 12px;
-  border-radius: var(--radius);
-  border: 2px dashed var(--border-light);
-  background: linear-gradient(180deg, var(--gray-50) 0%, var(--white) 100%);
-  transition: border-color 0.15s ease, background 0.15s ease;
+  min-height: 260px;
+  padding: 20px 22px;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%);
+  box-shadow:
+    0 1px 3px rgba(15, 23, 42, 0.06),
+    0 18px 40px -24px rgba(15, 23, 42, 0.18);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 .esign-tpl-canvas-inner.is-over {
-  border-color: var(--teal);
-  background: var(--teal-light);
+  border-color: rgba(8, 145, 178, 0.55);
+  box-shadow:
+    0 0 0 3px rgba(224, 242, 254, 0.9),
+    0 22px 50px -28px rgba(8, 145, 178, 0.35);
+}
+.esign-tpl-canvas-foot {
+  margin: 12px 0 0;
+  font-size: 11px;
+  color: #94a3b8;
+  line-height: 1.5;
+}
+.esign-tpl-kbd {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: #475569;
 }
 .esign-tpl-empty-canvas {
-  margin: 48px 16px;
+  margin: 36px 20px 44px;
   text-align: center;
+}
+.esign-tpl-empty-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 14px;
+  border-radius: 16px;
+  background: linear-gradient(145deg, #f1f5f9 0%, #e2e8f0 100%);
+  color: #64748b;
+}
+.esign-tpl-empty-title {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+.esign-tpl-empty-text {
+  margin: 0;
   font-size: 13px;
-  color: var(--text-muted);
+  line-height: 1.55;
+  color: #64748b;
+  max-width: 360px;
+  margin-left: auto;
+  margin-right: auto;
 }
 .esign-tpl-block {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   align-items: stretch;
-  margin-bottom: 10px;
-  padding: 10px 10px 10px 6px;
-  border-radius: var(--radius);
-  border: 1px solid var(--border);
-  background: var(--surface);
+  margin-bottom: 12px;
+  padding: 12px 12px 12px 8px;
+  border-radius: 10px;
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  background: #fff;
   cursor: default;
-  transition: box-shadow var(--transition), border-color var(--transition);
+  transition:
+    box-shadow 0.18s ease,
+    border-color 0.18s ease,
+    transform 0.15s ease;
+}
+.esign-tpl-block:hover {
+  border-color: rgba(148, 163, 184, 0.55);
 }
 .esign-tpl-block.is-selected {
-  border-color: var(--teal);
-  box-shadow: 0 0 0 3px var(--teal-light);
+  border-color: rgba(8, 145, 178, 0.65);
+  box-shadow: 0 0 0 3px rgba(224, 242, 254, 0.95);
 }
 .esign-tpl-block.is-dragging {
-  opacity: 0.65;
+  opacity: 0.72;
+  transform: scale(0.995);
 }
 .esign-tpl-block-grip {
   flex-shrink: 0;
-  width: 28px;
+  width: 32px;
   border: none;
-  background: var(--gray-50);
-  border-radius: var(--radius-sm);
-  color: var(--text-muted);
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 8px;
+  color: #94a3b8;
   cursor: grab;
-  font-size: 12px;
-  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 0;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.esign-tpl-block-grip:hover {
+  color: #64748b;
+  background: #e2e8f0;
 }
 .esign-tpl-block-grip:active {
   cursor: grabbing;
@@ -7259,102 +7452,338 @@ textarea.esign-pro-input {
 }
 .esign-tpl-preview-img {
   max-width: 100%;
-  max-height: 80px;
+  max-height: 88px;
   object-fit: contain;
-  border-radius: 4px;
+  border-radius: 6px;
 }
 .esign-tpl-preview-placeholder {
-  color: var(--text-muted);
+  color: #94a3b8;
   font-size: 12px;
+  font-style: italic;
 }
 .esign-tpl-preview-section {
-  border-left: 3px solid var(--teal);
-  padding-left: 10px;
+  border-left: 3px solid #0891b2;
+  padding-left: 12px;
+}
+.esign-tpl-preview-section--minimal {
+  border-left: none;
+  padding-left: 0;
+  opacity: 0.92;
+}
+.esign-tpl-preview-section--highlight {
+  border-left: 4px solid #0891b2;
+  padding: 10px 12px;
+  border-radius: 0 10px 10px 0;
+  background: rgba(240, 253, 250, 0.85);
 }
 .esign-tpl-preview-section strong {
   display: block;
   margin-bottom: 4px;
-  color: var(--text-primary);
+  color: #0f172a;
 }
 .esign-tpl-preview-btn {
   display: inline-block;
-  padding: 6px 14px;
-  background: #0284c7;
-  color: #fff;
-  border-radius: 6px;
+  padding: 7px 16px;
   font-size: 12px;
   font-weight: 600;
+  border: none;
 }
-.esign-tpl-inspector-type {
-  margin: 0 0 12px;
-  font-size: 11px;
-  font-weight: 700;
+.esign-tpl-preview-divider {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0;
+}
+.esign-tpl-preview-divider-line {
+  display: block;
+  width: 100%;
+  height: 0;
+  border: none;
+}
+.esign-tpl-preview-divider-line--solid {
+  border-top: 1px solid #e2e8f0;
+}
+.esign-tpl-preview-divider-line--dashed {
+  border-top: 1px dashed #cbd5e1;
+}
+.esign-tpl-preview-divider-line--subtle {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(148, 163, 184, 0.55), transparent);
+}
+.esign-tpl-preview-divider-cap {
+  font-size: 10px;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--teal);
+  color: #94a3b8;
+}
+.esign-tpl-preview-spacer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.esign-tpl-preview-spacer-bar {
+  width: 4px;
+  min-height: 12px;
+  border-radius: 4px;
+  background: linear-gradient(180deg, #e2e8f0, #cbd5e1);
+}
+.esign-tpl-preview-spacer-label {
+  font-size: 11px;
+  color: #94a3b8;
+  font-weight: 500;
+}
+.esign-tpl-inspector-head {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.95);
+}
+.esign-tpl-inspector-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: linear-gradient(145deg, #e0f2fe 0%, #f0f9ff 100%);
+  color: #0284c7;
+  flex-shrink: 0;
+}
+.esign-tpl-inspector-type {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+  text-transform: none;
+}
+.esign-tpl-inspector-sub {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: #64748b;
+}
+.esign-tpl-field-group {
+  margin-bottom: 4px;
+}
+.esign-tpl-field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  align-items: end;
+}
+.esign-tpl-seg {
+  display: flex;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  background: #f8fafc;
+}
+.esign-tpl-seg-btn {
+  flex: 1;
+  padding: 8px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  font-family: var(--font);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.esign-tpl-seg-btn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+.esign-tpl-seg-btn.is-active {
+  background: #fff;
+  color: #0369a1;
+  box-shadow: inset 0 0 0 1px rgba(8, 145, 178, 0.25);
+}
+.esign-tpl-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.esign-tpl-preset-chip {
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  cursor: pointer;
+  font-family: var(--font);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
+  transition: transform 0.12s ease;
+}
+.esign-tpl-preset-chip:hover {
+  transform: translateY(-1px);
+}
+.esign-tpl-range-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.esign-tpl-range-row input[type='range'] {
+  flex: 1;
+  accent-color: #0891b2;
+}
+.esign-tpl-range-val {
+  font-size: 12px;
+  font-weight: 700;
+  color: #475569;
+  min-width: 44px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.esign-tpl-inspector-color--sm {
+  height: 36px;
+}
+.esign-tpl-inspector-empty-wrap {
+  text-align: center;
+  padding: 24px 8px 8px;
+}
+.esign-tpl-inspector-empty-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 12px;
+  color: #cbd5e1;
+}
+.esign-tpl-inspector-empty-title {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #334155;
 }
 .esign-tpl-inspector-empty {
-  margin: 12px 0 0;
+  margin: 0;
   font-size: 12px;
-  line-height: 1.5;
-  color: var(--text-muted);
+  line-height: 1.55;
+  color: #64748b;
 }
 .esign-tpl-inspector-label {
   display: block;
   font-size: 11px;
   font-weight: 600;
-  color: var(--text-secondary);
-  margin: 10px 0 4px;
+  color: #475569;
+  margin: 12px 0 6px;
+}
+.esign-tpl-field-group .esign-tpl-inspector-label:first-child {
+  margin-top: 0;
 }
 .esign-tpl-inspector-input,
 .esign-tpl-inspector-select,
 .esign-tpl-inspector-textarea {
   width: 100%;
-  padding: 8px 10px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  padding: 9px 11px;
+  border: 1px solid #e2e8f0;
+  border-radius: 9px;
   font-size: 13px;
   font-family: var(--font);
-  background: var(--surface);
+  background: #fff;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+.esign-tpl-inspector-input:focus,
+.esign-tpl-inspector-select:focus,
+.esign-tpl-inspector-textarea:focus {
+  outline: none;
+  border-color: rgba(8, 145, 178, 0.55);
+  box-shadow: 0 0 0 3px rgba(224, 242, 254, 0.9);
+}
+.esign-tpl-merge-search {
+  margin-bottom: 10px;
+}
+.esign-tpl-merge-empty {
+  font-size: 12px;
+  color: #94a3b8;
+  margin: 4px 0 8px;
 }
 .esign-tpl-inspector-textarea {
   font-family: var(--font-mono);
   font-size: 12px;
   line-height: 1.5;
   resize: vertical;
-  min-height: 100px;
+  min-height: 120px;
 }
 .esign-tpl-inspector-color {
   width: 100%;
   height: 40px;
   padding: 4px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  border: 1px solid #e2e8f0;
+  border-radius: 9px;
   cursor: pointer;
-  background: var(--surface);
+  background: #fff;
 }
 .esign-tpl-inspector-chips {
-  margin-top: 14px;
-  padding-top: 12px;
-  border-top: 1px solid var(--border-light);
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(226, 232, 240, 0.95);
 }
-.esign-tpl-inspector-chips-label {
-  display: block;
-  font-size: 10px;
+.esign-tpl-inspector .esign-chips {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.esign-tpl-inspector .esign-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  text-align: left;
+  width: 100%;
+}
+.esign-chip-label {
+  font-size: 12px;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--text-muted);
-  margin-bottom: 8px;
+  color: #0f172a;
+}
+.esign-chip-code {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: #64748b;
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+.esign-tpl-inspector .esign-chip:hover {
+  border-color: rgba(8, 145, 178, 0.45);
+  background: #f0fdfa;
+  color: inherit;
+}
+.esign-tpl-inspector .esign-chip:hover .esign-chip-code {
+  color: #0891b2;
 }
 .esign-tpl-overlay {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   padding: 12px 18px;
-  border-radius: var(--radius);
-  background: var(--teal);
+  border-radius: 12px;
+  background: linear-gradient(135deg, #0891b2 0%, #0284c7 100%);
   color: #fff;
   font-weight: 700;
   font-size: 13px;
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-lg);
+}
+.esign-tpl-overlay-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.2);
 }
 
 .esign-empty {

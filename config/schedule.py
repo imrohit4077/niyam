@@ -1,8 +1,8 @@
 """
-Centralized periodic jobs (Celery Beat) — ForgeAPI equivalent of Rails schedule.rb / Whenever.
+Centralized periodic jobs (Celery Beat) — ATS equivalent of Rails schedule.rb / Whenever.
 
   Rails:           config/schedule.rb   + cron OR Whenever → Sidekiq/ActiveJob
-  ForgeAPI:        THIS FILE            → Celery Beat → app/jobs/*_job.py
+  ATS:        THIS FILE            → Celery Beat → app/jobs/*_job.py
 
 Rules:
   • List every repeating task here only — do not scatter crontab() in other modules.

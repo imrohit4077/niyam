@@ -40,7 +40,7 @@ function deriveTitle(pathname: string): string {
   if (pathname.includes('/settings/audit-compliance')) return 'Audit & compliance'
   if (pathname.includes('/settings')) return 'Settings'
   if (pathname.includes('/profile')) return 'My Profile'
-  return 'ForgeAPI'
+  return 'ATS'
 }
 
 export default function DashboardLayout() {

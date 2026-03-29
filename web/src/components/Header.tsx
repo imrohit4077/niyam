@@ -68,7 +68,7 @@ export default function Header({ user, onSignOut, variant = 'app', accountHomePa
         <div className="header-inner">
           <a className="header-brand" href="/">
             <BrandIcon />
-            <span className="header-brand-text">ForgeAPI</span>
+            <span className="header-brand-text">ATS</span>
           </a>
         </div>
       </header>
@@ -82,12 +82,12 @@ export default function Header({ user, onSignOut, variant = 'app', accountHomePa
           {accountHomePath ? (
             <Link className="header-brand" to={accountHomePath}>
               <BrandIcon />
-              <span className="header-brand-text">ForgeAPI</span>
+              <span className="header-brand-text">ATS</span>
             </Link>
           ) : (
             <a className="header-brand" href="/">
               <BrandIcon />
-              <span className="header-brand-text">ForgeAPI</span>
+              <span className="header-brand-text">ATS</span>
             </a>
           )}
           <div className="header-search">

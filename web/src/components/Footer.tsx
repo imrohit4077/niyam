@@ -11,9 +11,9 @@ export default function Footer() {
                 <path d="M4 18L12 4L20 18H16L12 10L8 18H4Z" fill="currentColor" />
               </svg>
             </div>
-            <span className="footer-brand-text">ForgeAPI</span>
+            <span className="footer-brand-text">ATS</span>
           </div>
-          <span className="footer-copyright">&copy; {year} ForgeAPI. All rights reserved.</span>
+          <span className="footer-copyright">&copy; {year} ATS. All rights reserved.</span>
         </div>
 
         <div className="footer-center">

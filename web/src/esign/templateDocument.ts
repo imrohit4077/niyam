@@ -1,6 +1,8 @@
 /** ATS block template — canonical JSON stored in esign_templates.content_blocks */
 
-export type BlockType = 'text' | 'image' | 'section' | 'button'
+export type BlockType = 'text' | 'image' | 'section' | 'button' | 'divider' | 'spacer'
+
+export type TextFontWeight = 'normal' | 'medium' | 'semibold' | 'bold'
 
 export type TextBlock = {
   id: string
@@ -9,6 +11,7 @@ export type TextBlock = {
   fontSize: number
   color: string
   align: 'left' | 'center' | 'right'
+  fontWeight: TextFontWeight
 }
 
 export type ImageBlock = {
@@ -19,6 +22,8 @@ export type ImageBlock = {
   widthPct: number
 }
 
+export type SectionVariant = 'card' | 'minimal' | 'highlight'
+
 export type SectionBlock = {
   id: string
   type: 'section'
@@ -27,6 +32,7 @@ export type SectionBlock = {
   bodyFontSize: number
   bodyColor: string
   bodyAlign: 'left' | 'center' | 'right'
+  variant: SectionVariant
 }
 
 export type ButtonBlock = {
@@ -35,9 +41,26 @@ export type ButtonBlock = {
   label: string
   href: string
   align: 'left' | 'center' | 'right'
+  bgColor: string
+  textColor: string
+  borderRadius: number
 }
 
-export type TemplateBlock = TextBlock | ImageBlock | SectionBlock | ButtonBlock
+export type DividerStyle = 'solid' | 'dashed' | 'subtle'
+
+export type DividerBlock = {
+  id: string
+  type: 'divider'
+  style: DividerStyle
+}
+
+export type SpacerBlock = {
+  id: string
+  type: 'spacer'
+  height: number
+}
+
+export type TemplateBlock = TextBlock | ImageBlock | SectionBlock | ButtonBlock | DividerBlock | SpacerBlock
 
 export type TemplateDocument = { version: 1; blocks: TemplateBlock[] }
 
@@ -52,6 +75,7 @@ export function createBlock(type: BlockType): TemplateBlock {
         fontSize: 15,
         color: '#111827',
         align: 'left',
+        fontWeight: 'normal',
       }
     case 'image':
       return { id, type: 'image', src: '', alt: 'Company logo', widthPct: 40 }
@@ -64,6 +88,7 @@ export function createBlock(type: BlockType): TemplateBlock {
         bodyFontSize: 14,
         bodyColor: '#374151',
         bodyAlign: 'left',
+        variant: 'card',
       }
     case 'button':
       return {
@@ -72,7 +97,14 @@ export function createBlock(type: BlockType): TemplateBlock {
         label: 'Acknowledge receipt',
         href: '#',
         align: 'center',
+        bgColor: '#0284c7',
+        textColor: '#ffffff',
+        borderRadius: 8,
       }
+    case 'divider':
+      return { id, type: 'divider', style: 'solid' }
+    case 'spacer':
+      return { id, type: 'spacer', height: 24 }
   }
 }
 
@@ -91,10 +123,46 @@ export function htmlToPlainText(html: string): string {
   }
 }
 
+/** Coerce blocks loaded from API that may omit newer optional fields */
+export function hydrateDocument(doc: TemplateDocument): TemplateDocument {
+  return {
+    ...doc,
+    blocks: doc.blocks.map(b => hydrateBlock(b)),
+  }
+}
+
+function hydrateBlock(b: TemplateBlock): TemplateBlock {
+  switch (b.type) {
+    case 'text':
+      return {
+        ...b,
+        fontWeight: b.fontWeight ?? 'normal',
+      }
+    case 'section':
+      return {
+        ...b,
+        variant: b.variant ?? 'card',
+      }
+    case 'button':
+      return {
+        ...b,
+        bgColor: b.bgColor ?? '#0284c7',
+        textColor: b.textColor ?? '#ffffff',
+        borderRadius: b.borderRadius ?? 8,
+      }
+    case 'divider':
+      return { ...b, style: b.style ?? 'solid' }
+    case 'spacer':
+      return { ...b, height: typeof b.height === 'number' ? b.height : 24 }
+    default:
+      return b
+  }
+}
+
 export function documentFromTemplateRow(contentBlocks: unknown, contentHtml: string): TemplateDocument {
   const cb = contentBlocks as TemplateDocument | null | undefined
   if (cb && cb.version === 1 && Array.isArray(cb.blocks) && cb.blocks.length > 0) {
-    return JSON.parse(JSON.stringify(cb)) as TemplateDocument
+    return hydrateDocument(JSON.parse(JSON.stringify(cb)) as TemplateDocument)
   }
   const plain = htmlToPlainText(contentHtml)
   const b = createBlock('text') as TextBlock
@@ -113,4 +181,15 @@ export function patchBlock(doc: TemplateDocument, id: string, partial: Partial<T
 
 export function removeBlock(doc: TemplateDocument, id: string): TemplateDocument {
   return { ...doc, blocks: doc.blocks.filter(b => b.id !== id) }
+}
+
+export function duplicateBlock(doc: TemplateDocument, id: string): TemplateDocument {
+  const idx = doc.blocks.findIndex(b => b.id === id)
+  if (idx < 0) return doc
+  const raw = doc.blocks[idx]
+  const nb = JSON.parse(JSON.stringify(raw)) as TemplateBlock
+  nb.id = crypto.randomUUID()
+  const next = [...doc.blocks]
+  next.splice(idx + 1, 0, nb)
+  return { ...doc, blocks: next }
 }
