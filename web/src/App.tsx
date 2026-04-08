@@ -35,6 +35,7 @@ import ReferralsHubPage from './pages/ReferralsHubPage'
 import CustomFieldsSettingsLayout from './layouts/CustomFieldsSettingsLayout'
 import CustomFieldsEntityPage from './pages/settings/CustomFieldsEntityPage'
 import LabelsSettingsPage from './pages/settings/LabelsSettingsPage'
+import CommunicationChannelsPage from './pages/settings/CommunicationChannelsPage'
 import HomeDashboardPage from './pages/HomeDashboardPage'
 import EsignOverviewPage from './pages/esign/EsignOverviewPage'
 import EsignTemplatesListPage from './pages/esign/EsignTemplatesListPage'
@@ -78,6 +79,16 @@ function AccountRedirect() {
 }
 
 function AuditComplianceAdminGate() {
+  const { accountId } = useParams<{ accountId: string }>()
+  const { user } = useAuth()
+  const slug = user?.role?.slug
+  if (slug !== 'admin' && slug !== 'superadmin') {
+    return <Navigate to={`/account/${accountId}/settings/general/organization`} replace />
+  }
+  return <Outlet />
+}
+
+function CommunicationChannelsAdminGate() {
   const { accountId } = useParams<{ accountId: string }>()
   const { user } = useAuth()
   const slug = user?.role?.slug
@@ -149,6 +160,9 @@ function AppRoutes() {
                 <Route path="candidates" element={<CustomFieldsEntityPage entityType="application" />} />
               </Route>
               <Route path="labels" element={<LabelsSettingsPage />} />
+              <Route path="communication-channels" element={<CommunicationChannelsAdminGate />}>
+                <Route index element={<CommunicationChannelsPage />} />
+              </Route>
               <Route path="esign" element={<EsignSettingsLayout />}>
                 <Route index element={<Navigate to="overview" replace />} />
                 <Route path="overview" element={<EsignOverviewPage />} />

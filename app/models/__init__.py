@@ -36,6 +36,7 @@ from app.models.esign_stage_rule import EsignStageRule
 from app.models.esign_request import EsignRequest
 from app.models.account_label import AccountLabel
 from app.models.label_assignment import LabelAssignment
+from app.models.communication_channel import CommunicationChannel
 
 __all__ = [
     "BaseModel", "Timestampable", "SoftDeletable", "Sluggable",
@@ -45,6 +46,7 @@ __all__ = [
     "InterviewPlan", "InterviewKit", "InterviewAssignment", "InterviewScorecard",
     "EsignTemplate", "EsignStageRule", "EsignRequest",
     "AccountLabel", "LabelAssignment",
+    "CommunicationChannel",
     "ReferralLink", "ReferralBonus",
     "AuditLogEntry", "AuditLogDeliveryFailure",
 ]

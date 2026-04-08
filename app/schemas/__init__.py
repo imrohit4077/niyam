@@ -26,4 +26,12 @@ class RefreshRequest(BaseModel):
     refresh_token: str
 
 
-__all__ = ["PaginationMeta", "LoginRequest", "RefreshRequest"]
+from app.schemas.communication_channels import CommunicationChannelCreate, CommunicationChannelUpdate
+
+__all__ = [
+    "PaginationMeta",
+    "LoginRequest",
+    "RefreshRequest",
+    "CommunicationChannelCreate",
+    "CommunicationChannelUpdate",
+]

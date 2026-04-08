@@ -126,6 +126,7 @@ def draw_routes(app: "FastAPI") -> None:
     from app.controllers.referrals_analytics_controller import ReferralsAnalyticsController
     from app.controllers.referrals_admin_controller import ReferralsAdminController
     from app.controllers.audit_log_controller import AuditLogController
+    from app.controllers.communication_channels_controller import CommunicationChannelsController
 
     router = APIRouter(prefix="/api/v1")
 
@@ -221,6 +222,42 @@ def draw_routes(app: "FastAPI") -> None:
     router.add_api_route(
         "/account/referral_settings",
         _wrap(AccountReferralSettingsController, "update", lambda c: c.update()),
+        methods=["PATCH"],
+    )
+
+    router.add_api_route(
+        "/communication_channels",
+        _wrap(CommunicationChannelsController, "index", lambda c: c.index()),
+        methods=["GET"],
+    )
+    router.add_api_route(
+        "/communication_channels",
+        _wrap(CommunicationChannelsController, "create", lambda c: c.create()),
+        methods=["POST"],
+    )
+    router.add_api_route(
+        "/communication_channels/{id:int}",
+        _wrap(CommunicationChannelsController, "show", lambda c: c.show()),
+        methods=["GET"],
+    )
+    router.add_api_route(
+        "/communication_channels/{id:int}",
+        _wrap(CommunicationChannelsController, "update", lambda c: c.update()),
+        methods=["PATCH"],
+    )
+    router.add_api_route(
+        "/communication_channels/{id:int}",
+        _wrap(CommunicationChannelsController, "destroy", lambda c: c.destroy()),
+        methods=["DELETE"],
+    )
+    router.add_api_route(
+        "/communication_channels/{id:int}/test",
+        _wrap(CommunicationChannelsController, "test", lambda c: c.test()),
+        methods=["POST"],
+    )
+    router.add_api_route(
+        "/communication_channels/{id:int}/set_default",
+        _wrap(CommunicationChannelsController, "set_default", lambda c: c.set_default()),
         methods=["PATCH"],
     )
 

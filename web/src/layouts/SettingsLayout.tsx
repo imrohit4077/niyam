@@ -10,6 +10,7 @@ export default function SettingsLayout() {
   const isGeneralNested = location.pathname.includes('/settings/general')
   const isCustomFieldsSection = location.pathname.includes('/settings/custom-fields')
   const isLabelsSection = location.pathname.includes('/settings/labels')
+  const isCommunicationChannelsSection = location.pathname.includes('/settings/communication-channels')
   const isAuditComplianceSection = location.pathname.includes('/settings/audit-compliance')
   const isEsignTemplateEditor = /\/settings\/esign\/templates\/(new|\d+\/edit)/.test(location.pathname)
   const showAuditNav =
@@ -17,7 +18,7 @@ export default function SettingsLayout() {
 
   return (
     <div
-      className={`settings-layout${isEsignSection || isGeneralNested || isCustomFieldsSection || isLabelsSection || isAuditComplianceSection ? ' settings-layout--wide' : ''}${isEsignTemplateEditor ? ' settings-layout--esign-editor' : ''}`}
+      className={`settings-layout${isEsignSection || isGeneralNested || isCustomFieldsSection || isLabelsSection || isCommunicationChannelsSection || isAuditComplianceSection ? ' settings-layout--wide' : ''}${isEsignTemplateEditor ? ' settings-layout--esign-editor' : ''}`}
     >
       <nav className="settings-subnav" aria-label="Settings sections">
         <NavLink
@@ -41,6 +42,15 @@ export default function SettingsLayout() {
         >
           Labels
         </NavLink>
+        {showAuditNav ? (
+          <NavLink
+            to={`${base}/communication-channels`}
+            className={({ isActive }) => `settings-subnav-link ${isActive ? 'settings-subnav-link--active' : ''}`}
+            end
+          >
+            Communication channels
+          </NavLink>
+        ) : null}
         {showAuditNav ? (
           <NavLink
             to={`${base}/audit-compliance`}

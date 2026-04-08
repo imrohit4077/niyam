@@ -19,6 +19,7 @@ export type SidebarPage =
   | 'settings-general'
   | 'settings-custom-fields'
   | 'settings-labels'
+  | 'settings-communication-channels'
   | 'settings-audit-compliance'
   | 'settings-esign'
 
@@ -45,6 +46,7 @@ const NAV: NavItem[] = [
   { id: 'settings-general', label: 'General', icon: 'gear', group: 'Settings' },
   { id: 'settings-custom-fields', label: 'Custom fields', icon: 'fieldgrid', group: 'Settings' },
   { id: 'settings-labels', label: 'Labels', icon: 'tag', group: 'Settings' },
+  { id: 'settings-communication-channels', label: 'Communication', icon: 'mail', group: 'Settings' },
   { id: 'settings-audit-compliance', label: 'Audit & compliance', icon: 'shield', group: 'Settings' },
   { id: 'settings-esign', label: 'E-sign', icon: 'document', group: 'Settings' },
   { id: 'team', label: 'Team', icon: 'team', group: 'Workspace' },
@@ -66,6 +68,7 @@ const PATH_SEGMENTS: Record<SidebarPage, string> = {
   'settings-general': 'settings/general',
   'settings-custom-fields': 'settings/custom-fields/jobs',
   'settings-labels': 'settings/labels',
+  'settings-communication-channels': 'settings/communication-channels',
   'settings-audit-compliance': 'settings/audit-compliance',
   'settings-esign': 'settings/esign',
 }
@@ -152,6 +155,11 @@ const ICONS: Record<string, ReactNode> = {
       <path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z" />
     </svg>
   ),
+  mail: (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" />
+    </svg>
+  ),
   shield: (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
       <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z" />
@@ -182,7 +190,8 @@ export default function Sidebar({ accountId }: Props) {
     const slug = user?.role?.slug?.toLowerCase()
     const isAdmin = slug === 'admin' || slug === 'superadmin'
     return NAV.filter(
-      item => item.id !== 'settings-audit-compliance' || isAdmin,
+      item =>
+        (item.id !== 'settings-audit-compliance' && item.id !== 'settings-communication-channels') || isAdmin,
     )
   }, [user?.role?.slug])
 
@@ -232,6 +241,9 @@ export default function Sidebar({ accountId }: Props) {
               const labelsActive = item.id === 'settings-labels' && pathname.includes('/settings/labels')
               const auditActive =
                 item.id === 'settings-audit-compliance' && pathname.includes('/settings/audit-compliance')
+              const commActive =
+                item.id === 'settings-communication-channels' &&
+                pathname.includes('/settings/communication-channels')
               return (
                 <NavLink
                   key={item.id}
@@ -240,11 +252,12 @@ export default function Sidebar({ accountId }: Props) {
                     item.id === 'profile' ||
                     item.id === 'settings-custom-fields' ||
                     item.id === 'settings-labels' ||
+                    item.id === 'settings-communication-channels' ||
                     item.id === 'settings-audit-compliance'
                   }
                   title={collapsed ? item.label : undefined}
                   className={({ isActive }) =>
-                    `sidebar-item ${isActive || esignActive || generalActive || customFieldsActive || labelsActive || auditActive ? 'sidebar-item-active' : ''}`
+                    `sidebar-item ${isActive || esignActive || generalActive || customFieldsActive || labelsActive || commActive || auditActive ? 'sidebar-item-active' : ''}`
                   }
                 >
                   <span className="sidebar-item-icon">{ICONS[item.icon]}</span>
