@@ -1,0 +1,314 @@
+---
+description: ForgeAPI coding conventions — Rails-style FastAPI project. Applies to all Python and TypeScript files.
+alwaysApply: true
+---
+
+# ForgeAPI — Rails-Style FastAPI Conventions
+
+This codebase is a **FastAPI + SQLAlchemy** app that mirrors Ruby on Rails conventions.
+Always follow these patterns precisely. Never invent new structural patterns.
+
+---
+
+## Project Layout
+
+```
+app/
+  controllers/       # Handle HTTP: auth, params, call service, render_json
+  controllers/concerns/  # Shared controller mixins (Authenticatable, Paginatable)
+  models/            # SQLAlchemy models inheriting BaseModel
+  models/concerns/   # Model mixins (Timestampable, SoftDeletable, Sluggable)
+  services/          # Business logic, return success()/failure()
+  jobs/              # Celery async tasks inheriting BaseJob
+  middleware/        # ASGI middlewares (Auth, AuditLog, Logging)
+  helpers/           # Pure utility functions (JWT, responses, etc.)
+  schemas/           # Pydantic: request validation and response shapes only
+config/
+  routes.py          # ALL routes live here — the routes.rb equivalent
+  settings.py        # App settings via pydantic-settings
+  database.py        # Engine, SessionLocal, get_db, Base
+  celery.py          # Celery app instance and queue config
+  schedule.py        # Celery Beat schedule entries
+db/
+  migrations/versions/  # Alembic migration files
+  seeds.py           # Seed data
+```
+
+---
+
+## Models (`app/models/`)
+
+- Inherit `BaseModel` from `app.models.base_model`
+- Use SQLAlchemy 2 `Mapped` / `mapped_column` syntax
+- Always declare `__tablename__` as plural snake_case (Rails convention)
+- Always include `account_id` FK for tenant-scoped models
+- Use FK with `ondelete="CASCADE"` or `"RESTRICT"` explicitly
+- Override `to_dict()` to serialize dates as `.isoformat()` and rename/add computed fields
+- Use concerns as mixins (`Timestampable`, `SoftDeletable`, `Sluggable`)
+- Use model callbacks (`@before_save`, `@after_create`, etc.) for side effects, never in controllers
+
+```python
+# ✅ CORRECT model
+from sqlalchemy import BigInteger, String, ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column
+from app.models.base_model import BaseModel
+
+class Job(BaseModel):
+    __tablename__ = "jobs"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    account_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("accounts.id", ondelete="CASCADE"), nullable=False)
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+
+    def to_dict(self) -> dict:
+        d = super().to_dict()
+        if isinstance(d.get("created_at"), datetime):
+            d["created_at"] = d["created_at"].isoformat()
+        return d
+```
+
+```python
+# ❌ WRONG — never use legacy Column() syntax or skip account_id on tenant models
+class Job(Base):
+    __tablename__ = "jobs"
+    id = Column(Integer, primary_key=True)
+```
+
+---
+
+## Controllers (`app/controllers/`)
+
+- Inherit `BaseController` (and concern mixins like `Authenticatable`)
+- Use `@before_action` to guard actions — never inline auth checks inside action methods
+- Use `self.request.path_params["key"]` for path params (cast to `int` explicitly)
+- Use `self.params` for merged path + query + body
+- Always delegate business logic to a **Service** — controllers only orchestrate
+- Return `self.render_json(data)` for success, `self.render_error(msg, status=N)` for errors
+- Branch on `result["ok"]`: if `True` render data, if `False` render error
+
+```python
+# ✅ CORRECT controller
+from app.controllers.base_controller import BaseController, before_action
+from app.controllers.concerns.authenticatable import Authenticatable
+from app.services.job_service import JobService
+
+class JobsController(BaseController, Authenticatable):
+
+    @before_action
+    def require_auth(self):
+        self.authenticate_user()
+
+    def index(self):
+        result = JobService(self.db).list_jobs(self.current_user["account_id"])
+        if not result["ok"]:
+            return self.render_error(result["error"], status=400)
+        return self.render_json(result["data"])
+
+    def show(self):
+        job_id = int(self.request.path_params["id"])
+        result = JobService(self.db).find_job(job_id)
+        if not result["ok"]:
+            return self.render_error(result["error"], status=404)
+        return self.render_json(result["data"])
+```
+
+```python
+# ❌ WRONG — no direct DB queries in controllers, no inline auth, no raw exceptions
+def index(self):
+    jobs = self.db.query(Job).all()   # wrong — use service
+    return {"jobs": jobs}
+```
+
+---
+
+## Services (`app/services/`)
+
+- Inherit `BaseService`
+- Always return `self.success(data)` → `{"ok": True, "data": ...}` or `self.failure(msg)` → `{"ok": False, "error": ...}`
+- Never raise HTTP exceptions — return `failure()` instead
+- All DB queries and business rules belong here
+- Name methods clearly: `list_*`, `find_*`, `create_*`, `update_*`, `destroy_*`
+
+```python
+# ✅ CORRECT service
+from app.services.base_service import BaseService
+from app.models.job import Job
+
+class JobService(BaseService):
+
+    def list_jobs(self, account_id: int) -> dict:
+        jobs = Job.where(self.db, account_id=account_id)
+        return self.success([j.to_dict() for j in jobs])
+
+    def find_job(self, job_id: int) -> dict:
+        job = Job.find_by(self.db, id=job_id)
+        if not job:
+            return self.failure("Job not found")
+        return self.success(job.to_dict())
+```
+
+```python
+# ❌ WRONG — never raise HTTPException in a service
+def find_job(self, job_id):
+    job = self.db.query(Job).get(job_id)
+    if not job:
+        raise HTTPException(status_code=404)  # wrong
+```
+
+---
+
+## Routes (`config/routes.py`)
+
+- **All routes are declared in `draw_routes()`** — this is `config/routes.rb`
+- Use `resources(router, "/path", ControllerClass)` for standard CRUD
+- Use `router.add_api_route(...)` + `_wrap(Controller, "action", lambda c: c.action())` for custom routes
+- All routes are under the `/api/v1` prefix (set on the router)
+- Import controllers inside `draw_routes()` to avoid circular imports
+- Group routes by resource with comments
+- Public routes pass `run_before=False` to `_wrap()`
+
+```python
+# ✅ CORRECT route registration
+resources(router, "/jobs", JobsController)
+
+router.add_api_route(
+    "/jobs/{job_id:int}/analytics",
+    _wrap(JobsController, "analytics", lambda c: c.analytics()),
+    methods=["GET"],
+)
+
+# Public route (no auth)
+router.add_api_route(
+    "/public/apply/{token}",
+    _wrap(PublicApplyController, "show", lambda c: c.show(), run_before=False),
+    methods=["GET"],
+)
+```
+
+```python
+# ❌ WRONG — never add routes in controller files or main.py
+app.get("/jobs")(some_function)
+```
+
+---
+
+## Jobs (`app/jobs/`)
+
+- Inherit `BaseJob` OR use `@celery_app.task` decorator directly for simple tasks
+- Override `perform(**kwargs)` for the main logic
+- Use `MyJob.perform_later(**kwargs)` to enqueue, `MyJob.perform_now(**kwargs)` for sync
+- Set class-level `queue`, `retry_limit`, `retry_delay`
+- Register scheduled jobs in `config/schedule.py` using `beat_entry()`
+
+```python
+# ✅ CORRECT job
+from app.jobs.base_job import BaseJob
+
+class WelcomeEmailJob(BaseJob):
+    queue = "mailers"
+    retry_limit = 3
+
+    def perform(self, user_id: int) -> None:
+        # send email logic here
+        pass
+
+# Enqueue: WelcomeEmailJob.perform_later(user_id=123)
+```
+
+---
+
+## Migrations (`db/migrations/versions/`)
+
+- Named: `YYYYMMDD_HHMMSS_description.py`
+- Run via `python manage.py db:migrate`
+- Always include `upgrade()` and `downgrade()`
+- Use Alembic `op.create_table`, `op.add_column`, etc.
+- Never modify existing migrations — always create a new one
+
+---
+
+## Schemas (`app/schemas/`)
+
+- Use Pydantic for **request body validation** and **response shape typing** only
+- Never use Pydantic for DB operations — that is always SQLAlchemy
+- Keep schemas thin; avoid duplicating model fields
+
+---
+
+## Response Format
+
+All API responses use this envelope (via `render_json` / `render_error`):
+
+```json
+// Success
+{ "success": true, "data": ..., "meta": { "page": 1, "total": 50 } }
+
+// Error
+{ "success": false, "error": "Not found", "code": 404 }
+```
+
+Never return raw dicts directly from controllers — always use `render_json` / `render_error`.
+
+---
+
+## Authentication
+
+- `AuthMiddleware` sets `request.state.current_user` from the Bearer JWT
+- Mix `Authenticatable` into controllers; call `self.authenticate_user()` in a `@before_action`
+- Use `self.current_user` (dict from JWT payload) in controller methods
+- Use `require_admin()` / `require_owner()` from `Authenticatable` for role checks
+
+---
+
+## Multi-Tenancy
+
+- All tenant-scoped models have `account_id`
+- Always filter queries by `account_id` in service methods — never return cross-tenant data
+- Resolve `account_id` via `AccountUser.find_by(self.db, user_id=user_id)` in the controller, then pass it to the service
+
+---
+
+## Frontend (`web/src/`)
+
+- API calls live in `web/src/api/*.ts` — one file per resource (e.g. `jobs.ts`, `scorecards.ts`)
+- All API calls use `Authorization: Bearer <token>` header
+- Expect `{ success, data }` envelope from every endpoint
+- Pages live in `web/src/pages/`, layouts in `web/src/layouts/`
+- Use React context from `web/src/contexts/` for global state (auth, account)
+
+---
+
+## Naming Conventions
+
+| Thing | Convention | Example |
+|---|---|---|
+| Model class | `PascalCase` | `InterviewScorecard` |
+| Model file | `snake_case.py` | `interview_scorecard.py` |
+| Table name | `plural_snake_case` | `scorecards` |
+| Controller class | `PascalCase` + `Controller` suffix | `ScorecardsController` |
+| Controller file | `snake_case_controller.py` | `scorecards_controller.py` |
+| Service class | `PascalCase` + `Service` suffix | `ScorecardService` |
+| Service file | `snake_case_service.py` | `scorecard_service.py` |
+| Job class | `PascalCase` + `Job` suffix | `AuditLogFlushJob` |
+| Job file | `snake_case_job.py` | `audit_log_flush_job.py` |
+| Migration file | `YYYYMMDD_HHMMSS_verb_noun.py` | `20260315_create_scorecards.py` |
+
+---
+
+## Do's and Don'ts
+
+**Do:**
+- Keep controllers thin — auth, params, call service, return response
+- Keep services focused — one service per resource, clear method names
+- Always cast path params to `int` explicitly
+- Use `Model.find(db, id)` (raises 404) or `Model.find_by(db, **kw)` (returns None)
+- Always scope DB queries to `account_id`
+- Add new routes in `config/routes.py` only
+
+**Don't:**
+- Write DB queries in controllers
+- Raise `HTTPException` in services
+- Use `self.db.query(Model)` legacy style — use `select()` or `BaseModel` class methods
+- Add FastAPI route decorators outside `config/routes.py`
+- Skip `@before_action` for auth — never inline auth in action methods
+- Commit model changes without a corresponding Alembic migration
