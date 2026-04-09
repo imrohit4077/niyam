@@ -128,6 +128,7 @@ def draw_routes(app: "FastAPI") -> None:
     from app.controllers.audit_log_controller import AuditLogController
     from app.controllers.communication_channels_controller import CommunicationChannelsController
     from app.controllers.communication_channels_oauth_controller import CommunicationChannelsOauthController
+    from app.controllers.reference_controller import ReferenceController
 
     router = APIRouter(prefix="/api/v1")
 
@@ -224,6 +225,12 @@ def draw_routes(app: "FastAPI") -> None:
         "/account/referral_settings",
         _wrap(AccountReferralSettingsController, "update", lambda c: c.update()),
         methods=["PATCH"],
+    )
+
+    router.add_api_route(
+        "/reference/countries",
+        _wrap(ReferenceController, "countries", lambda c: c.countries()),
+        methods=["GET"],
     )
 
     router.add_api_route(

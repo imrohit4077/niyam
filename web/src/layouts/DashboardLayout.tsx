@@ -28,6 +28,8 @@ function deriveTitle(pathname: string): string {
   if (pathname.includes('/settings/esign/overview')) return 'E-sign overview'
   if (pathname.includes('/settings/esign')) return 'E-sign'
   if (pathname.includes('/settings/general/organization')) return 'Organization'
+  if (pathname.includes('/settings/general/departments')) return 'Departments'
+  if (pathname.includes('/settings/general/job-locations')) return 'Job locations'
   if (pathname.includes('/settings/general/workspace')) return 'Workspace'
   if (pathname.includes('/settings/general/appearance')) return 'Typography'
   if (pathname.includes('/settings/custom-fields/candidates')) return 'Candidate fields'

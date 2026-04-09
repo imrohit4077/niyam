@@ -2,6 +2,8 @@ import { NavLink, Outlet, useParams } from 'react-router-dom'
 
 const NAV = [
   { path: 'organization', label: 'Organization', desc: 'Company, locale & timezone' },
+  { path: 'departments', label: 'Departments', desc: 'Teams for jobs and filters' },
+  { path: 'job-locations', label: 'Job locations', desc: 'Countries for job location field' },
   { path: 'workspace', label: 'Workspace', desc: 'Slug, plan & shortcuts' },
   { path: 'appearance', label: 'Typography', desc: 'Font family & base size for the app' },
   { path: 'referrals', label: 'Referral program', desc: 'Links, notifications & HRIS webhook' },
@@ -31,6 +33,10 @@ export default function GeneralSettingsLayout() {
                 <span className="esign-sidenav-link-icon" aria-hidden>
                   {item.path === 'organization' ? (
                     <IconOrg />
+                  ) : item.path === 'departments' ? (
+                    <IconDepartments />
+                  ) : item.path === 'job-locations' ? (
+                    <IconGlobe />
                   ) : item.path === 'workspace' ? (
                     <IconWorkspace />
                   ) : item.path === 'referrals' ? (
@@ -60,6 +66,24 @@ function IconOrg() {
   return (
     <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6}>
       <path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function IconDepartments() {
+  return (
+    <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6}>
+      <path d="M4 6h7v12H4zM13 10h7v8h-7z" strokeLinejoin="round" />
+      <path d="M9 6V4h6v2" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function IconGlobe() {
+  return (
+    <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6}>
+      <circle cx={12} cy={12} r={9} />
+      <path d="M3 12h18M12 3a15 15 0 000 18M12 3a15 15 0 010 18" strokeLinecap="round" />
     </svg>
   )
 }

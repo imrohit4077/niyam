@@ -7,6 +7,7 @@ Rails-style clarity:
   - Worker/beat: set LOG_COLOR_WORKER=false if you ship logs without ANSI escapes.
   - Log lines: file:line first, then UTC time, level (color), process (web|worker|beat),
     layer (Controller/Service/Job/[Celery:…]/[SQL]), message.
+  - SQL lines (LOG_SQL): INSERT green, SELECT blue, UPDATE yellow, DELETE red, other cyan.
 
 Usage elsewhere (unchanged):
   from app.helpers.logger import get_logger
@@ -48,14 +49,27 @@ _LEVEL_STYLES: dict[str, tuple[str, str]] = {
     "ERROR": ("\033[31m", "red"),       # red
     "CRITICAL": ("\033[35m", "magenta"),
 }
-_SQL_COLOR = "\033[94m"  # bright blue for SQL statements
+# SQL statement colors (before_cursor_execute → app.sql)
+_SQL_COLOR_INSERT = "\033[92m"  # bright green — INSERT
+_SQL_COLOR_SELECT = "\033[94m"  # bright blue — SELECT / reads
+_SQL_COLOR_UPDATE = "\033[93m"  # bright yellow — UPDATE
+_SQL_COLOR_DELETE = "\033[91m"  # bright red — DELETE
+_SQL_COLOR_OTHER = "\033[96m"  # bright cyan — PRAGMA, DDL, etc.
+
+_SQL_KIND_TO_COLOR: dict[str, str] = {
+    "insert": _SQL_COLOR_INSERT,
+    "select": _SQL_COLOR_SELECT,
+    "update": _SQL_COLOR_UPDATE,
+    "delete": _SQL_COLOR_DELETE,
+    "other": _SQL_COLOR_OTHER,
+}
 _CELERY_ACCENT = "\033[1;35m"  # bold magenta for [Celery:…] tags in worker/beat logs
 
 
 class ForgeLogFormatter(logging.Formatter):
     """
     filename:lineno [timestamp UTC] [LEVEL] [process] [layer] — message
-    SQL (logger app.sql): … [SQL] … with blue [SQL] + blue statement body.
+    SQL (logger app.sql): … [SQL] … — INSERT green, SELECT blue, UPDATE yellow, DELETE red, other cyan.
     """
 
     def __init__(self, *, use_color: bool = True) -> None:
@@ -82,8 +96,10 @@ class ForgeLogFormatter(logging.Formatter):
             # First column: source location (bold so it stays visible at line start)
             loc_s = f"\033[1m{loc}{_RESET}"
             if is_sql:
-                layer_s = f"{_SQL_COLOR}[SQL]{_RESET}"
-                msg = f"{_SQL_COLOR}{msg}{_RESET}"
+                kind = getattr(record, "sql_kind", None) or "other"
+                sql_c = _SQL_KIND_TO_COLOR.get(kind, _SQL_COLOR_OTHER)
+                layer_s = f"{sql_c}[SQL]{_RESET}"
+                msg = f"{sql_c}{msg}{_RESET}"
             elif layer.startswith("[Celery"):
                 layer_s = f"{_CELERY_ACCENT}{layer}{_RESET}"
             else:
@@ -238,6 +254,44 @@ def ensure_logging_configured() -> None:
     configure_logging(process_name="app")
 
 
+def _classify_sql_statement(statement: str) -> str:
+    """
+    Classify SQL for terminal color: insert | select | update | delete | other.
+    Strips leading comments (-- …, /* … */) so dialects that prefix comments still classify.
+    """
+    s = statement.lstrip()
+    if not s:
+        return "other"
+    while True:
+        t = s.lstrip()
+        if t.startswith("--"):
+            nl = s.find("\n")
+            if nl == -1:
+                return "other"
+            s = s[nl + 1 :]
+            continue
+        if t.startswith("/*"):
+            end = s.find("*/")
+            if end == -1:
+                break
+            s = s[end + 2 :]
+            continue
+        break
+    s = s.strip()
+    if not s:
+        return "other"
+    head = s.split(None, 1)[0].upper()
+    if head in ("INSERT", "REPLACE"):
+        return "insert"
+    if head == "UPDATE":
+        return "update"
+    if head == "DELETE":
+        return "delete"
+    if head in ("SELECT", "WITH"):
+        return "select"
+    return "other"
+
+
 def _sql_app_caller() -> tuple[str, int]:
     """
     Innermost stack frame under app/ (prefers services|controllers|models|jobs).
@@ -296,9 +350,13 @@ def attach_sqlalchemy_cursor_logging(engine: Any) -> None:
         msg = statement.strip()[:2000]
         if params is not None:
             msg = f"{msg} | params={params!r}"
+        sql_kind = _classify_sql_statement(statement)
         log.info(
             msg,
-            extra={"sql_source": f"{caller_file}:{caller_line}"},
+            extra={
+                "sql_source": f"{caller_file}:{caller_line}",
+                "sql_kind": sql_kind,
+            },
         )
 
 

@@ -13,6 +13,17 @@ import CustomAttributeFields from '../components/CustomAttributeFields'
 import LabelMultiSelect from '../components/LabelMultiSelect'
 import { customAttributesApi, type CustomAttributeDefinition } from '../api/customAttributes'
 import { labelsApi, type AccountLabelRow } from '../api/labels'
+import { getOrganizationSettings, type OrganizationSettings } from '../api/accountOrganization'
+import { fetchCountriesCatalog, type CountryRow } from '../api/reference'
+
+function normalizeOrgSettings(row: OrganizationSettings): OrganizationSettings {
+  return {
+    ...row,
+    departments: Array.isArray(row.departments) ? row.departments : [],
+    enabled_country_codes:
+      row.enabled_country_codes === undefined ? null : row.enabled_country_codes,
+  }
+}
 
 type JobStepId =
   | 'basic_info'
@@ -1167,6 +1178,8 @@ export default function JobEditorPage() {
   const [referralLinkLoading, setReferralLinkLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState('')
+  const [orgSettings, setOrgSettings] = useState<OrganizationSettings | null>(null)
+  const [countriesCatalog, setCountriesCatalog] = useState<CountryRow[]>([])
 
   const jobsBase = `/account/${accountId}/jobs`
   const numericId = isNew ? null : editJobId
@@ -1200,6 +1213,33 @@ export default function JobEditorPage() {
 
   const currentStep = visibleSteps[stepIndex] ?? visibleSteps[0]
   const stepId = currentStep?.id ?? 'basic_info'
+
+  const loadOrgMeta = useCallback(async () => {
+    const aid = Number(accountId)
+    if (!token || !Number.isFinite(aid)) return
+    try {
+      const [org, cat] = await Promise.all([getOrganizationSettings(token, aid), fetchCountriesCatalog(token)])
+      setOrgSettings(normalizeOrgSettings(org))
+      setCountriesCatalog(cat.countries)
+    } catch {
+      setOrgSettings(null)
+      setCountriesCatalog([])
+    }
+  }, [token, accountId])
+
+  useEffect(() => {
+    void loadOrgMeta()
+  }, [loadOrgMeta])
+
+  const locationOptions = useMemo((): CountryRow[] => {
+    const enabled = orgSettings?.enabled_country_codes
+    if (!countriesCatalog.length) return []
+    if (enabled === null || enabled === undefined) return countriesCatalog
+    const allow = new Set(enabled)
+    return countriesCatalog.filter(c => allow.has(c.code))
+  }, [orgSettings, countriesCatalog])
+
+  const departmentOptions = orgSettings?.departments ?? []
 
   useEffect(() => {
     accountMembersApi.list(token).then(setMembers).catch(() => setMembers([]))
@@ -1596,81 +1636,145 @@ export default function JobEditorPage() {
 
             <div className="job-editor-sheet-body job-editor-sheet-body--step">
               {stepId === 'basic_info' && (
-                <section className="job-step-pane">
-                  <div className="job-editor-grid-2">
-                    <JobEditorField label="Job title *">
-                      <input
-                        className="job-editor-input"
-                        value={form.title}
-                        onChange={e => set('title', e.target.value)}
-                        placeholder="Senior Software Engineer"
-                      />
-                    </JobEditorField>
-                    <JobEditorField label="Status">
-                      <select className="job-editor-select" value={form.status} onChange={e => set('status', e.target.value)}>
-                        <option value="draft">Draft</option>
-                        <option value="open">Open / live</option>
-                        <option value="paused">Paused</option>
-                        <option value="closed">Closed</option>
-                      </select>
-                    </JobEditorField>
-                    <JobEditorField label="Department">
-                      <input className="job-editor-input" value={form.department} onChange={e => set('department', e.target.value)} />
-                    </JobEditorField>
-                    <JobEditorField label="Location (city / region)">
-                      <input className="job-editor-input" value={form.location} onChange={e => set('location', e.target.value)} />
-                    </JobEditorField>
-                    <JobEditorField label="Work arrangement">
-                      <select
-                        className="job-editor-select"
-                        value={form.location_type}
-                        onChange={e => set('location_type', e.target.value)}
-                      >
-                        <option value="onsite">On-site</option>
-                        <option value="remote">Remote</option>
-                        <option value="hybrid">Hybrid</option>
-                      </select>
-                    </JobEditorField>
-                    <JobEditorField label="Employment type">
-                      <select
-                        className="job-editor-select"
-                        value={form.employment_type}
-                        onChange={e => set('employment_type', e.target.value)}
-                      >
-                        <option value="full_time">Full-time</option>
-                        <option value="part_time">Part-time</option>
-                        <option value="contract">Contract</option>
-                        <option value="internship">Internship</option>
-                      </select>
-                    </JobEditorField>
-                    <JobEditorField label="Experience level">
-                      <select
-                        className="job-editor-select"
-                        value={form.experience_level}
-                        onChange={e => set('experience_level', e.target.value)}
-                      >
-                        <option value="">—</option>
-                        <option value="0-1">0–1 years</option>
-                        <option value="2-5">2–5 years</option>
-                        <option value="6-10">6–10 years</option>
-                        <option value="10+">10+ years</option>
-                      </select>
-                    </JobEditorField>
-                    <JobEditorField label="Open positions (headcount)">
-                      <input
-                        className="job-editor-input"
-                        type="number"
-                        min={1}
-                        value={form.open_positions}
-                        onChange={e => set('open_positions', e.target.value)}
-                      />
-                    </JobEditorField>
+                <section className="job-step-pane job-basic-pane">
+                  <div className="job-basic-top">
+                    <div className="job-basic-title-block">
+                      <JobEditorField label="Job title">
+                        <input
+                          className="job-editor-input job-editor-input--title"
+                          value={form.title}
+                          onChange={e => set('title', e.target.value)}
+                          placeholder="e.g. Senior Software Engineer"
+                          aria-required
+                        />
+                      </JobEditorField>
+                    </div>
+                    <div className="job-basic-status-block">
+                      <JobEditorField label="Status">
+                        <select className="job-editor-select" value={form.status} onChange={e => set('status', e.target.value)}>
+                          <option value="draft">Draft</option>
+                          <option value="open">Open</option>
+                          <option value="paused">Paused</option>
+                          <option value="closed">Closed</option>
+                        </select>
+                      </JobEditorField>
+                    </div>
                   </div>
+
+                  <div className="job-basic-section">
+                    <h3 className="job-basic-section-title">Where &amp; how</h3>
+                    <div className="job-basic-grid">
+                      <JobEditorField label="Department" hint="Workspace list (Settings → General).">
+                        <select
+                          className="job-editor-select"
+                          value={
+                            !form.department
+                              ? ''
+                              : departmentOptions.some(d => d.name === form.department)
+                                ? form.department
+                                : `__legacy_dept__${form.department}`
+                          }
+                          onChange={e => {
+                            const v = e.target.value
+                            set('department', v.startsWith('__legacy_dept__') ? v.slice(15) : v)
+                          }}
+                        >
+                          <option value="">Select…</option>
+                          {departmentOptions.map(d => (
+                            <option key={d.id} value={d.name}>
+                              {d.name}
+                            </option>
+                          ))}
+                          {form.department && !departmentOptions.some(d => d.name === form.department) ? (
+                            <option value={`__legacy_dept__${form.department}`}>
+                              {form.department} (legacy)
+                            </option>
+                          ) : null}
+                        </select>
+                      </JobEditorField>
+                      <JobEditorField label="Location" hint="Enabled countries (Settings → General).">
+                        <select
+                          className="job-editor-select"
+                          value={
+                            !form.location
+                              ? ''
+                              : locationOptions.some(c => c.name === form.location)
+                                ? form.location
+                                : `__legacy_loc__${form.location}`
+                          }
+                          onChange={e => {
+                            const v = e.target.value
+                            set('location', v.startsWith('__legacy_loc__') ? v.slice(14) : v)
+                          }}
+                        >
+                          <option value="">Select…</option>
+                          {locationOptions.map(c => (
+                            <option key={c.code} value={c.name}>
+                              {c.name}
+                            </option>
+                          ))}
+                          {form.location && !locationOptions.some(c => c.name === form.location) ? (
+                            <option value={`__legacy_loc__${form.location}`}>{form.location} (legacy)</option>
+                          ) : null}
+                        </select>
+                      </JobEditorField>
+                      <JobEditorField label="Work mode">
+                        <select
+                          className="job-editor-select"
+                          value={form.location_type}
+                          onChange={e => set('location_type', e.target.value)}
+                        >
+                          <option value="onsite">On-site</option>
+                          <option value="remote">Remote</option>
+                          <option value="hybrid">Hybrid</option>
+                        </select>
+                      </JobEditorField>
+                    </div>
+                  </div>
+
+                  <div className="job-basic-section">
+                    <h3 className="job-basic-section-title">Role</h3>
+                    <div className="job-basic-grid job-basic-grid--role">
+                      <JobEditorField label="Employment">
+                        <select
+                          className="job-editor-select"
+                          value={form.employment_type}
+                          onChange={e => set('employment_type', e.target.value)}
+                        >
+                          <option value="full_time">Full-time</option>
+                          <option value="part_time">Part-time</option>
+                          <option value="contract">Contract</option>
+                          <option value="internship">Internship</option>
+                        </select>
+                      </JobEditorField>
+                      <JobEditorField label="Experience">
+                        <select
+                          className="job-editor-select"
+                          value={form.experience_level}
+                          onChange={e => set('experience_level', e.target.value)}
+                        >
+                          <option value="">Any</option>
+                          <option value="0-1">0–1 yr</option>
+                          <option value="2-5">2–5 yr</option>
+                          <option value="6-10">6–10 yr</option>
+                          <option value="10+">10+ yr</option>
+                        </select>
+                      </JobEditorField>
+                      <JobEditorField label="Headcount">
+                        <input
+                          className="job-editor-input"
+                          type="number"
+                          min={1}
+                          value={form.open_positions}
+                          onChange={e => set('open_positions', e.target.value)}
+                        />
+                      </JobEditorField>
+                    </div>
+                  </div>
+
                   {jobAttrDefs.length > 0 && (
-                    <JobEditorField
-                      label="Custom fields"
-                      hint="Settings → Custom fields → Job fields. Stored as custom_fields on this requisition."
-                    >
+                    <div className="job-basic-section">
+                      <h3 className="job-basic-section-title">Custom fields</h3>
                       <CustomAttributeFields
                         definitions={jobAttrDefs}
                         values={jobCustomFields}
@@ -1678,13 +1782,11 @@ export default function JobEditorPage() {
                         disabled={saving}
                         idPrefix="job-cf"
                       />
-                    </JobEditorField>
+                    </div>
                   )}
                   {!isNew && job && (
-                    <JobEditorField
-                      label="Labels"
-                      hint="Workspace labels (Settings → Labels). Search text is refreshed by the background worker."
-                    >
+                    <div className="job-basic-section">
+                      <h3 className="job-basic-section-title">Labels</h3>
                       <LabelMultiSelect
                         catalog={labelCatalog}
                         selectedIds={new Set((job.labels ?? []).map(l => l.id))}
@@ -1692,22 +1794,26 @@ export default function JobEditorPage() {
                         emptyHint="No labels yet — add them under Settings → Labels."
                         onToggle={(id, checked) => void toggleJobLabel(id, checked)}
                       />
-                    </JobEditorField>
+                    </div>
                   )}
-                  <JobEditorField label="Job description" hint="Rich text for public posting and internal alignment.">
-                    <div className="job-editor-description-wrap">
+
+                  <div className="job-basic-section job-basic-section--description">
+                    <h3 className="job-basic-section-title">Description</h3>
+                    <p className="job-basic-section-lead">Public-facing copy for the posting. Use headings and bullets for skimmability.</p>
+                    <div className="job-editor-description-wrap job-editor-description-wrap--basic">
                       <RichTextEditor
                         value={form.descriptionHtml}
                         onChange={html => setForm(f => ({ ...f, descriptionHtml: html }))}
-                        placeholder="Mission, responsibilities, what great looks like…"
-                        minHeight={isNew ? 260 : 300}
+                        placeholder="Role mission, responsibilities, requirements…"
+                        minHeight={isNew ? 220 : 240}
                       />
                     </div>
-                  </JobEditorField>
+                  </div>
+
                   {!isNew && job && (
-                    <footer className="job-editor-foot-meta">
-                      <span className="job-editor-foot-label">Posting slug</span>
-                      <code className="job-editor-foot-code">{job.slug}</code>
+                    <footer className="job-basic-slug-foot">
+                      <span className="job-basic-slug-label">URL slug</span>
+                      <code className="job-basic-slug-code">{job.slug}</code>
                     </footer>
                   )}
                 </section>

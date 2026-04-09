@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Link, useOutletContext, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import type { DashboardOutletContext } from '../layouts/DashboardOutletContext'
 import { jobsApi } from '../api/jobs'
@@ -14,6 +14,17 @@ import { interviewsApi, type InterviewAssignmentRow, type InterviewKitPayload } 
 import { scorecardsApi, type ScorecardRow } from '../api/scorecards'
 import CustomAttributeFields from './CustomAttributeFields'
 import { customAttributesApi, type CustomAttributeDefinition } from '../api/customAttributes'
+import { getOrganizationSettings, type OrganizationSettings } from '../api/accountOrganization'
+import { fetchCountriesCatalog, type CountryRow } from '../api/reference'
+
+function normalizeOrgSettings(row: OrganizationSettings): OrganizationSettings {
+  return {
+    ...row,
+    departments: Array.isArray(row.departments) ? row.departments : [],
+    enabled_country_codes:
+      row.enabled_country_codes === undefined ? null : row.enabled_country_codes,
+  }
+}
 
 // ── Shared UI primitives ───────────────────────────────────────────
 
@@ -302,6 +313,40 @@ export function ProfileView() {
 
 // ── Jobs view ──────────────────────────────────────────────────────
 
+function JobIconPencil() {
+  return (
+    <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden>
+      <path
+        d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+function JobIconExternal() {
+  return (
+    <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden>
+      <path d="M18 13v6a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+function JobIconCopy() {
+  return (
+    <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden>
+      <rect x={9} y={9} width={13} height={13} rx={2} />
+      <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+function JobIconTrash() {
+  return (
+    <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden>
+      <path d="M4 7h16M10 11v6M14 11v6M6 7l1-3h10l1 3M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
 export function JobsView() {
   const { token, accountId } = useOutletContext<DashboardOutletContext>()
   const navigate = useNavigate()
@@ -315,14 +360,42 @@ export function JobsView() {
   const [statusFilter, setStatusFilter] = useState<string>('')
   const [departmentFilter, setDepartmentFilter] = useState('')
   const [locationFilter, setLocationFilter] = useState('')
+  const [orgSettings, setOrgSettings] = useState<OrganizationSettings | null>(null)
+  const [countries, setCountries] = useState<CountryRow[]>([])
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedQ(filterQ.trim()), 320)
     return () => clearTimeout(t)
   }, [filterQ])
 
+  const loadMeta = useCallback(async () => {
+    const aid = Number(accountId)
+    if (!token || !Number.isFinite(aid)) return
+    try {
+      const [org, cat] = await Promise.all([getOrganizationSettings(token, aid), fetchCountriesCatalog(token)])
+      setOrgSettings(normalizeOrgSettings(org))
+      setCountries(cat.countries)
+    } catch {
+      setOrgSettings(null)
+      setCountries([])
+    }
+  }, [token, accountId])
+
+  useEffect(() => {
+    void loadMeta()
+  }, [loadMeta])
+
+  const locationOptions = useMemo((): CountryRow[] => {
+    const enabled = orgSettings?.enabled_country_codes
+    if (!countries.length) return []
+    if (enabled === null || enabled === undefined) return countries
+    const allow = new Set(enabled)
+    return countries.filter((c: CountryRow) => allow.has(c.code))
+  }, [orgSettings, countries])
+
   const load = useCallback(async () => {
-    setLoading(true); setErr('')
+    setLoading(true)
+    setErr('')
     try {
       setJobs(
         await jobsApi.list(token, {
@@ -339,7 +412,9 @@ export function JobsView() {
     }
   }, [token, debouncedQ, statusFilter, departmentFilter, locationFilter])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => {
+    void load()
+  }, [load])
 
   const del = async (job: Job) => {
     try {
@@ -352,6 +427,8 @@ export function JobsView() {
     setConfirmDelete(null)
   }
 
+  const deptOptions = orgSettings?.departments ?? []
+
   return (
     <>
       {confirmDelete && (
@@ -362,116 +439,172 @@ export function JobsView() {
           onCancel={() => setConfirmDelete(null)}
         />
       )}
-      <ListHeader
-        title="Jobs"
-        count={jobs.length}
-        onAction={() => navigate(`/account/${accountId}/jobs/new`)}
-        actionLabel="+ New Job"
-      />
-      <div className="list-filters-bar" role="search" aria-label="Filter jobs">
-        <input
-          type="search"
-          className="list-filter-input"
-          placeholder="Search title, description, versions…"
-          value={filterQ}
-          onChange={e => setFilterQ(e.target.value)}
-          aria-label="Search jobs"
+      <div className="jobs-page">
+        <ListHeader
+          title="Jobs"
+          count={jobs.length}
+          onAction={() => navigate(`/account/${accountId}/jobs/new`)}
+          actionLabel="+ New Job"
         />
-        <select
-          className="list-filter-select"
-          value={statusFilter}
-          onChange={e => setStatusFilter(e.target.value)}
-          aria-label="Job status"
-        >
-          <option value="">All statuses</option>
-          <option value="draft">draft</option>
-          <option value="open">open</option>
-          <option value="paused">paused</option>
-          <option value="closed">closed</option>
-        </select>
-        <input
-          type="search"
-          className="list-filter-input list-filter-input--narrow"
-          placeholder="Department"
-          value={departmentFilter}
-          onChange={e => setDepartmentFilter(e.target.value)}
-          aria-label="Filter by department"
-        />
-        <input
-          type="search"
-          className="list-filter-input list-filter-input--narrow"
-          placeholder="Location"
-          value={locationFilter}
-          onChange={e => setLocationFilter(e.target.value)}
-          aria-label="Filter by location"
-        />
-      </div>
-      <p className="interviews-lead" style={{ margin: '0 0 12px' }}>
-        Interview scorecards are recorded per candidate (after interviews), not for the job itself. Open{' '}
-        <strong>Applications</strong> or <strong>Interviews</strong> to view or submit scores.
-      </p>
-      <div className="list-table">
-        <div className="list-table-head">
-          <div className="list-col list-col-main">Title</div>
-          <div className="list-col">Department</div>
-          <div className="list-col">Location</div>
-          <div className="list-col">Status</div>
-          <div className="list-col">Actions</div>
-        </div>
-        {loading && <LoadingRow />}
-        {err && <ErrorRow msg={err} />}
-        {!loading && !err && jobs.length === 0 && <EmptyRow text="No jobs yet. Create your first job to get started." />}
-        {jobs.map(j => (
-          <div key={j.id} className="list-row">
-            <div className="list-col list-col-main"><div><div className="list-row-name">{j.title}</div><div className="list-row-sub">{j.slug}</div></div></div>
-            <div className="list-col list-row-sub">{j.department || '—'}</div>
-            <div className="list-col list-row-sub">{j.location || '—'}</div>
-            <div className="list-col"><span className={`tag ${STAGE_COLORS[j.status] ?? 'tag-gray'}`}>{j.status}</span></div>
-            <div className="list-col" style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-              <button
-                type="button"
-                className="btn-row-action"
-                onClick={() => navigate(`/account/${accountId}/jobs/${j.id}/edit`)}
-              >
-                Edit
-              </button>
-              {j.apply_token && (
-                <>
-                  <button
-                    type="button"
-                    className="btn-row-action"
-                    title={j.status === 'open' ? 'Open candidate apply page' : 'Set status to Open so candidates can view and apply'}
-                    disabled={j.status !== 'open'}
-                    onClick={() => {
-                      const u = `${window.location.origin}/apply/${encodeURIComponent(j.apply_token!)}`
-                      window.open(u, '_blank', 'noopener,noreferrer')
-                    }}
-                  >
-                    Apply page
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-row-action"
-                    title={j.status === 'open' ? 'Copy link' : 'Candidates can only apply when job status is Open'}
-                    disabled={j.status !== 'open'}
-                    onClick={() => {
-                      const u = `${window.location.origin}/apply/${encodeURIComponent(j.apply_token!)}`
-                      void navigator.clipboard.writeText(u).then(
-                        () => toast.success('Apply link copied', 'Share this URL with candidates.'),
-                        () => toast.error('Copy failed', 'Copy the link from the address bar after opening Apply page.'),
-                      )
-                    }}
-                  >
-                    Copy link
-                  </button>
-                </>
-              )}
-              <button type="button" className="btn-row-action btn-row-danger" onClick={() => setConfirmDelete(j)}>
-                Delete
-              </button>
-            </div>
+
+        <div className="jobs-filters-toolbar" role="search" aria-label="Filter jobs">
+          <div className="jobs-filters-row jobs-filters-row--search">
+            <span className="jobs-filter-icon" aria-hidden>
+              <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
+                <circle cx={11} cy={11} r={7} />
+                <path d="M20 20l-3-3" strokeLinecap="round" />
+              </svg>
+            </span>
+            <input
+              type="search"
+              className="jobs-filter-search"
+              placeholder="Search title, description, versions…"
+              value={filterQ}
+              onChange={e => setFilterQ(e.target.value)}
+              aria-label="Search jobs"
+            />
           </div>
-        ))}
+          <div className="jobs-filters-row jobs-filters-row--selects">
+            <label className="jobs-filter-field">
+              <span className="jobs-filter-label">Status</span>
+              <select
+                className="jobs-filter-select"
+                value={statusFilter}
+                onChange={e => setStatusFilter(e.target.value)}
+              >
+                <option value="">All statuses</option>
+                <option value="draft">Draft</option>
+                <option value="open">Open</option>
+                <option value="paused">Paused</option>
+                <option value="closed">Closed</option>
+              </select>
+            </label>
+            <label className="jobs-filter-field">
+              <span className="jobs-filter-label">Department</span>
+              <select
+                className="jobs-filter-select"
+                value={departmentFilter}
+                onChange={e => setDepartmentFilter(e.target.value)}
+              >
+                <option value="">All departments</option>
+                {deptOptions.map(d => (
+                  <option key={d.id} value={d.name}>
+                    {d.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="jobs-filter-field">
+              <span className="jobs-filter-label">Location</span>
+              <select className="jobs-filter-select" value={locationFilter} onChange={e => setLocationFilter(e.target.value)}>
+                <option value="">All locations</option>
+                {locationOptions.map(c => (
+                  <option key={c.code} value={c.name}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+        </div>
+
+        <p className="jobs-page-hint">
+          Interview scorecards are recorded per candidate (after interviews), not for the job itself. Open{' '}
+          <strong>Applications</strong> or <strong>Interviews</strong> to view or submit scores. Configure departments and
+          departments under <strong>Settings → General → Departments</strong> and countries under{' '}
+          <strong>Job locations</strong>.
+        </p>
+
+        <div className="list-table jobs-table">
+          <div className="list-table-head jobs-table-head">
+            <div className="list-col list-col-main">Title</div>
+            <div className="list-col">Department</div>
+            <div className="list-col">Location</div>
+            <div className="list-col">Status</div>
+            <div className="list-col list-col-actions">Actions</div>
+          </div>
+          {loading && <LoadingRow />}
+          {err && <ErrorRow msg={err} />}
+          {!loading && !err && jobs.length === 0 && (
+            <EmptyRow
+              text={
+                debouncedQ || statusFilter || departmentFilter || locationFilter
+                  ? 'No jobs match your filters. Try clearing filters or create a new job.'
+                  : 'No jobs yet. Create your first job to get started.'
+              }
+            />
+          )}
+          {jobs.map(j => (
+            <div key={j.id} className="list-row jobs-table-row">
+              <div className="list-col list-col-main">
+                <div>
+                  <div className="list-row-name">{j.title}</div>
+                  <div className="list-row-sub">{j.slug}</div>
+                </div>
+              </div>
+              <div className="list-col list-row-sub">{j.department || '—'}</div>
+              <div className="list-col list-row-sub">{j.location || '—'}</div>
+              <div className="list-col">
+                <span className={`tag ${STAGE_COLORS[j.status] ?? 'tag-gray'}`}>{j.status}</span>
+              </div>
+              <div className="list-col list-col-actions">
+                <div className="jobs-actions-row">
+                  <button
+                    type="button"
+                    className="btn-icon-round"
+                    title="Edit job"
+                    aria-label="Edit job"
+                    onClick={() => navigate(`/account/${accountId}/jobs/${j.id}/edit`)}
+                  >
+                    <JobIconPencil />
+                  </button>
+                  {j.apply_token ? (
+                    <>
+                      <button
+                        type="button"
+                        className="btn-icon-round"
+                        title={j.status === 'open' ? 'Open apply page' : 'Job must be Open to apply'}
+                        aria-label="Open apply page"
+                        disabled={j.status !== 'open'}
+                        onClick={() => {
+                          const u = `${window.location.origin}/apply/${encodeURIComponent(j.apply_token!)}`
+                          window.open(u, '_blank', 'noopener,noreferrer')
+                        }}
+                      >
+                        <JobIconExternal />
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-icon-round"
+                        title={j.status === 'open' ? 'Copy apply link' : 'Job must be Open'}
+                        aria-label="Copy apply link"
+                        disabled={j.status !== 'open'}
+                        onClick={() => {
+                          const u = `${window.location.origin}/apply/${encodeURIComponent(j.apply_token!)}`
+                          void navigator.clipboard.writeText(u).then(
+                            () => toast.success('Apply link copied', 'Share this URL with candidates.'),
+                            () => toast.error('Copy failed', 'Open the apply page and copy from the address bar.'),
+                          )
+                        }}
+                      >
+                        <JobIconCopy />
+                      </button>
+                    </>
+                  ) : null}
+                  <button
+                    type="button"
+                    className="btn-icon-round btn-icon-round--danger"
+                    title="Delete job"
+                    aria-label="Delete job"
+                    onClick={() => setConfirmDelete(j)}
+                  >
+                    <JobIconTrash />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </>
   )

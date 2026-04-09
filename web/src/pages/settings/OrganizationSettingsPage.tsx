@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useParams } from 'react-router-dom'
 import { useAuth } from '../../auth/AuthContext'
 import { useToast } from '../../contexts/ToastContext'
 import {
@@ -55,7 +56,13 @@ function timeZoneOptions(): string[] {
   ]
 }
 
+function normalizeOrg(row: OrganizationSettings): OrganizationSettings {
+  return { ...row }
+}
+
 export default function OrganizationSettingsPage() {
+  const { accountId: accountIdParam } = useParams<{ accountId: string }>()
+  const accountId = accountIdParam ? Number(accountIdParam) : NaN
   const { getToken, loadProfile } = useAuth()
   const { success, error: showError } = useToast()
   const token = getToken()
@@ -66,28 +73,28 @@ export default function OrganizationSettingsPage() {
   const [form, setForm] = useState<OrganizationSettings | null>(null)
 
   const load = useCallback(async () => {
-    if (!token) return
+    if (!token || !Number.isFinite(accountId)) return
     setLoading(true)
     try {
-      const row = await getOrganizationSettings(token)
-      setForm(row)
+      const row = await getOrganizationSettings(token, accountId)
+      setForm(normalizeOrg(row))
     } catch (e) {
       showError('Could not load organization settings', e instanceof Error ? e.message : undefined)
       setForm(null)
     } finally {
       setLoading(false)
     }
-  }, [token, showError])
+  }, [token, accountId, showError])
 
   useEffect(() => {
     void load()
   }, [load])
 
   async function save() {
-    if (!token || !form) return
+    if (!token || !form || !Number.isFinite(accountId)) return
     setSaving(true)
     try {
-      const updated = await patchOrganizationSettings(token, {
+      const updated = await patchOrganizationSettings(token, accountId, {
         name: form.name.trim(),
         organization: {
           logo_url: form.logo_url.trim(),
@@ -97,7 +104,7 @@ export default function OrganizationSettingsPage() {
           timezone: form.timezone,
         },
       })
-      setForm(updated)
+      setForm(normalizeOrg(updated))
       await loadProfile()
       success('Saved', 'Organization settings updated.')
     } catch (e) {
@@ -113,13 +120,14 @@ export default function OrganizationSettingsPage() {
     return zones
   }, [zones, form])
 
-  if (!token) return null
+  if (!token || !Number.isFinite(accountId)) return null
 
   return (
     <div className="settings-org-page">
       <p className="settings-lead">
         These values apply across your workspace. <strong>Timezone</strong> is used for dates and scheduling context in
-        the app.
+        the app. Manage <strong>departments</strong> and <strong>job location countries</strong> from the{' '}
+        <strong>Departments</strong> and <strong>Job locations</strong> items in the General sidebar.
       </p>
 
       {loading || !form ? (
@@ -220,6 +228,7 @@ export default function OrganizationSettingsPage() {
                 IANA timezone (e.g. America/New_York). Used for consistent timestamps and scheduling.
               </p>
             </div>
+
           </div>
         </>
       )}
