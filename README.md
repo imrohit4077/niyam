@@ -185,6 +185,12 @@ Copy `.env.example` to `.env`. Key variables:
 | `CELERY_BROKER_URL` | Celery broker | `redis://localhost:6379/2` |
 | `CELERY_RESULT_BACKEND` | Celery results | `redis://localhost:6379/2` |
 | `DEFAULT_PAGE_SIZE` / `MAX_PAGE_SIZE` | Pagination | `20` / `100` |
+| `FRONTEND_PUBLIC_URL` | SPA base URL (OAuth return, public links) | (empty) |
+| `GOOGLE_OAUTH_CLIENT_ID` | Gmail connect in Communication channels | (empty) |
+| `GOOGLE_OAUTH_CLIENT_SECRET` | Gmail OAuth client secret | (empty) |
+| `GOOGLE_OAUTH_REDIRECT_URI` | Must match Google Cloud Console redirect URI | (empty) |
+
+**Gmail OAuth (Communication channels)** — set `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, and `GOOGLE_OAUTH_REDIRECT_URI` (e.g. `http://localhost:8000/api/v1/communication_channels/oauth/google/callback`). Register the same redirect URI in [Google Cloud Console](https://console.cloud.google.com/) under APIs & Services → Credentials → OAuth 2.0 Client. Set `FRONTEND_PUBLIC_URL` to your Vite dev server (e.g. `http://localhost:5173`) so users return to the app after Google redirects to the API callback.
 
 ### Database (`config/database.yml`)
 

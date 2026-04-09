@@ -1,4 +1,17 @@
-# React + TypeScript + Vite
+# React + TypeScript + Vite (ForgeAPI `web/`)
+
+The API lives in the repo root. For **Communication channels → Connect Gmail**, the backend needs these in the **root** `.env` (see root `.env.example`):
+
+```env
+FRONTEND_PUBLIC_URL=http://localhost:5173
+GOOGLE_OAUTH_CLIENT_ID=your-client-id.apps.googleusercontent.com
+GOOGLE_OAUTH_CLIENT_SECRET=...
+GOOGLE_OAUTH_REDIRECT_URI=http://localhost:8000/api/v1/communication_channels/oauth/google/callback
+```
+
+Register `GOOGLE_OAUTH_REDIRECT_URI` exactly in Google Cloud Console. Run the API on port 8000 and this dev server on 5173 (or adjust URLs to match).
+
+---
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
