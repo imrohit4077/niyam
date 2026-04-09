@@ -508,13 +508,6 @@ export function JobsView() {
           </div>
         </div>
 
-        <p className="jobs-page-hint">
-          Interview scorecards are recorded per candidate (after interviews), not for the job itself. Open{' '}
-          <strong>Applications</strong> or <strong>Interviews</strong> to view or submit scores. Configure departments and
-          departments under <strong>Settings → General → Departments</strong> and countries under{' '}
-          <strong>Job locations</strong>.
-        </p>
-
         <div className="list-table jobs-table">
           <div className="list-table-head jobs-table-head">
             <div className="list-col list-col-main">Title</div>
