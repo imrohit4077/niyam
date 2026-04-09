@@ -127,6 +127,7 @@ def draw_routes(app: "FastAPI") -> None:
     from app.controllers.referrals_admin_controller import ReferralsAdminController
     from app.controllers.audit_log_controller import AuditLogController
     from app.controllers.communication_channels_controller import CommunicationChannelsController
+    from app.controllers.communication_channels_oauth_controller import CommunicationChannelsOauthController
 
     router = APIRouter(prefix="/api/v1")
 
@@ -259,6 +260,17 @@ def draw_routes(app: "FastAPI") -> None:
         "/communication_channels/{id:int}/set_default",
         _wrap(CommunicationChannelsController, "set_default", lambda c: c.set_default()),
         methods=["PATCH"],
+    )
+
+    router.add_api_route(
+        "/communication_channels/oauth/google/authorize",
+        _wrap(CommunicationChannelsOauthController, "google_authorize", lambda c: c.google_authorize()),
+        methods=["GET"],
+    )
+    router.add_api_route(
+        "/communication_channels/oauth/google/callback",
+        _wrap(CommunicationChannelsOauthController, "google_callback", lambda c: c.google_callback(), run_before=False),
+        methods=["GET"],
     )
 
     router.add_api_route(

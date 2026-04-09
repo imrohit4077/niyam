@@ -67,6 +67,10 @@ class Settings(BaseSettings):
 
     # E-sign: candidate signing links (SPA origin); optional global webhook secret for providers
     FRONTEND_PUBLIC_URL: str = ""
+    # Gmail OAuth for Communication channels (must match Google Cloud Console redirect URI)
+    GOOGLE_OAUTH_CLIENT_ID: str = ""
+    GOOGLE_OAUTH_CLIENT_SECRET: str = ""
+    GOOGLE_OAUTH_REDIRECT_URI: str = ""
     ESIGN_WEBHOOK_SECRET: str = ""
     # When set, each merged internal e-sign HTML snapshot is also written under {dir}/{account_id}/{request_id}.html
     ESIGN_ARTIFACTS_DIR: str = ""

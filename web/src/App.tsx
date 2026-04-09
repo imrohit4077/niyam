@@ -35,7 +35,8 @@ import ReferralsHubPage from './pages/ReferralsHubPage'
 import CustomFieldsSettingsLayout from './layouts/CustomFieldsSettingsLayout'
 import CustomFieldsEntityPage from './pages/settings/CustomFieldsEntityPage'
 import LabelsSettingsPage from './pages/settings/LabelsSettingsPage'
-import CommunicationChannelsPage from './pages/settings/CommunicationChannelsPage'
+import CommunicationChannelsHubPage from './pages/settings/CommunicationChannelsHubPage'
+import CommunicationChannelsEmailPage from './pages/settings/CommunicationChannelsEmailPage'
 import HomeDashboardPage from './pages/HomeDashboardPage'
 import EsignOverviewPage from './pages/esign/EsignOverviewPage'
 import EsignTemplatesListPage from './pages/esign/EsignTemplatesListPage'
@@ -161,7 +162,8 @@ function AppRoutes() {
               </Route>
               <Route path="labels" element={<LabelsSettingsPage />} />
               <Route path="communication-channels" element={<CommunicationChannelsAdminGate />}>
-                <Route index element={<CommunicationChannelsPage />} />
+                <Route index element={<CommunicationChannelsHubPage />} />
+                <Route path="email" element={<CommunicationChannelsEmailPage />} />
               </Route>
               <Route path="esign" element={<EsignSettingsLayout />}>
                 <Route index element={<Navigate to="overview" replace />} />

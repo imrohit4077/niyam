@@ -46,7 +46,7 @@ export default function SettingsLayout() {
           <NavLink
             to={`${base}/communication-channels`}
             className={({ isActive }) => `settings-subnav-link ${isActive ? 'settings-subnav-link--active' : ''}`}
-            end
+            end={false}
           >
             Communication channels
           </NavLink>
