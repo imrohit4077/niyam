@@ -28,6 +28,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
         "/api/v1/auth/refresh",
         "/api/v1/public/esign",
         "/api/v1/webhooks/esign",
+        "/api/v1/communication_channels/oauth/google/callback",
     }
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:

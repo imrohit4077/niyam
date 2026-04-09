@@ -252,7 +252,6 @@ export default function Sidebar({ accountId }: Props) {
                     item.id === 'profile' ||
                     item.id === 'settings-custom-fields' ||
                     item.id === 'settings-labels' ||
-                    item.id === 'settings-communication-channels' ||
                     item.id === 'settings-audit-compliance'
                   }
                   title={collapsed ? item.label : undefined}

@@ -88,4 +88,8 @@ export const communicationChannelsApi = {
 
   setDefault: (token: string, id: number) =>
     req<CommunicationChannelRow>(`/communication_channels/${id}/set_default`, token, { method: 'PATCH' }),
+
+  /** Admin only. Requires GOOGLE_OAUTH_* env on the API. Returns URL to open (same window) for Google consent. */
+  googleOAuthAuthorize: (token: string) =>
+    req<{ authorization_url: string }>('/communication_channels/oauth/google/authorize', token),
 }
