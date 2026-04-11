@@ -115,8 +115,8 @@ export default function ReferralProgramSettingsPage() {
           HRIS / payroll webhook
         </h3>
         <p className="job-editor-step-lead" style={{ marginTop: 0 }}>
-          When a bonus becomes eligible, Forge can POST a JSON payload to your URL. Optional HMAC secret is sent as{' '}
-          <code>X-Forge-Signature</code>.
+          When a bonus becomes eligible, Niyam can POST a JSON payload to your URL. Optional HMAC secret is sent as{' '}
+          <code>X-Niyam-Signature</code>.
         </p>
         <div className="esign-field" style={{ marginBottom: 12 }}>
           <label className="esign-label">Webhook URL</label>

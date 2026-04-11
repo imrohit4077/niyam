@@ -294,7 +294,7 @@ const SKILL_CATALOG: string[] = [
   'React Native',
   'Redis',
   'Ruby',
-  'Ruby on Rails',
+  'Rails',
   'Rust',
   'Salesforce',
   'Scala',

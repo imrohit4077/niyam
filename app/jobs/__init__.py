@@ -1,4 +1,4 @@
-"""Background jobs. Rails equivalent: app/jobs/ (ActiveJob)."""
+"""Background jobs (Celery tasks)."""
 
 from app.jobs.base_job import BaseJob
 

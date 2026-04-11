@@ -1,7 +1,4 @@
-"""
-Application settings loaded from environment.
-Rails equivalent: config/application.rb + config/database.yml + env vars.
-"""
+"""Application settings loaded from environment (Niyam ATS)."""
 
 from functools import lru_cache
 from typing import Literal
@@ -20,7 +17,7 @@ class Settings(BaseSettings):
     )
 
     # App
-    APP_NAME: str = "MyApp"
+    APP_NAME: str = "Niyam"
     APP_ENV: Literal["development", "staging", "production"] = "development"
     DEBUG: bool = True
     SECRET_KEY: str = "change-me-in-production"
@@ -30,13 +27,13 @@ class Settings(BaseSettings):
     LOG_COLOR: bool = True
     # Celery worker/beat: use ANSI colors even when stdout is not a TTY (Docker/K8s). Set false for raw log shipping.
     LOG_COLOR_WORKER: bool = True
-    # Rails-style: print SQL in dev by default; set LOG_SQL=false in production if too noisy.
+
     LOG_SQL: bool = True
 
     # Audit: buffer API audit payloads in Redis; Celery Beat flushes to Postgres on a schedule.
     AUDIT_LOG_BUFFER_ENABLED: bool = True
     AUDIT_LOG_REDIS_URL: str = ""  # empty → same as REDIS_URL
-    AUDIT_LOG_BUFFER_KEY: str = "forge:audit_log:buffer:v1"
+    AUDIT_LOG_BUFFER_KEY: str = "niyam:audit_log:buffer:v1"
 
     # Database
     DATABASE_URL: str = "postgresql://postgres:postgres@localhost:5432/myapp"
@@ -53,7 +50,7 @@ class Settings(BaseSettings):
     REDIS_URL: str = "redis://localhost:6379/0"
 
     # Celery
-    # Celery broker DB index (Rails/Sidekiq style). Requested default: Redis DB 2.
+    # Celery broker DB index. Default: Redis DB 2.
     CELERY_BROKER_URL: str = "redis://localhost:6379/2"
     CELERY_RESULT_BACKEND: str = "redis://localhost:6379/2"
     # Worker process: gevent = many concurrent greenlets on one OS process (not prefork).
@@ -92,7 +89,7 @@ CELERY_TIMEZONE = "UTC"
 CELERY_ENABLE_UTC = True
 CELERY_TASK_TRACK_STARTED = True
 
-# Named queues (Rails/Sidekiq style)
+# Named Celery queues
 CELERY_TASK_QUEUES = ["default", "mailers", "critical", "low_priority"]
 CELERY_DEFAULT_QUEUE = "default"
 

@@ -7,7 +7,7 @@ from app.services.referral_service import run_eligibility_scan
 logger = get_logger(__name__)
 
 
-@celery_app.task(name="forge.referral_bonus_eligibility_scan")
+@celery_app.task(name="niyam.referral_bonus_eligibility_scan")
 def referral_bonus_eligibility_scan() -> int:
     db = SessionLocal()
     try:

@@ -1,6 +1,6 @@
-# Applicant Tracking System — Full-stack platform
+# Niyam — Applicant Tracking System (ATS)
 
-A production-oriented **Applicant Tracking System (ATS)** with a **Rails-style FastAPI** backend and a **React (Vite + TypeScript)** web app. It supports multi-account workspaces, jobs, candidates, pipeline stages, structured interviews, scorecards, referrals, electronic signatures, labels, audit logging, and organization settings—wired through a consistent **controllers → services → models** architecture.
+**Niyam** is a production-oriented **Applicant Tracking System**. The stack is **FastAPI** + **SQLAlchemy** on the backend and **React (Vite + TypeScript)** on the frontend. It supports multi-account workspaces, jobs, candidates, pipeline stages, structured interviews, scorecards, referrals, electronic signatures, labels, audit logging, and organization settings—wired through **controllers → services → models**.
 
 ---
 
@@ -89,7 +89,7 @@ A production-oriented **Applicant Tracking System (ATS)** with a **Rails-style F
 │
 ├── config/
 │   ├── settings.py         # Environment-backed settings
-│   ├── database.yml        # Per-environment DB (Rails-style)
+│   ├── database.yml        # Per-environment DB (YAML)
 │   ├── database_yml.py     # YAML → DATABASE_URL
 │   ├── database.py         # Engine, SessionLocal, get_db
 │   ├── routes.py           # All API routes (draw_routes)
@@ -208,7 +208,7 @@ Copy **`.env.example`** to **`.env`**. Important variables:
 
 ### Database (`config/database.yml`)
 
-Rails-style YAML per environment. **`APP_ENV`** selects the section merged with `default`. You can always override with **`DATABASE_URL`** in `.env`.
+YAML database config per environment. **`APP_ENV`** selects the section merged with `default`. You can always override with **`DATABASE_URL`** in `.env`.
 
 ---
 
@@ -269,7 +269,7 @@ Responses use a consistent JSON envelope (e.g. `success`, `data`, `error`) via c
 - **Models:** SQLAlchemy 2 `Mapped` / `mapped_column`; tenant-scoped data uses **`account_id`**; **`to_dict()`** for serialization.
 - **Jobs:** Celery tasks under **`app/jobs/`**; register includes in **`config/celery.py`** as needed.
 
-Project-specific editor rules may live under **`.cursor/rules/`** for AI-assisted development.
+Editor and AI guidance: **`.cursor/rules/niyam-conventions.mdc`**.
 
 ---
 
@@ -284,7 +284,7 @@ Project-specific editor rules may live under **`.cursor/rules/`** for AI-assiste
 | `python manage.py scheduler` | Celery Beat |
 | `python manage.py generate migration \| controller \| model \| job \| service` | Scaffolds |
 
-**Note:** `manage.py` accepts Rails-style **`db:migrate`** as well as **`db migrate`**.
+**Note:** `manage.py` accepts **`db:migrate`** (colon) as well as **`db migrate`**.
 
 ---
 
@@ -315,7 +315,7 @@ pytest tests/ -v --cov=app --cov-report=term-missing
 
 ## Optional: fastforge scaffold CLI
 
-This repository includes a **`fastforge`** package definition in **`pyproject.toml`** for generating new apps and scaffolds (similar in spirit to `rails new` / `rails generate`). Install in editable mode if you use it:
+This repository includes a **`fastforge`** package definition in **`pyproject.toml`** for generating new apps and scaffolds. Install in editable mode if you use it:
 
 ```bash
 pip install -e .

@@ -1,4 +1,4 @@
-"""Celery: queue e-sign rows on pipeline stage change; document merge runs in forge.esign_deliver_request."""
+"""Celery: queue e-sign rows on pipeline stage change; document merge runs in niyam.esign_deliver_request."""
 from __future__ import annotations
 
 from config.celery import celery_app
@@ -9,7 +9,7 @@ from app.services.esign_automation_service import EsignAutomationService
 logger = get_logger(__name__)
 
 
-@celery_app.task(name="forge.esign_on_stage_transition")
+@celery_app.task(name="niyam.esign_on_stage_transition")
 def esign_on_stage_transition(
     account_id: int,
     application_id: int,

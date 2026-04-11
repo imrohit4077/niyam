@@ -20,7 +20,7 @@ from app.services.interview_sync_service import ensure_interview_assignments_for
 logger = get_logger(__name__)
 
 
-@celery_app.task(name="forge.interview_assignments_backfill_account", ignore_result=True)
+@celery_app.task(name="niyam.interview_assignments_backfill_account", ignore_result=True)
 def interview_assignments_backfill_account(account_id: int, batch_size: int = 500) -> dict[str, Any]:
     """
     Scan applications in the account (non-deleted, pipeline stage set) and ensure assignments exist.

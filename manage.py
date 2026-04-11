@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-CLI manager. Rails equivalent: bin/rails / rails runner
+Niyam ATS — CLI manager.
+
 Commands: runserver, generate migration|controller|model|job|service, db:migrate|rollback|status|history|seed|reset, routes, worker (starts Beat by default), scheduler, shell.
 """
 
@@ -18,7 +19,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 @click.group()
 def cli() -> None:
-    """MyApp CLI - Rails-style management."""
+    """Niyam CLI."""
     pass
 
 
@@ -26,7 +27,7 @@ def cli() -> None:
 @click.option("--port", default=8000, help="Port to run on.")
 @click.option("--host", default="0.0.0.0", help="Host to bind.")
 def runserver(host: str, port: int) -> None:
-    """Start uvicorn with reload. Like rails s."""
+    """Start uvicorn with reload."""
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
     subprocess.run(["uvicorn", "main:app", "--host", host, "--port", str(port), "--reload"], check=True)
 
@@ -39,7 +40,7 @@ def db_cmd() -> None:
 
 @db_cmd.command("create")
 def db_create() -> None:
-    """Create the database defined in config/database.yml for current APP_ENV (like rails db:create)."""
+    """Create the database defined in config/database.yml for current APP_ENV."""
     from sqlalchemy import create_engine, text
 
     from config.database_yml import get_database_config, build_database_url
@@ -73,7 +74,7 @@ def db_migrate() -> None:
     cwd = os.path.dirname(os.path.abspath(__file__))
     click.echo("Running migrations (alembic upgrade head)...")
     subprocess.run([sys.executable, "-m", "alembic", "upgrade", "head"], check=True, cwd=cwd)
-    # Sync Rails-style schema_migrations table with all revisions up to head.
+    # Sync schema_migrations table with all revisions up to head.
     try:
         from alembic.config import Config
         from alembic.script import ScriptDirectory
@@ -246,7 +247,7 @@ def generate_controller(name: str) -> None:
         "app", "controllers", f"{name}_controller.py",
     )
     content = f'''"""
-{class_name}. Rails equivalent: app/controllers/{name}_controller.rb
+{class_name} — HTTP controller (Niyam).
 """
 
 from fastapi import Request
@@ -286,7 +287,7 @@ def generate_model(name: str) -> None:
     class_name = "".join(w.capitalize() for w in name.split("_"))
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "app", "models", f"{name}.py")
     content = f'''"""
-{class_name} model. Rails equivalent: app/models/{name}.rb
+{class_name} model (Niyam).
 """
 
 from sqlalchemy import String
@@ -313,7 +314,7 @@ def generate_job(name: str) -> None:
     class_name = "".join(w.capitalize() for w in name.split("_")) + "Job"
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "app", "jobs", f"{name}_job.py")
     content = f'''"""
-{class_name}. Rails equivalent: app/jobs/{name}_job.rb
+{class_name} — background job (Niyam).
 """
 
 from config.celery import celery_app
@@ -342,7 +343,7 @@ def generate_service(name: str) -> None:
     class_name = "".join(w.capitalize() for w in name.split("_")) + "Service"
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "app", "services", f"{name}_service.py")
     content = f'''"""
-{class_name}. Rails equivalent: app/services/{name}_service.rb
+{class_name} — service layer (Niyam).
 """
 
 from app.services.base_service import BaseService
@@ -360,7 +361,7 @@ class {class_name}(BaseService):
 
 @cli.command()
 def routes() -> None:
-    """Print all registered routes (like rails routes)."""
+    """Print all registered HTTP routes."""
     from main import app
     for route in app.routes:
         if hasattr(route, "methods") and hasattr(route, "path"):
@@ -480,15 +481,10 @@ def shell() -> None:
         db.close()
 
 
-def _normalize_rails_style_args() -> None:
+def _normalize_db_colon_args() -> None:
     """
-    Support Rails-style commands like:
-      python manage.py db:create
-      python manage.py db:migrate
-      python manage.py db:seed
-
-    by rewriting argv to Click's group syntax:
-      python manage.py db create
+    Support db:create style commands (colon alias):
+      python manage.py db:migrate  →  python manage.py db migrate
     """
     if len(sys.argv) < 2:
         return
@@ -502,5 +498,5 @@ def _normalize_rails_style_args() -> None:
 
 
 if __name__ == "__main__":
-    _normalize_rails_style_args()
+    _normalize_db_colon_args()
     cli()

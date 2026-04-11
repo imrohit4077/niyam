@@ -6,7 +6,7 @@ from typing import Any
 
 from config.settings import get_settings
 
-_CACHE_PREFIX = "forge:referral_token:"
+_CACHE_PREFIX = "niyam:referral_token:"
 _TTL_SEC = 60 * 60 * 24 * 90  # 90 days
 
 

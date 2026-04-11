@@ -1,6 +1,6 @@
 """
 Pydantic schemas for request/response validation and serialization only.
-Rails equivalent: strong parameters + serializers. All CRUD goes through SQLAlchemy models.
+
 """
 
 from pydantic import BaseModel, EmailStr

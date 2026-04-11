@@ -1,4 +1,4 @@
-# Rails-style database configuration.
+# Niyam — database configuration (copy to database.yml).
 # Copy to database.yml and set adapter, host, database, username, password per environment.
 # Environment is selected by APP_ENV (development, test, production).
 #

@@ -1,6 +1,6 @@
 """
 Timestampable concern: created_at and updated_at columns with helpers.
-Rails equivalent: ActiveRecord::Timestamp
+
 """
 
 from datetime import datetime

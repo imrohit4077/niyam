@@ -1,6 +1,6 @@
 """
 Standardized JSON response helpers.
-Rails equivalent: render json: { ... } with a standard envelope
+
 """
 
 from typing import Any

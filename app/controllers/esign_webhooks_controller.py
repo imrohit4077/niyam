@@ -9,7 +9,7 @@ from app.services.esign_webhook_service import EsignWebhookService
 class EsignWebhooksController(BaseController):
     async def receive(self):
         raw = await self.request.body()
-        sig = self.request.headers.get("X-Forge-Esign-Signature") or ""
+        sig = self.request.headers.get("X-Niyam-Esign-Signature") or ""
         try:
             payload = json.loads(raw.decode("utf-8") or "{}")
         except json.JSONDecodeError:

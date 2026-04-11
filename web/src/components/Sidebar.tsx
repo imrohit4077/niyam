@@ -170,7 +170,7 @@ const ICONS: Record<string, ReactNode> = {
   ),
 }
 
-const SIDEBAR_COLLAPSED_KEY = 'forge.sidebarCollapsed'
+const SIDEBAR_COLLAPSED_KEY = 'niyam.sidebarCollapsed'
 
 function readSidebarCollapsed(): boolean {
   try {

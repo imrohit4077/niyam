@@ -14,7 +14,7 @@ logger = get_logger(__name__)
 def dispatch_audit_payload(payload: dict[str, Any]) -> None:
     """
     If AUDIT_LOG_BUFFER_ENABLED: LPUSH to Redis (periodic flush writes DB).
-    On Redis errors: fall back to forge.audit_log_append Celery task.
+    On Redis errors: fall back to niyam.audit_log_append Celery task.
     If buffer disabled: Celery only (legacy behavior).
     """
     from config.settings import get_settings

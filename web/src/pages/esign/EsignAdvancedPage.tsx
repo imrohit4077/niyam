@@ -90,7 +90,7 @@ export default function EsignAdvancedPage() {
             Save
           </button>
           <p className="esign-pro-api-ref">
-            Endpoint <code>POST /api/v1/webhooks/esign</code> · header <code>X-Forge-Esign-Signature</code>
+            Endpoint <code>POST /api/v1/webhooks/esign</code> · header <code>X-Niyam-Esign-Signature</code>
           </p>
         </section>
       )}

@@ -1,5 +1,5 @@
 """
-Application logger. Rails equivalent: Rails.logger
+Application logger for Niyam.
 
 All behavior (format, colors, levels, SQL) is configured once in
 config/logging_setup.py — do not add handlers here.
@@ -15,6 +15,6 @@ from config.logging_setup import ensure_logging_configured
 
 
 def get_logger(name: str) -> logging.Logger:
-    """Named logger; shares root Forge formatter after configure_logging() runs."""
+    """Named logger; shares root console formatter after configure_logging() runs."""
     ensure_logging_configured()
     return logging.getLogger(name)

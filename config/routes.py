@@ -1,7 +1,7 @@
 """
-Central route definitions. Rails equivalent: config/routes.rb
-Single file where all routes are registered. Uses resources() and namespace().
-Add your controllers and routes here.
+Central HTTP route definitions for Niyam.
+
+All API routes are registered here via `draw_routes`, `resources()`, and `namespace()`.
 """
 
 import asyncio
@@ -95,9 +95,7 @@ def namespace(app: "FastAPI", prefix: str):
 
 
 def draw_routes(app: "FastAPI") -> None:
-    """
-    Register all routes. Rails equivalent: config/routes.rb
-    """
+    """Register all API routes on the FastAPI app."""
     from app.controllers.auth_controller import AuthController
     from app.controllers.profile_controller import ProfileController
     from app.controllers.jobs_controller import JobsController

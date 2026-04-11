@@ -1,6 +1,6 @@
 """
 Base controller with before_action, after_action, render_json, params, paginate.
-Rails equivalent: ApplicationController
+
 """
 
 from typing import Any, Callable

@@ -9,7 +9,7 @@ from config.database import SessionLocal
 from app.services.label_service import LabelService
 
 
-@celery_app.task(name="forge.sync_label_search_document")
+@celery_app.task(name="niyam.sync_label_search_document")
 def sync_label_search_document(account_id: int, labelable_type: str, labelable_id: int) -> None:
     db = SessionLocal()
     try:
@@ -18,7 +18,7 @@ def sync_label_search_document(account_id: int, labelable_type: str, labelable_i
         db.close()
 
 
-@celery_app.task(name="forge.reindex_label_search_for_label")
+@celery_app.task(name="niyam.reindex_label_search_for_label")
 def reindex_label_search_for_label(account_id: int, label_id: int) -> None:
     db = SessionLocal()
     try:

@@ -6,7 +6,7 @@ from app.models.application import Application
 from app.models.hiring_plan import HiringPlan
 
 
-@celery_app.task(name="forge.refresh_hiring_plan_hires_made")
+@celery_app.task(name="niyam.refresh_hiring_plan_hires_made")
 def refresh_hiring_plan_hires_made(account_id: int, job_id: int) -> None:
     db = SessionLocal()
     try:

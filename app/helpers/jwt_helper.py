@@ -1,6 +1,6 @@
 """
 JWT token creation and validation.
-Rails equivalent: Devise JWT / custom token logic
+
 """
 
 from datetime import datetime, timezone, timedelta

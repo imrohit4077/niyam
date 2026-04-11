@@ -1,6 +1,6 @@
 """
 SoftDeletable concern: deleted_at column and soft delete/restore.
-Rails equivalent: paranoia / discard gem
+
 """
 
 from datetime import datetime
@@ -34,7 +34,7 @@ class SoftDeletable:
         return self.deleted_at is not None
 
     def soft_delete(self, db: "Session") -> None:
-        """Set deleted_at to now. Rails: model.discard."""
+        """Set deleted_at to now (soft delete)."""
         from datetime import timezone
         self.deleted_at = datetime.now(timezone.utc)
         db.add(self)
@@ -42,7 +42,7 @@ class SoftDeletable:
         db.refresh(self)
 
     def restore(self, db: "Session") -> None:
-        """Clear deleted_at. Rails: model.undiscard."""
+        """Clear deleted_at (restore)."""
         self.deleted_at = None
         db.add(self)
         db.commit()

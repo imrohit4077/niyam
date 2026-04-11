@@ -1,5 +1,5 @@
 """
-Alembic migration environment. Rails equivalent: db/migrate runner
+Alembic migration environment for Niyam.
 """
 
 import os

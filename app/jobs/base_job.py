@@ -1,6 +1,6 @@
 """
 Base job with perform_later, perform_now, retry, and on_failure.
-Rails equivalent: ApplicationJob / Sidekiq::Worker
+
 """
 
 from typing import Any

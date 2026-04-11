@@ -1,6 +1,6 @@
 """
 User model.
-Rails equivalent: User < ApplicationRecord
+
 """
 
 from datetime import datetime

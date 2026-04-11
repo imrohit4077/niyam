@@ -1,5 +1,5 @@
 """
-Database seeding. Rails equivalent: db/seeds.rb
+Database seeding for Niyam (customize `run_seeds()`).
 Creates: 1 account, 1 admin role, 1 user, links them together.
 Also idempotently adds internal e-sign demo templates + a sample rule (when migrations include esign tables).
 """
