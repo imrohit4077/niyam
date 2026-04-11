@@ -1,160 +1,138 @@
-<p align="center">
-  <img src="docs/readme/niyam-wordmark-dark.png" alt="Niyam ATS" width="400" />
-</p>
+<div align="center">
 
-<p align="center"><strong>Applicant tracking for teams that outgrow spreadsheets.</strong></p>
+<img src="docs/readme/niyam-wordmark-dark.png" alt="Niyam" width="360" />
 
-<p align="center">
-  <sub>Multi-account workspaces · configurable hiring pipeline · structured interviews · e-signatures · referrals · audit trail · FastAPI + PostgreSQL backend · React SPA</sub>
-</p>
+<br />
 
-<p align="center">
-  <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/Python-3.11%2B-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python" /></a>
-  <a href="https://fastapi.tiangolo.com/"><img src="https://img.shields.io/badge/FastAPI-API-009688?style=flat-square&logo=fastapi&logoColor=white" alt="FastAPI" /></a>
-  <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=0d1117" alt="React" /></a>
-  <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript" /></a>
-  <a href="https://vitejs.dev/"><img src="https://img.shields.io/badge/Vite-8-646CFF?style=flat-square&logo=vite&logoColor=white" alt="Vite" /></a>
-  <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white" alt="PostgreSQL" />
-  <img src="https://img.shields.io/badge/Redis-DC382D?style=flat-square&logo=redis&logoColor=white" alt="Redis" />
-  <img src="https://img.shields.io/badge/Celery-37814A?style=flat-square&logo=celery&logoColor=white" alt="Celery" />
-</p>
+**Applicant tracking for teams that outgrow spreadsheets.**
 
-<p align="center">
-  <a href="#platform-capabilities">Capabilities</a> ·
-  <a href="#quick-start">Quick start</a> ·
-  <a href="#architecture">Architecture</a> ·
-  <a href="#tech-stack">Tech stack</a> ·
-  <a href="#repository-layout">Repository layout</a> ·
-  <a href="#configuration">Configuration</a> ·
-  <a href="#deployment">Deployment</a>
-</p>
+Multi-account workspaces · configurable hiring pipeline · structured interviews · e-signatures · referrals · audit trail
+
+<br />
+
+[![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/downloads/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=0d1117)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Redis](https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white)](https://redis.io/)
+[![Celery](https://img.shields.io/badge/Celery-37814A?style=for-the-badge&logo=celery&logoColor=white)](https://docs.celeryq.dev/)
+
+<br />
+
+[Capabilities](#platform-capabilities) · [Quick start](#quick-start) · [Architecture](#architecture) · [Tech stack](#tech-stack) · [Repository layout](#repository-layout) · [Configuration](#configuration) · [Deployment](#deployment)
+
+</div>
+
+---
+
+## Overview
+
+**Niyam** is a full-stack ATS: a **FastAPI** and **PostgreSQL** API with a **React** SPA. Features are wired through `config/routes.py` on the backend and `web/src/` on the frontend—what follows reflects what exists in this repository today.
 
 ---
 
 ## Platform capabilities
 
-Everything below is implemented in this repository today (API routes in `config/routes.py`, screens in `web/src/`).
-
 ### Authentication & workspace
 
-| | |
-|:---|:---|
-| 🔑 | **Sign-in & sessions** — Email/password login, access + refresh JWT flow. |
-| 👤 | **Profile** — Authenticated user profile endpoint for the signed-in recruiter. |
-| 🏢 | **Multi-account** — Data scoped per workspace (`account_id`); members see only their account. |
-| 👥 | **Team directory** — List account members for collaboration and permissions context. |
+- **Sign-in & sessions** — Email/password login with access and refresh JWT flow.
+- **Profile** — Authenticated user profile for the signed-in recruiter.
+- **Multi-account** — Data scoped per workspace (`account_id`); members see only their account.
+- **Team directory** — Account members for collaboration and permissions context.
 
 ### Jobs & hiring plans
 
-| | |
-|:---|:---|
-| 📋 | **Jobs** — Create, list, show, update, and archive jobs with rich fields (title, department, location, compensation, skills, employment type, experience, hiring team, and more). |
-| 📚 | **Job versions** — Version history per job: list, create, and update snapshots as the requisition evolves. |
-| 📎 | **Attachments** — Upload, list, and remove files on a job for specs, briefs, or templates. |
-| 📈 | **Job analytics** — Per-job metrics endpoint for funnel and activity insight. |
-| 🧭 | **Hiring plan per job** — Structured hiring plan linked to each requisition. |
-| 🏷️ | **Labels on jobs** — Tag requisitions for reporting and filtering. |
-| 🔗 | **Referral link per job** — Generate shareable referral URLs tied to a specific opening. |
+- **Jobs** — Create, list, show, update, and archive jobs (title, department, location, compensation, skills, employment type, experience, hiring team, and more).
+- **Job versions** — Version history per job: list, create, and update snapshots as the requisition evolves.
+- **Attachments** — Upload, list, and remove files on a job.
+- **Job analytics** — Per-job metrics for funnel and activity.
+- **Hiring plan per job** — Structured hiring plan linked to each requisition.
+- **Labels on jobs** — Tag requisitions for reporting and filtering.
+- **Referral link per job** — Shareable referral URLs tied to a specific opening.
 
 ### Career presence: boards & postings
 
-| | |
-|:---|:---|
-| 🗂️ | **Job boards** — Manage internal or external boards that organize how roles are published. |
-| 📣 | **Postings** — Create and manage postings so approved jobs surface where candidates apply. |
+- **Job boards** — Internal or external boards that organize how roles are published.
+- **Postings** — Create and manage postings so approved jobs surface where candidates apply.
 
 ### Pipeline & applications
 
-| | |
-|:---|:---|
-| 🪜 | **Pipeline stages** — Define stages per job; reorder stages to match your process. |
-| 📬 | **Applications** — List, view, create, and remove applications; update candidate-facing fields. |
-| ➡️ | **Move on pipeline** — Change an application’s stage as candidates progress. |
-| 🏷️ | **Labels on applications** — Tag candidates/applications for triage and reporting. |
-| 🗃️ | **Hiring plans (workspace)** — Workspace-level hiring plan resources alongside per-job plans. |
-| 👤 | **Candidates view** — Dedicated workspace view to work the candidate pool. |
+- **Pipeline stages** — Define stages per job; reorder to match your process.
+- **Applications** — List, view, create, and remove applications; update candidate-facing fields.
+- **Move on pipeline** — Change an application’s stage as candidates progress.
+- **Labels on applications** — Tag candidates and applications for triage and reporting.
+- **Hiring plans (workspace)** — Workspace-level hiring plan resources alongside per-job plans.
+- **Candidates view** — Dedicated workspace view for the candidate pool.
 
 ### Interviews, kits & scorecards
 
-| | |
-|:---|:---|
-| 📅 | **Interview plans per job** — Create, list, show, update, and remove plans bound to a job. |
-| 🧰 | **Interview kits** — Fetch and save structured kits (questions, focus areas) for a plan on a job. |
-| ✅ | **My interview assignments** — Interviewers see work assigned to them. |
-| ✋ | **Claim assignments** — Pick up open interview slots when your process allows it. |
-| 📝 | **Live interview kit** — Load the kit for an in-flight assignment during the interview. |
-| ⭐ | **Submit scorecards** — Capture structured feedback after each interview. |
-| 🔄 | **Update assignments** — Reschedule, reassign, or adjust interview state. |
-| 📊 | **Scorecards by application** — Consolidated scorecard history for one candidate record. |
-| 🧠 | **Hiring debrief** — Job-level debrief view across scorecards for panel alignment. |
+- **Interview plans per job** — CRUD for plans bound to a job.
+- **Interview kits** — Structured kits (questions, focus areas) for a plan on a job.
+- **My interview assignments** — Interviewers see work assigned to them.
+- **Claim assignments** — Pick up open interview slots when your process allows it.
+- **Live interview kit** — Load the kit during an in-flight assignment.
+- **Submit scorecards** — Structured feedback after each interview.
+- **Update assignments** — Reschedule, reassign, or adjust interview state.
+- **Scorecards by application** — Consolidated scorecard history for one candidate record.
+- **Hiring debrief** — Job-level debrief across scorecards for panel alignment.
 
 ### Referral program
 
-| | |
-|:---|:---|
-| ⚙️ | **Referral program settings** — Configure how referrals work for the account (bonuses, messaging, policy). |
-| 💰 | **Referral bonuses** — List bonus rows, update payouts/status, **export CSV** for finance. |
-| 🏆 | **Leaderboard** — Rank referrers to drive healthy competition. |
-| 🙋 | **My referrals** — Employees see referrals they originated. |
-| 📊 | **Admin overview** — Operations view for program health and volume. |
-| 🏠 | **Referrals hub** — First-class UI area for referral activity (`/referrals`). |
+- **Referral program settings** — Configure bonuses, messaging, and policy.
+- **Referral bonuses** — List rows, update payouts/status, **export CSV** for finance.
+- **Leaderboard** — Rank referrers.
+- **My referrals** — Employees see referrals they originated.
+- **Admin overview** — Operations view for program health and volume.
+- **Referrals hub** — UI area for referral activity (`/referrals`).
 
 ### E-signatures
 
-| | |
-|:---|:---|
-| 🛠️ | **Account e-sign settings** — Workspace defaults for how signing runs (branding, behavior). |
-| 📄 | **HTML templates** — Full CRUD for agreement bodies rendered to candidates. |
-| ⚡ | **Stage rules** — Automate when a signing request fires from pipeline stage changes. |
-| 📨 | **Signing requests** — List requests; generate packages for a given application. |
-| ✒️ | **Public signing** — Tokenized signing page (no recruiter login) with legal name + signature pad. |
-| ⬇️ | **Signed PDF download** — Candidates download executed agreements when available. |
-| 🔁 | **E-sign webhooks** — Inbound webhook endpoint for provider-style integrations. |
-| 📑 | **Signed documents library** — Workspace UI to browse completed agreements (`/esign-documents`). |
-| 🧭 | **Settings workspace** — Overview, template editor, rules, and advanced e-sign configuration screens. |
+- **Account e-sign settings** — Workspace defaults for branding and behavior.
+- **HTML templates** — Full CRUD for agreement bodies rendered to candidates.
+- **Stage rules** — Automate signing requests from pipeline stage changes.
+- **Signing requests** — List requests; generate packages for a given application.
+- **Public signing** — Tokenized signing page (no recruiter login) with legal name and signature pad.
+- **Signed PDF download** — Candidates download executed agreements when available.
+- **E-sign webhooks** — Inbound endpoint for provider-style integrations.
+- **Signed documents library** — Workspace UI for completed agreements (`/esign-documents`).
+- **Settings workspace** — Overview, template editor, rules, and advanced e-sign screens.
 
-### Organization, data model & comms
+### Organization, data model & communications
 
-| | |
-|:---|:---|
-| 🏛️ | **Organization** — Legal name, timezone, locale, and core company profile fields. |
-| 🏬 | **Departments** — Structure hiring by department for jobs and reporting. |
-| 📍 | **Job locations** — Curated locations for consistent job ads and filters. |
-| 🧩 | **Workspace metadata** — Additional workspace-level configuration surfaces. |
-| 🎨 | **Appearance** — Typography and presentation settings for the product experience. |
-| 🧾 | **Custom attribute definitions** — Typed custom fields for **jobs** and **applications** (candidate records). |
-| 🏷️ | **Labels** — Workspace-wide labels with create / update / archive flows. |
-| ✉️ | **Communication channels** — Multiple outbound email channels, **test send**, **set default**. |
-| 🔐 | **Gmail OAuth** — Connect Google mail for sending through a secure OAuth flow. |
-| 🌍 | **Countries reference** — API-backed country list for forms and compliance-friendly pickers. |
+- **Organization** — Legal name, timezone, locale, and core company profile.
+- **Departments** — Structure hiring by department for jobs and reporting.
+- **Job locations** — Curated locations for consistent job ads and filters.
+- **Workspace metadata** — Additional workspace-level configuration.
+- **Appearance** — Typography and presentation settings.
+- **Custom attribute definitions** — Typed custom fields for **jobs** and **applications**.
+- **Labels** — Workspace-wide labels with create, update, and archive flows.
+- **Communication channels** — Multiple outbound email channels, **test send**, **set default**.
+- **Gmail OAuth** — Connect Google mail via OAuth.
+- **Countries reference** — API-backed country list for forms and pickers.
 
 ### Audit & compliance
 
-| | |
-|:---|:---|
-| 📜 | **Audit trail settings** — Toggle and tune how audit events are captured for the account. |
-| 🔍 | **Audit log** — Paginated, filterable history of sensitive actions for investigations. |
-| ⚠️ | **Delivery failures** — Visibility when audit or notification delivery does not land. |
-| ✅ | **Compliance summary** — Account-level compliance endpoint for dashboards and exports. |
-| 🖥️ | **Admin UI** — Overview, audit log browser, and delivery-failure pages under settings. |
+- **Audit trail settings** — Toggle and tune how audit events are captured.
+- **Audit log** — Paginated, filterable history of sensitive actions.
+- **Delivery failures** — Visibility when audit or notification delivery fails.
+- **Compliance summary** — Account-level compliance endpoint for dashboards and exports.
+- **Admin UI** — Overview, audit log browser, and delivery-failure pages under settings.
 
 ### Candidate-facing experience
 
-| | |
-|:---|:---|
-| 🌐 | **Public job apply** — Branded apply page by token: load job, submit application, confirmation UX. |
-| ✍️ | **Public e-sign** — Same-session signing for agreements triggered from your process. |
+- **Public job apply** — Branded apply page by token: load job, submit application, confirmation UX.
+- **Public e-sign** — Token-based signing for agreements triggered from your process.
 
-### Platform operations (how it runs)
+### Platform operations
 
-| | |
-|:---|:---|
-| 🩺 | **Health check** — `GET /health` for load balancers and monitors. |
-| 📘 | **OpenAPI** — Interactive docs when `DEBUG=true`. |
-| 🗄️ | **PostgreSQL + Alembic** — Migrations and relational integrity for all hiring data. |
-| ⚙️ | **Celery + Redis** — Background work: e-sign delivery, label search sync, audit flush, and other async jobs. |
-| 📦 | **PDF pipeline** — Signed documents via **WeasyPrint** when system libs exist, **fpdf2** fallback otherwise. |
-| 🔒 | **Buffered audit** — Optional Redis-backed buffering with scheduled flush to PostgreSQL for high-volume writes. |
+- **Health check** — `GET /health` for load balancers and monitors.
+- **OpenAPI** — Interactive docs when `DEBUG=true`.
+- **PostgreSQL + Alembic** — Migrations and relational integrity.
+- **Celery + Redis** — Background work: e-sign delivery, label search sync, audit flush, and other async jobs.
+- **PDF pipeline** — **WeasyPrint** when system libs exist, **fpdf2** fallback otherwise.
+- **Buffered audit** — Optional Redis-backed buffering with scheduled flush to PostgreSQL for high-volume writes.
 
 ---
 
@@ -194,10 +172,10 @@ flowchart TB
 
 | Surface | Role |
 |--------|------|
-| **`main.py`** | FastAPI application, middleware, **`/health`**. |
-| **`config/routes.py`** | Central route table for every HTTP endpoint. |
-| **`web/`** | SPA; dev server proxies **`/api`** to the API; **`vite.config.ts`** emits **`static/`**. |
-| **`app/jobs/`** | Async tasks: e-sign, indexing, audit flush, and more. |
+| `main.py` | FastAPI application, middleware, `/health`. |
+| `config/routes.py` | Central route table for every HTTP endpoint. |
+| `web/` | SPA; dev server proxies `/api` to the API; `vite.config.ts` emits `static/`. |
+| `app/jobs/` | Async tasks: e-sign, indexing, audit flush, and more. |
 
 ---
 
@@ -270,12 +248,12 @@ cd web && npm install && npm run dev
 # http://localhost:5173 — proxies /api → http://localhost:8000
 ```
 
-Set **`FRONTEND_PUBLIC_URL`** in `.env` (e.g. `http://localhost:5173`) for OAuth return URLs and public flows that need the SPA origin.
+Set **`FRONTEND_PUBLIC_URL`** in `.env` (for example `http://localhost:5173`) for OAuth return URLs and public flows that need the SPA origin.
 
 | Command | Purpose |
 |---------|---------|
 | `npm run dev` | Vite dev server, `/api` → backend |
-| `npm run build` | Typecheck + bundle → **`../static/`** |
+| `npm run build` | Typecheck + bundle → `../static/` |
 | `npm run lint` | ESLint |
 
 ---
@@ -297,10 +275,10 @@ Copy **`.env.example`** → **`.env`**. Notable variables:
 | `AUDIT_LOG_*` | Optional Redis buffering for audit payloads |
 | `ESIGN_*` | Optional e-sign artifact directories |
 
-**`config/database.yml`** — per-environment DB config; **`APP_ENV`** selects the section merged with `default`.
+**`config/database.yml`** — Per-environment DB config; **`APP_ENV`** selects the section merged with `default`.
 
 <details>
-<summary><b>Database CLI</b> (migrations, seed, reset)</summary>
+<summary><strong>Database CLI</strong> (migrations, seed, reset)</summary>
 
 | Command | Description |
 |---------|-------------|
@@ -323,7 +301,7 @@ python manage.py db:migrate
 </details>
 
 <details>
-<summary><b>Background jobs (Celery)</b></summary>
+<summary><strong>Background jobs (Celery)</strong></summary>
 
 | Process | Command |
 |---------|---------|
@@ -337,7 +315,7 @@ Typical tasks: e-sign (merge HTML, links, PDF packaging), label search document 
 </details>
 
 <details>
-<summary><b>API shape & code organization</b></summary>
+<summary><strong>API shape & code organization</strong></summary>
 
 - Base path: **`/api/v1`** (`config/routes.py`).
 - **`GET /health`** — unauthenticated.
@@ -353,7 +331,7 @@ Contributor patterns: **`.cursor/rules/niyam-conventions.mdc`**.
 </details>
 
 <details>
-<summary><b>CLI reference</b></summary>
+<summary><strong>CLI reference</strong></summary>
 
 | Command | Description |
 |---------|-------------|
@@ -369,7 +347,7 @@ Contributor patterns: **`.cursor/rules/niyam-conventions.mdc`**.
 </details>
 
 <details>
-<summary><b>Testing</b></summary>
+<summary><strong>Testing</strong></summary>
 
 ```bash
 pytest tests/ -v
@@ -389,8 +367,8 @@ pytest tests/ -v --cov=app --cov-report=term-missing
 ## Deployment
 
 1. Set **`APP_ENV`**, **`DEBUG=false`**, strong **`SECRET_KEY`** and **`JWT_SECRET_KEY`**, production **`DATABASE_URL`** / **`database.yml`**, Redis for Celery and audit.
-2. **`python manage.py db:migrate`**.
-3. Run the API with a production ASGI stack (e.g. **Gunicorn + Uvicorn** workers).
+2. Run **`python manage.py db:migrate`**.
+3. Run the API with a production ASGI stack (for example **Gunicorn + Uvicorn** workers).
 4. Run **Celery workers** and a dedicated **Beat** process if you use **`--no-beat`** on workers.
 5. Serve **`static/`** (from `web/`: **`npm run build`**) via reverse proxy or CDN; tighten **CORS** in production (`main.py`).
 
