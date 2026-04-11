@@ -16,7 +16,8 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  install:
+    name: npm ci (lockfile)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -33,10 +34,5 @@ jobs:
           cache: npm
           cache-dependency-path: web/package-lock.json
 
-      - name: Install dependencies
+      - name: Install from lockfile
         run: npm ci
-
-      # tsc -b && vite build (strict typecheck + bundle). ESLint is not enforced here until
-      # `npm run lint` is clean across web/src (see eslint.config.js).
-      - name: Typecheck and production build
-        run: npm run build

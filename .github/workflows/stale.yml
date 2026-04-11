@@ -1,0 +1,26 @@
+name: Stale
+
+on:
+  schedule:
+    - cron: "17 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@v9
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          days-before-stale: 90
+          days-before-close: 30
+          stale-issue-message: "This issue was marked stale due to inactivity."
+          stale-pr-message: "This pull request was marked stale due to inactivity."
+          close-issue-message: "Closing as stale. Reopen if still relevant."
+          close-pr-message: "Closing as stale. Reopen or open a new PR if still relevant."
+          exempt-issue-labels: pinned,security
+          exempt-pr-labels: pinned,security
