@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/readme/niyam-wordmark-dark.png" alt="Niyam ATS — shield mark and wordmark" width="720" />
+  <img src="docs/readme/niyam-wordmark-dark.png" alt="Niyam ATS — shield mark and wordmark" width="400" />
 </p>
 
 <p align="center">
