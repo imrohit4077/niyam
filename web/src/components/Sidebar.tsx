@@ -33,11 +33,11 @@ interface NavItem {
 
 const NAV: NavItem[] = [
   { id: 'profile', label: 'My Profile', icon: 'user', group: 'Overview' },
-  { id: 'jobs', label: 'Jobs', icon: 'briefcase', group: 'Jobs' },
-  { id: 'hiring-plans', label: 'Hiring plans', icon: 'target', group: 'Jobs' },
-  { id: 'pipeline', label: 'Pipeline', icon: 'columns', group: 'Jobs' },
-  { id: 'job-boards', label: 'Job Boards', icon: 'globe', group: 'Jobs' },
-  { id: 'postings', label: 'Postings', icon: 'send', group: 'Jobs' },
+  { id: 'jobs', label: 'Jobs', icon: 'briefcase', group: 'Recruiting' },
+  { id: 'hiring-plans', label: 'Hiring plans', icon: 'target', group: 'Recruiting' },
+  { id: 'pipeline', label: 'Pipeline', icon: 'columns', group: 'Recruiting' },
+  { id: 'job-boards', label: 'Job Boards', icon: 'globe', group: 'Recruiting' },
+  { id: 'postings', label: 'Postings', icon: 'send', group: 'Recruiting' },
   { id: 'job-applications', label: 'Applications', icon: 'document', group: 'Candidates' },
   { id: 'candidates', label: 'Candidates', icon: 'people', group: 'Candidates' },
   { id: 'interviews', label: 'Interviews', icon: 'calendar', group: 'Candidates' },
