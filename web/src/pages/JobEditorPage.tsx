@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type KeyboardEvent } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { useNavigate, useOutletContext, useParams, useLocation, useSearchParams } from 'react-router-dom'
 import { jobsApi, type Job, type JobAnalytics, type JobAttachment, type JobConfig, type JobReferralSettings } from '../api/jobs'
 import { referralsApi } from '../api/referrals'
@@ -69,7 +69,7 @@ const ALL_STEP_DEFS: {
     label: 'Skills',
     short: 'Required & nice-to-have',
     railTitle: 'Signal for matching',
-    railBody: 'One skill per line. These land in job_config and pair with scorecards and screening later.',
+    railBody: 'Required and nice-to-have skills feed matching, screening, and scorecards for this requisition.',
   },
   {
     id: 'compensation',
@@ -339,27 +339,175 @@ function expandSkillEntries(raw: string[] | undefined): string[] {
   return dedup
 }
 
+/** Salary fields: digits only (stored as string for controlled inputs). */
+function sanitizeSalaryDigits(raw: string): string {
+  return raw.replace(/\D/g, '')
+}
+
+/** ISO 4217-style 3-letter code for job salary currency. */
+function normalizeCurrencyCode(raw: string | undefined | null): string {
+  const t = (raw ?? 'USD').trim().toUpperCase().replace(/[^A-Z]/g, '')
+  if (t.length >= 3) return t.slice(0, 3)
+  return 'USD'
+}
+
+/** Common ISO codes; workspace default is merged in the UI. */
+const COMMON_CURRENCIES: readonly string[] = [
+  'USD',
+  'EUR',
+  'GBP',
+  'INR',
+  'CAD',
+  'AUD',
+  'CHF',
+  'JPY',
+  'SGD',
+  'HKD',
+  'NZD',
+  'SEK',
+  'NOK',
+  'MXN',
+  'BRL',
+  'ZAR',
+]
+
+function SkillsMatchingImpact({ requiredCount, niceCount }: { requiredCount: number; niceCount: number }) {
+  const max = 20
+  const reqPct = Math.min(100, (requiredCount / max) * 100)
+  const nicePct = Math.min(100, (niceCount / max) * 100)
+  const ticks = [0, 5, 10, 15, 20]
+  return (
+    <div className="job-skills-impact">
+      <h4 className="job-skills-impact-title">Matching Impact</h4>
+      <p className="job-skills-impact-desc">
+        Visualize how skills will be used for talent matching and on scorecards.
+      </p>
+      <div className="job-skills-impact-bars">
+        <div className="job-skills-impact-row">
+          <span className="job-skills-impact-label">Strengths</span>
+          <div className="job-skills-impact-track" aria-hidden>
+            <div className="job-skills-impact-fill job-skills-impact-fill--req" style={{ width: `${reqPct}%` }} />
+          </div>
+        </div>
+        <div className="job-skills-impact-row">
+          <span className="job-skills-impact-label">Nice-to-have impact</span>
+          <div className="job-skills-impact-track" aria-hidden>
+            <div className="job-skills-impact-fill job-skills-impact-fill--nice" style={{ width: `${nicePct}%` }} />
+          </div>
+        </div>
+      </div>
+      <div className="job-skills-impact-scale" aria-hidden>
+        {ticks.map(t => (
+          <span key={t}>{t}</span>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function SkillsRecommendedRow({
+  catalog,
+  skillsRequired,
+  skillsNice,
+  onAddRequired,
+}: {
+  catalog: readonly string[]
+  skillsRequired: string[]
+  skillsNice: string[]
+  onAddRequired: (s: string) => void
+}) {
+  const used = useMemo(() => {
+    const set = new Set<string>()
+    for (const s of skillsRequired) set.add(s.toLowerCase())
+    for (const s of skillsNice) set.add(s.toLowerCase())
+    return set
+  }, [skillsRequired, skillsNice])
+
+  const recommended = useMemo(() => catalog.filter(s => !used.has(s.toLowerCase())), [catalog, used])
+
+  const show = recommended.slice(0, 12)
+  const nextPlus = recommended[0]
+
+  return (
+    <div className="job-skills-recommended">
+      <p className="job-skill-panel-eyebrow">Recommended skills for this job title</p>
+      <div className="job-skills-reco-inner">
+        <div className="job-skills-reco-cloud" role="list">
+          {show.length === 0 ? (
+            <span className="job-editor-muted job-skills-reco-empty">All catalog skills are already selected.</span>
+          ) : (
+            show.map(s => (
+              <button key={s} type="button" className="job-skills-reco-pill" role="listitem" onClick={() => onAddRequired(s)}>
+                {s}
+              </button>
+            ))
+          )}
+        </div>
+        <button
+          type="button"
+          className="job-skills-reco-plus"
+          aria-label="Add next suggested skill to required"
+          onClick={() => {
+            if (nextPlus) onAddRequired(nextPlus)
+          }}
+          disabled={!nextPlus}
+        >
+          <span className="job-skills-reco-plus-icon" aria-hidden>
+            +
+          </span>
+          <span className="job-skills-reco-plus-label">Plus</span>
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function SkillPickerColumn({
   label,
   hint,
   selected,
   onChange,
   variant,
+  panel = false,
+  eyebrow,
+  panelTitle,
+  panelHint,
+  searchPlaceholder,
+  searchTone = 'default',
 }: {
   label: string
   hint?: string
   selected: string[]
   onChange: (skills: string[]) => void
   variant: 'required' | 'nice'
+  panel?: boolean
+  eyebrow?: string
+  panelTitle?: string
+  panelHint?: string
+  searchPlaceholder?: string
+  searchTone?: 'default' | 'nice'
 }) {
   const [selectKey, setSelectKey] = useState(0)
   const [customDraft, setCustomDraft] = useState('')
+  const [searchFilter, setSearchFilter] = useState('')
 
   const inSelected = useMemo(() => new Set(selected.map(s => s.toLowerCase())), [selected])
   const catalogOptions = useMemo(
     () => SKILL_CATALOG.filter(s => !inSelected.has(s.toLowerCase())),
     [inSelected],
   )
+
+  const filteredCatalog = useMemo(() => {
+    const q = searchFilter.trim().toLowerCase()
+    if (!q) return catalogOptions
+    return catalogOptions.filter(s => s.toLowerCase().includes(q))
+  }, [catalogOptions, searchFilter])
+
+  const quickPick = useMemo(() => {
+    const q = searchFilter.trim()
+    const pool = q ? filteredCatalog : catalogOptions
+    return pool.slice(0, 12)
+  }, [searchFilter, filteredCatalog, catalogOptions])
 
   const addSkill = (raw: string) => {
     const t = raw.trim()
@@ -383,6 +531,84 @@ function SkillPickerColumn({
       e.preventDefault()
       addSkill(customDraft)
     }
+  }
+
+  const panelHeadId = `skill-panel-${variant}-title`
+
+  if (panel) {
+    return (
+      <div className={`job-skill-panel job-skill-panel--${variant}`} aria-labelledby={panelHeadId}>
+        {eyebrow ? <p className="job-skill-panel-eyebrow">{eyebrow}</p> : null}
+        {panelTitle ? (
+          <h3 id={panelHeadId} className="job-skill-panel-headline">
+            {panelTitle}
+          </h3>
+        ) : null}
+        {panelHint ? <p className="job-skill-panel-sub">{panelHint}</p> : null}
+        {!panelHint && hint ? <p className="job-skill-panel-sub">{hint}</p> : null}
+
+        <div className={`job-skill-search-wrap job-skill-search-wrap--${searchTone}`}>
+          <svg className="job-skill-search-icon" width={18} height={18} viewBox="0 0 24 24" fill="none" aria-hidden>
+            <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth={2} />
+            <path d="M20 20l-4-4" stroke="currentColor" strokeWidth={2} strokeLinecap="round" />
+          </svg>
+          <input
+            className="job-skill-search-input"
+            type="search"
+            value={searchFilter}
+            onChange={e => setSearchFilter(e.target.value)}
+            placeholder={searchPlaceholder ?? 'Search tags'}
+            aria-label={searchPlaceholder ?? 'Search skills'}
+          />
+        </div>
+
+        <div className="job-skill-chips job-skill-chips--panel" role="list" aria-label={label}>
+          {selected.length === 0 ? (
+            <span className="job-editor-muted job-skill-chips-empty">No skills selected yet.</span>
+          ) : (
+            selected.map(skill => (
+              <span key={skill} className={`job-skill-chip job-skill-chip--${variant}`} role="listitem">
+                <span className="job-skill-chip-text">{skill}</span>
+                <button
+                  type="button"
+                  className="job-skill-chip-remove"
+                  onClick={() => remove(skill)}
+                  aria-label={`Remove ${skill}`}
+                >
+                  ×
+                </button>
+              </span>
+            ))
+          )}
+        </div>
+
+        {quickPick.length > 0 ? (
+          <div className="job-skill-quick-picks" aria-label="Suggested skills from catalog">
+            {quickPick.map(s => (
+              <button key={s} type="button" className="job-skill-quick-pick" onClick={() => addSkill(s)}>
+                + {s}
+              </button>
+            ))}
+          </div>
+        ) : catalogOptions.length === 0 ? (
+          <p className="job-skill-panel-catalog-empty">All catalog skills are selected—add a custom skill below.</p>
+        ) : null}
+
+        <div className="job-skill-custom-row">
+          <input
+            className="job-editor-input"
+            value={customDraft}
+            onChange={e => setCustomDraft(e.target.value)}
+            placeholder="Add custom skill (Enter)"
+            onKeyDown={onCustomKeyDown}
+            aria-label="Add custom skill"
+          />
+          <button type="button" className="btn-row-action" onClick={() => addSkill(customDraft)}>
+            Add
+          </button>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -1198,6 +1424,14 @@ export default function JobEditorPage() {
   const [orgSettings, setOrgSettings] = useState<OrganizationSettings | null>(null)
   const [countriesCatalog, setCountriesCatalog] = useState<CountryRow[]>([])
 
+  const accountDefaultCurrency = useMemo(
+    () => normalizeCurrencyCode(orgSettings?.default_currency ?? 'USD'),
+    [orgSettings?.default_currency],
+  )
+  const accountDefaultCurrencyRef = useRef(accountDefaultCurrency)
+  accountDefaultCurrencyRef.current = accountDefaultCurrency
+  const orgCurrencySeededRef = useRef(false)
+
   const jobsBase = `/account/${accountId}/jobs`
   const numericId = isNew ? null : editJobId
   const hasPostCreateSteps = numericId != null && !Number.isNaN(numericId) && numericId > 0
@@ -1231,6 +1465,17 @@ export default function JobEditorPage() {
   const currentStep = visibleSteps[stepIndex] ?? visibleSteps[0]
   const stepId = currentStep?.id ?? 'basic_info'
 
+  const currencyOptions = useMemo(() => {
+    const d = accountDefaultCurrency
+    const rest = COMMON_CURRENCIES.filter(c => c !== d)
+    const ordered = [d, ...rest]
+    const seen = new Set(ordered)
+    if (form.salary_currency && !seen.has(form.salary_currency)) {
+      return [form.salary_currency, ...ordered]
+    }
+    return ordered
+  }, [accountDefaultCurrency, form.salary_currency])
+
   const loadOrgMeta = useCallback(async () => {
     const aid = Number(accountId)
     if (!token || !Number.isFinite(aid)) return
@@ -1247,6 +1492,18 @@ export default function JobEditorPage() {
   useEffect(() => {
     void loadOrgMeta()
   }, [loadOrgMeta])
+
+  /** New job: apply workspace default currency once org settings load. */
+  useEffect(() => {
+    if (!isNew) {
+      orgCurrencySeededRef.current = false
+      return
+    }
+    if (!orgSettings) return
+    if (orgCurrencySeededRef.current) return
+    orgCurrencySeededRef.current = true
+    setForm(f => ({ ...f, salary_currency: accountDefaultCurrency }))
+  }, [isNew, orgSettings, accountDefaultCurrency])
 
   const locationOptions = useMemo((): CountryRow[] => {
     const enabled = orgSettings?.enabled_country_codes
@@ -1301,6 +1558,7 @@ export default function JobEditorPage() {
 
   useEffect(() => {
     if (isNew) {
+      orgCurrencySeededRef.current = false
       setJob(null)
       setControlVersionId(null)
       setLoadErr('')
@@ -1320,7 +1578,7 @@ export default function JobEditorPage() {
         descriptionHtml: '<p></p>',
         salary_min: '',
         salary_max: '',
-        salary_currency: 'USD',
+        salary_currency: normalizeCurrencyCode(accountDefaultCurrencyRef.current),
         salary_visible: true,
         bonus_incentives: '',
         budget_approval_status: '',
@@ -1369,9 +1627,9 @@ export default function JobEditorPage() {
           open_positions: String(j.open_positions ?? 1),
           status: j.status,
           descriptionHtml: v?.description ? v.description : '<p></p>',
-          salary_min: j.salary_min != null ? String(j.salary_min) : '',
-          salary_max: j.salary_max != null ? String(j.salary_max) : '',
-          salary_currency: j.salary_currency || 'USD',
+          salary_min: j.salary_min != null ? sanitizeSalaryDigits(String(j.salary_min)) : '',
+          salary_max: j.salary_max != null ? sanitizeSalaryDigits(String(j.salary_max)) : '',
+          salary_currency: normalizeCurrencyCode(j.salary_currency || accountDefaultCurrencyRef.current),
           salary_visible: j.salary_visible !== false,
           bonus_incentives: j.bonus_incentives ?? '',
           budget_approval_status: j.budget_approval_status ?? '',
@@ -1480,7 +1738,7 @@ export default function JobEditorPage() {
     status: form.status,
     salary_min: parseNum(form.salary_min),
     salary_max: parseNum(form.salary_max),
-    salary_currency: form.salary_currency || 'USD',
+    salary_currency: normalizeCurrencyCode(form.salary_currency || accountDefaultCurrency),
     salary_visible: form.salary_visible,
     bonus_incentives: form.bonus_incentives || null,
     budget_approval_status: form.budget_approval_status || null,
@@ -1565,6 +1823,33 @@ export default function JobEditorPage() {
     }
   }
 
+  const goToBasicInfoStep = () => {
+    const idx = visibleSteps.findIndex(s => s.id === 'basic_info')
+    if (idx >= 0) goToStepIndex(idx)
+  }
+
+  const discardSkills = () => {
+    if (isNew) {
+      setSkillsRequired([])
+      setSkillsNice([])
+      return
+    }
+    if (job) {
+      setSkillsRequired(expandSkillEntries(job.job_config?.skills_required))
+      setSkillsNice(expandSkillEntries(job.job_config?.skills_nice))
+    }
+  }
+
+  const addSkillToRequired = (s: string) => {
+    const t = s.trim()
+    if (!t) return
+    setSkillsNice(prev => prev.filter(x => x.toLowerCase() !== t.toLowerCase()))
+    setSkillsRequired(prev => {
+      if (prev.some(x => x.toLowerCase() === t.toLowerCase())) return prev
+      return [...prev, t]
+    })
+  }
+
   if (!isNew && (Number.isNaN(editJobId) || editJobId <= 0)) {
     return (
       <div className="job-editor-page">
@@ -1632,7 +1917,19 @@ export default function JobEditorPage() {
         <span className="job-editor-crumb-arrow" aria-hidden>
           →
         </span>
-        <span className="job-editor-crumb-current">{isNew ? 'New position' : job?.title || 'Edit position'}</span>
+        {stepId === 'skills' ? (
+          <>
+            <button type="button" className="job-editor-crumb-link" onClick={goToBasicInfoStep}>
+              {isNew ? form.title.trim() || 'New position' : job?.title || 'Edit position'}
+            </button>
+            <span className="job-editor-crumb-arrow" aria-hidden>
+              →
+            </span>
+            <span className="job-editor-crumb-current">Configure Skills</span>
+          </>
+        ) : (
+          <span className="job-editor-crumb-current">{isNew ? 'New position' : job?.title || 'Edit position'}</span>
+        )}
       </nav>
 
       {!isNew && loadErr && <div className="auth-error job-editor-inline-alert">{loadErr}</div>}
@@ -1643,15 +1940,34 @@ export default function JobEditorPage() {
           <article className="job-editor-sheet">
             <header className="job-editor-sheet-head">
               <div className="job-editor-sheet-titles">
-                <p className="job-editor-step-kicker">
-                  Step {stepIndex + 1} of {visibleSteps.length}
-                  {isNew ? ' · create the job to unlock the remaining steps' : ''}
-                </p>
-                <h1 className="job-editor-page-title">{currentStep?.label}</h1>
-                <p className="job-editor-page-sub">{currentStep?.short}</p>
+                {stepId === 'skills' ? (
+                  <>
+                    <p className="job-editor-step-kicker">
+                      Step {stepIndex + 1} of {visibleSteps.length}: Skill Requirements
+                    </p>
+                    <div className="job-editor-skills-hero-title">
+                      <h1 className="job-editor-page-title">Configure Job Skills</h1>
+                      {form.status === 'draft' ? (
+                        <span className="job-editor-draft-badge" title="Job is not published yet">
+                          Draft
+                        </span>
+                      ) : null}
+                    </div>
+                    <p className="job-editor-page-sub">{currentStep?.short}</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="job-editor-step-kicker">
+                      Step {stepIndex + 1} of {visibleSteps.length}
+                      {isNew ? ' · create the job to unlock the remaining steps' : ''}
+                    </p>
+                    <h1 className="job-editor-page-title">{currentStep?.label}</h1>
+                    <p className="job-editor-page-sub">{currentStep?.short}</p>
+                  </>
+                )}
               </div>
               <div className="job-editor-sheet-head-actions">
-                {isNew ? (
+                {stepId === 'skills' ? null : isNew ? (
                   <button
                     type="button"
                     className="job-editor-btn-primary"
@@ -1886,93 +2202,183 @@ export default function JobEditorPage() {
               )}
 
               {stepId === 'skills' && (
-                <section className="job-step-pane" aria-labelledby="step-skills">
+                <section className="job-step-pane job-skills-pane" aria-labelledby="step-skills">
                   <h2 id="step-skills" className="visually-hidden">
-                    Skills
+                    Configure job skills
                   </h2>
-                  <p className="job-editor-step-lead" style={{ marginTop: 0 }}>
-                    Pick skills from the list or add your own. Selected items appear as tags and are stored as{' '}
-                    <code>job_config.skills_required</code> and <code>skills_nice</code>.
-                  </p>
-                  <div className="job-editor-grid-2 job-skills-grid">
-                    <SkillPickerColumn
-                      label="Required skills"
-                      hint="Must-haves for the role."
-                      selected={skillsRequired}
-                      onChange={setSkillsRequired}
-                      variant="required"
-                    />
-                    <SkillPickerColumn
-                      label="Nice-to-have skills"
-                      hint="Bonus strengths."
-                      selected={skillsNice}
-                      onChange={setSkillsNice}
-                      variant="nice"
-                    />
+                  <div className="job-skills-card">
+                    <div className="job-skills-columns">
+                      <SkillPickerColumn
+                        panel
+                        label="Required skills"
+                        eyebrow="Required skills"
+                        panelTitle="Must-Haves for the Role"
+                        panelHint="Select minimum proficiency and mandatory skills."
+                        searchPlaceholder="Search tags"
+                        selected={skillsRequired}
+                        onChange={setSkillsRequired}
+                        variant="required"
+                      />
+                      <SkillPickerColumn
+                        panel
+                        label="Nice-to-have skills"
+                        eyebrow="Nice-to-have skills"
+                        panelTitle="Bonus Strengths & Extra Value"
+                        panelHint="Add non-mandatory skills that strengthen a candidate profile."
+                        searchPlaceholder="Add non-mandatory skills…"
+                        searchTone="nice"
+                        selected={skillsNice}
+                        onChange={setSkillsNice}
+                        variant="nice"
+                      />
+                    </div>
+                    <div className="job-skills-bottom">
+                      <SkillsRecommendedRow
+                        catalog={SKILL_CATALOG}
+                        skillsRequired={skillsRequired}
+                        skillsNice={skillsNice}
+                        onAddRequired={addSkillToRequired}
+                      />
+                      <SkillsMatchingImpact requiredCount={skillsRequired.length} niceCount={skillsNice.length} />
+                    </div>
                   </div>
+                  <footer className="job-skills-footer">
+                    <button
+                      type="button"
+                      className="job-editor-btn-outline job-skills-footer-discard"
+                      onClick={discardSkills}
+                      disabled={saving}
+                    >
+                      Discard changes
+                    </button>
+                    <button
+                      type="button"
+                      className="job-editor-btn-primary job-skills-footer-continue"
+                      onClick={() => void saveAndProceed()}
+                      disabled={saving || (!isNew && !!loadErr)}
+                    >
+                      {saving ? 'Saving…' : 'Save and Continue'}
+                      <span className="job-skills-footer-arrow" aria-hidden>
+                        →
+                      </span>
+                    </button>
+                  </footer>
                 </section>
               )}
 
               {stepId === 'compensation' && (
-                <section className="job-step-pane">
-                  <div className="job-editor-grid-2">
-                    <JobEditorField label="Salary min">
-                      <input className="job-editor-input" value={form.salary_min} onChange={e => set('salary_min', e.target.value)} />
-                    </JobEditorField>
-                    <JobEditorField label="Salary max">
-                      <input className="job-editor-input" value={form.salary_max} onChange={e => set('salary_max', e.target.value)} />
-                    </JobEditorField>
-                    <JobEditorField label="Currency">
-                      <input
-                        className="job-editor-input"
-                        value={form.salary_currency}
-                        onChange={e => set('salary_currency', e.target.value.toUpperCase())}
-                        placeholder="USD"
-                      />
-                    </JobEditorField>
-                    <JobEditorField label="Show salary on posting">
-                      <label className="job-checkbox-label">
-                        <input
-                          type="checkbox"
-                          checked={form.salary_visible}
-                          onChange={e => set('salary_visible', e.target.checked)}
-                        />
-                        Visible to candidates
-                      </label>
-                    </JobEditorField>
-                    <JobEditorField label="Bonus / incentives">
-                      <textarea
-                        className="job-editor-input"
-                        rows={3}
-                        value={form.bonus_incentives}
-                        onChange={e => set('bonus_incentives', e.target.value)}
-                        placeholder="OTE, equity, signing bonus…"
-                      />
-                    </JobEditorField>
-                    <JobEditorField label="Budget approval status">
-                      <select
-                        className="job-editor-select"
-                        value={form.budget_approval_status}
-                        onChange={e => set('budget_approval_status', e.target.value)}
+                <section className="job-step-pane job-compensation-pane">
+                  <div className="job-compensation-card">
+                    <div className="job-compensation-card-head">
+                      <h2 className="job-compensation-card-title">Salary &amp; visibility</h2>
+                      <p className="job-compensation-card-lead">
+                        Amounts use whole numbers in {form.salary_currency || accountDefaultCurrency}. Currency defaults
+                        from your workspace (Settings → Organization).
+                      </p>
+                    </div>
+                    <div className="job-compensation-grid job-editor-grid-2">
+                      <JobEditorField
+                        label="Salary min"
+                        hint="Digits only — annual or period amount for your org."
                       >
-                        <option value="">—</option>
-                        <option value="draft">Draft</option>
-                        <option value="pending">Pending approval</option>
-                        <option value="approved">Approved</option>
-                        <option value="rejected">Rejected</option>
-                      </select>
-                    </JobEditorField>
-                    <JobEditorField label="Cost center">
-                      <input className="job-editor-input" value={form.cost_center} onChange={e => set('cost_center', e.target.value)} />
-                    </JobEditorField>
-                    <JobEditorField label="Hiring budget ID">
-                      <input
-                        className="job-editor-input"
-                        value={form.hiring_budget_id}
-                        onChange={e => set('hiring_budget_id', e.target.value)}
-                        placeholder="FIN-REQ-1024"
-                      />
-                    </JobEditorField>
+                        <input
+                          className="job-editor-input job-editor-input--salary"
+                          type="text"
+                          inputMode="numeric"
+                          autoComplete="off"
+                          value={form.salary_min}
+                          onChange={e => set('salary_min', sanitizeSalaryDigits(e.target.value))}
+                          placeholder="e.g. 120000"
+                        />
+                      </JobEditorField>
+                      <JobEditorField
+                        label="Salary max"
+                        hint="Digits only — should be ≥ min when both set."
+                      >
+                        <input
+                          className="job-editor-input job-editor-input--salary"
+                          type="text"
+                          inputMode="numeric"
+                          autoComplete="off"
+                          value={form.salary_max}
+                          onChange={e => set('salary_max', sanitizeSalaryDigits(e.target.value))}
+                          placeholder="e.g. 160000"
+                        />
+                      </JobEditorField>
+                      <JobEditorField
+                        label="Currency"
+                        hint={
+                          orgSettings
+                            ? `Workspace default: ${accountDefaultCurrency}. Override per job if needed.`
+                            : 'Loads from workspace Settings → Organization when available.'
+                        }
+                      >
+                        <select
+                          className="job-editor-select job-compensation-select"
+                          value={form.salary_currency}
+                          onChange={e => set('salary_currency', e.target.value)}
+                          aria-label="Salary currency"
+                        >
+                          {currencyOptions.map(c => (
+                            <option key={c} value={c}>
+                              {c}
+                            </option>
+                          ))}
+                        </select>
+                      </JobEditorField>
+                      <JobEditorField label="Show salary on posting">
+                        <label className="job-checkbox-label job-compensation-checkbox">
+                          <input
+                            type="checkbox"
+                            checked={form.salary_visible}
+                            onChange={e => set('salary_visible', e.target.checked)}
+                          />
+                          Visible to candidates
+                        </label>
+                      </JobEditorField>
+                    </div>
+
+                    <div className="job-compensation-divider" aria-hidden />
+
+                    <div className="job-compensation-grid job-editor-grid-2">
+                      <JobEditorField label="Bonus / incentives">
+                        <textarea
+                          className="job-editor-input job-compensation-textarea"
+                          rows={3}
+                          value={form.bonus_incentives}
+                          onChange={e => set('bonus_incentives', e.target.value)}
+                          placeholder="OTE, equity, signing bonus…"
+                        />
+                      </JobEditorField>
+                      <JobEditorField label="Budget approval status">
+                        <select
+                          className="job-editor-select job-compensation-select"
+                          value={form.budget_approval_status}
+                          onChange={e => set('budget_approval_status', e.target.value)}
+                        >
+                          <option value="">—</option>
+                          <option value="draft">Draft</option>
+                          <option value="pending">Pending approval</option>
+                          <option value="approved">Approved</option>
+                          <option value="rejected">Rejected</option>
+                        </select>
+                      </JobEditorField>
+                      <JobEditorField label="Cost center">
+                        <input
+                          className="job-editor-input"
+                          value={form.cost_center}
+                          onChange={e => set('cost_center', e.target.value)}
+                        />
+                      </JobEditorField>
+                      <JobEditorField label="Hiring budget ID">
+                        <input
+                          className="job-editor-input"
+                          value={form.hiring_budget_id}
+                          onChange={e => set('hiring_budget_id', e.target.value)}
+                          placeholder="FIN-REQ-1024"
+                        />
+                      </JobEditorField>
+                    </div>
                   </div>
                 </section>
               )}

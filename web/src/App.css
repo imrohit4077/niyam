@@ -5381,6 +5381,425 @@ a.sidebar-item {
   min-width: 0;
 }
 
+/* Job editor — Configure skills step (mockup layout) */
+.job-editor-skills-hero-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+}
+
+.job-editor-draft-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: 6px;
+  background: rgba(234, 179, 8, 0.2);
+  color: #a16207;
+  border: 1px solid rgba(234, 179, 8, 0.45);
+}
+
+.job-skills-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.job-skills-card {
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid rgba(15, 25, 35, 0.08);
+  box-shadow: 0 8px 28px rgba(15, 25, 35, 0.06);
+  overflow: hidden;
+}
+
+.job-skills-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  border-bottom: 1px solid rgba(15, 25, 35, 0.08);
+}
+
+@media (max-width: 900px) {
+  .job-skills-columns {
+    grid-template-columns: 1fr;
+  }
+}
+
+.job-skill-panel {
+  padding: 24px 28px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.job-skill-panel--required {
+  border-right: 1px solid rgba(15, 25, 35, 0.08);
+}
+
+@media (max-width: 900px) {
+  .job-skill-panel--required {
+    border-right: none;
+    border-bottom: 1px solid rgba(15, 25, 35, 0.08);
+  }
+}
+
+.job-skill-panel-eyebrow {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--teal, #0891b2);
+}
+
+.job-skill-panel-headline {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+}
+
+.job-skill-panel-sub {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: rgba(15, 25, 35, 0.62);
+}
+
+.job-skill-search-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(15, 25, 35, 0.12);
+  background: #f8fafc;
+}
+
+.job-skill-search-wrap--nice {
+  background: rgba(0, 180, 216, 0.08);
+  border-color: rgba(8, 145, 178, 0.2);
+}
+
+.job-skill-search-icon {
+  flex-shrink: 0;
+  color: rgba(15, 25, 35, 0.45);
+}
+
+.job-skill-search-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  outline: none;
+  color: #0f172a;
+}
+
+.job-skill-search-input::placeholder {
+  color: rgba(15, 25, 35, 0.45);
+}
+
+.job-skill-chips--panel {
+  min-height: 48px;
+  background: rgba(15, 25, 35, 0.03);
+  border: 1px solid rgba(15, 25, 35, 0.1);
+}
+
+.job-skill-panel .job-skill-chip--required {
+  background: #d1e9f0;
+  color: #0f4c5c;
+  border-color: rgba(45, 122, 130, 0.35);
+}
+
+.job-skill-panel .job-skill-chip--nice {
+  background: #e8f6f9;
+  color: #155e75;
+  border-color: rgba(8, 145, 178, 0.3);
+}
+
+.job-skill-quick-picks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.job-skill-quick-pick {
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 999px;
+  border: 1px dashed rgba(8, 145, 178, 0.45);
+  background: rgba(255, 255, 255, 0.9);
+  color: #0e7490;
+  cursor: pointer;
+}
+
+.job-skill-quick-pick:hover {
+  background: rgba(0, 180, 216, 0.1);
+  border-style: solid;
+}
+
+.job-skill-panel-catalog-empty {
+  margin: 0;
+  font-size: 13px;
+  color: rgba(15, 25, 35, 0.55);
+}
+
+.job-skills-bottom {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 0;
+  align-items: stretch;
+}
+
+@media (max-width: 900px) {
+  .job-skills-bottom {
+    grid-template-columns: 1fr;
+  }
+}
+
+.job-skills-recommended {
+  padding: 22px 28px 26px;
+  border-right: 1px solid rgba(15, 25, 35, 0.08);
+}
+
+@media (max-width: 900px) {
+  .job-skills-recommended {
+    border-right: none;
+    border-bottom: 1px solid rgba(15, 25, 35, 0.08);
+  }
+}
+
+.job-skills-reco-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.job-skills-reco-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.job-skills-reco-empty {
+  font-size: 13px;
+}
+
+.job-skills-reco-pill {
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 999px;
+  border: 1px solid rgba(8, 145, 178, 0.25);
+  background: #d1e9f0;
+  color: #0f4c5c;
+  cursor: pointer;
+}
+
+.job-skills-reco-pill:hover {
+  filter: brightness(0.97);
+}
+
+.job-skills-reco-plus {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: 52px;
+  min-height: 52px;
+  padding: 6px;
+  border-radius: 12px;
+  border: 1px dashed rgba(8, 145, 178, 0.45);
+  background: #fff;
+  color: #0e7490;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.job-skills-reco-plus:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.job-skills-reco-plus-icon {
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.job-skills-reco-plus-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.job-skills-impact {
+  padding: 22px 28px 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.job-skills-impact-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.job-skills-impact-desc {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: rgba(15, 25, 35, 0.58);
+}
+
+.job-skills-impact-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.job-skills-impact-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.job-skills-impact-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(15, 25, 35, 0.75);
+}
+
+.job-skills-impact-track {
+  height: 12px;
+  border-radius: 999px;
+  background: rgba(15, 25, 35, 0.08);
+  overflow: hidden;
+}
+
+.job-skills-impact-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.25s ease;
+}
+
+.job-skills-impact-fill--req {
+  background: linear-gradient(90deg, #0f4c5c, #2d7a82);
+}
+
+.job-skills-impact-fill--nice {
+  background: linear-gradient(90deg, #67d4e8, #99e0ed);
+}
+
+.job-skills-impact-scale {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: rgba(15, 25, 35, 0.45);
+  margin-top: 4px;
+}
+
+.job-skills-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 4px;
+}
+
+.job-skills-footer-continue {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.job-skills-footer-arrow {
+  font-size: 1.1em;
+  line-height: 1;
+}
+
+/* Job editor — Compensation step */
+.job-compensation-pane {
+  max-width: 920px;
+}
+
+.job-compensation-card {
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid rgba(15, 25, 35, 0.08);
+  box-shadow: 0 8px 28px rgba(15, 25, 35, 0.06);
+  padding: 24px 28px 28px;
+}
+
+.job-compensation-card-head {
+  margin-bottom: 20px;
+}
+
+.job-compensation-card-title {
+  margin: 0 0 8px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+}
+
+.job-compensation-card-lead {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: rgba(15, 25, 35, 0.58);
+}
+
+.job-compensation-grid {
+  gap: 18px 20px;
+}
+
+.job-compensation-grid .job-editor-field {
+  min-width: 0;
+}
+
+.job-editor-input--salary {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+.job-compensation-select {
+  width: 100%;
+  max-width: 100%;
+}
+
+.job-compensation-checkbox {
+  padding: 10px 0;
+}
+
+.job-compensation-textarea {
+  min-height: 88px;
+  resize: vertical;
+}
+
+.job-compensation-divider {
+  height: 1px;
+  background: rgba(15, 25, 35, 0.08);
+  margin: 24px 0;
+}
+
 .job-pipeline-rules {
   display: flex;
   flex-direction: column;
