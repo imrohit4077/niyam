@@ -11,7 +11,7 @@ from app.services.referral_account_settings_service import merged_referral_setti
 logger = get_logger(__name__)
 
 
-@celery_app.task(name="forge.referral_milestone_notify")
+@celery_app.task(name="niyam.referral_milestone_notify")
 def referral_milestone_notify(account_id: int, application_id: int, new_status: str) -> None:
     db = SessionLocal()
     try:

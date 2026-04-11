@@ -1,7 +1,4 @@
-"""
-Celery application instance and configuration.
-Rails equivalent: config/application.rb (ActiveJob backend) + Sidekiq.
-"""
+"""Celery application instance and configuration (Niyam ATS)."""
 
 from __future__ import annotations
 
@@ -19,7 +16,7 @@ from config.settings import get_settings
 settings = get_settings()
 
 celery_app = Celery(
-    "myapp",
+    "niyam",
     broker=settings.CELERY_BROKER_URL,
     backend=settings.CELERY_RESULT_BACKEND,
     include=[],
@@ -49,7 +46,7 @@ celery_app.conf.update(
     },
 )
 
-# Celery Beat: single source of truth — config/schedule.py (Rails schedule.rb equivalent)
+# Celery Beat: single source of truth — config/schedule.py
 beat_schedule: dict = {}
 if CELERY_BEAT_SCHEDULE:
     for name, entry in CELERY_BEAT_SCHEDULE.items():
@@ -77,10 +74,7 @@ def _celery_process_name_from_argv() -> str:
 
 
 def _import_job_modules() -> None:
-    """
-    Rails-like convention: autoload every `app/jobs/*_job.py` module so the
-    `@celery_app.task(...)` decorators run and tasks get registered.
-    """
+    """Autoload every `app/jobs/*_job.py` so `@celery_app.task(...)` decorators register tasks."""
     jobs_dir = Path(__file__).resolve().parents[1] / "app" / "jobs"
     if not jobs_dir.exists():
         return
@@ -99,24 +93,24 @@ def _import_job_modules() -> None:
 _import_job_modules()
 
 
-# ── Logging: same Forge formatter / colors / SQL as the web app (one config file) ──
+# ── Logging: same formatter / colors / SQL as the web app (one config file) ──
 @worker_init.connect
-def _forge_logging_worker(**_kwargs: object) -> None:
+def _niyam_logging_worker(**_kwargs: object) -> None:
     configure_logging(process_name="worker", force=True)
 
 
 @worker_process_init.connect
-def _forge_logging_worker_child(**_kwargs: object) -> None:
-    """Prefork pool: each child process needs Forge logging re-applied after Celery setup."""
+def _niyam_logging_worker_child(**_kwargs: object) -> None:
+    """Prefork pool: each child process needs logging re-applied after Celery setup."""
     configure_logging(process_name="worker", force=True)
 
 
 @after_setup_logger.connect
-def _forge_after_celery_root_logger(logger=None, **_kwargs: object) -> None:
-    """Runs after Celery configures the root logger — re-attach colored Forge handler."""
+def _niyam_after_celery_root_logger(logger=None, **_kwargs: object) -> None:
+    """Runs after Celery configures the root logger — re-attach colored console handler."""
     configure_logging(process_name=_celery_process_name_from_argv(), force=True)
 
 
 @beat_init.connect
-def _forge_logging_beat(**_kwargs: object) -> None:
+def _niyam_logging_beat(**_kwargs: object) -> None:
     configure_logging(process_name="beat", force=True)

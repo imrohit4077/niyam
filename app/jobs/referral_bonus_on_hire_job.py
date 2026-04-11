@@ -7,7 +7,7 @@ from app.services.referral_service import ReferralBonusService
 logger = get_logger(__name__)
 
 
-@celery_app.task(name="forge.referral_bonus_on_hire")
+@celery_app.task(name="niyam.referral_bonus_on_hire")
 def referral_bonus_on_hire(account_id: int, application_id: int) -> None:
     db = SessionLocal()
     try:

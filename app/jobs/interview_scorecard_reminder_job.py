@@ -3,7 +3,7 @@ Nudge interviewers when a scorecard is still missing 2+ hours after interview_en
 
 Register in config/schedule.py (CELERY_BEAT_SCHEDULE), e.g. every 15 minutes:
   "interview_scorecard_reminders": {
-      "task": "forge.interview_scorecard_reminders",
+      "task": "niyam.interview_scorecard_reminders",
       "schedule": {"hour": "*", "minute": "*/15"},
   }
 
@@ -35,7 +35,7 @@ def _notify_interviewer(assignment_id: int, interviewer_id: int, account_id: int
     )
 
 
-@celery_app.task(name="forge.interview_scorecard_reminders")
+@celery_app.task(name="niyam.interview_scorecard_reminders")
 def interview_scorecard_reminders() -> dict[str, int]:
     db = SessionLocal()
     sent = 0

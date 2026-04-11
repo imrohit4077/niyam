@@ -23,7 +23,7 @@ logger = get_logger(__name__)
 
 
 @celery_app.task(
-    name="forge.audit_log_flush",
+    name="niyam.audit_log_flush",
     ignore_result=True,
     autoretry_for=(Exception,),
     retry_backoff=True,

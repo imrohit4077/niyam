@@ -1,11 +1,11 @@
 ---
-description: ForgeAPI coding conventions — Rails-style FastAPI project. Applies to all Python and TypeScript files.
+description: Niyam coding conventions — Layered FastAPI project. Applies to all Python and TypeScript files.
 alwaysApply: true
 ---
 
-# ForgeAPI — Rails-Style FastAPI Conventions
+# Niyam — FastAPI conventions (ATS)
 
-This codebase is a **FastAPI + SQLAlchemy** app that mirrors Ruby on Rails conventions.
+This codebase is a **FastAPI + SQLAlchemy** app that uses controllers, services, and models consistently.
 Always follow these patterns precisely. Never invent new structural patterns.
 
 ---
@@ -24,7 +24,7 @@ app/
   helpers/           # Pure utility functions (JWT, responses, etc.)
   schemas/           # Pydantic: request validation and response shapes only
 config/
-  routes.py          # ALL routes live here — the routes.rb equivalent
+  routes.py          # ALL routes live here (single registry)
   settings.py        # App settings via pydantic-settings
   database.py        # Engine, SessionLocal, get_db, Base
   celery.py          # Celery app instance and queue config
@@ -40,7 +40,7 @@ db/
 
 - Inherit `BaseModel` from `app.models.base_model`
 - Use SQLAlchemy 2 `Mapped` / `mapped_column` syntax
-- Always declare `__tablename__` as plural snake_case (Rails convention)
+- Always declare `__tablename__` as plural snake_case
 - Always include `account_id` FK for tenant-scoped models
 - Use FK with `ondelete="CASCADE"` or `"RESTRICT"` explicitly
 - Override `to_dict()` to serialize dates as `.isoformat()` and rename/add computed fields
@@ -159,7 +159,7 @@ def find_job(self, job_id):
 
 ## Routes (`config/routes.py`)
 
-- **All routes are declared in `draw_routes()`** — this is `config/routes.rb`
+- **All routes are declared in `draw_routes()`** — `config/routes.py`
 - Use `resources(router, "/path", ControllerClass)` for standard CRUD
 - Use `router.add_api_route(...)` + `_wrap(Controller, "action", lambda c: c.action())` for custom routes
 - All routes are under the `/api/v1` prefix (set on the router)

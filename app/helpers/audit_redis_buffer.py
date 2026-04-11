@@ -12,8 +12,8 @@ from typing import Any
 
 from config.settings import get_settings
 
-_BUFFER_KEY = "forge:audit_log:buffer:v1"
-_FLUSH_LOCK_KEY = "forge:audit_log:flush_lock"
+_BUFFER_KEY = "niyam:audit_log:buffer:v1"
+_FLUSH_LOCK_KEY = "niyam:audit_log:flush_lock"
 _LUA_DRAIN = """
 local items = redis.call('LRANGE', KEYS[1], 0, -1)
 redis.call('DEL', KEYS[1])

@@ -1,15 +1,14 @@
 """
-Central logging configuration for ATS (web server, Celery worker, beat, shell).
+Central logging configuration for Niyam (web server, Celery worker, beat, shell).
 
-Rails-style clarity:
   - One place to tune format, colors, levels, and SQL logging.
-  - Same Forge formatter for API and background workers (see config/celery.py signals).
+  - Same console formatter for API and background workers (see config/celery.py signals).
   - Worker/beat: set LOG_COLOR_WORKER=false if you ship logs without ANSI escapes.
   - Log lines: file:line first, then UTC time, level (color), process (web|worker|beat),
     layer (Controller/Service/Job/[Celery:…]/[SQL]), message.
   - SQL lines (LOG_SQL): INSERT green, SELECT blue, UPDATE yellow, DELETE red, other cyan.
 
-Usage elsewhere (unchanged):
+Usage:
   from app.helpers.logger import get_logger
   logger = get_logger(__name__)
 
@@ -66,7 +65,7 @@ _SQL_KIND_TO_COLOR: dict[str, str] = {
 _CELERY_ACCENT = "\033[1;35m"  # bold magenta for [Celery:…] tags in worker/beat logs
 
 
-class ForgeLogFormatter(logging.Formatter):
+class NiyamLogFormatter(logging.Formatter):
     """
     filename:lineno [timestamp UTC] [LEVEL] [process] [layer] — message
     SQL (logger app.sql): … [SQL] … — INSERT green, SELECT blue, UPDATE yellow, DELETE red, other cyan.
@@ -118,7 +117,7 @@ class ForgeLogFormatter(logging.Formatter):
         return out
 
 
-class _ForgeFilter(logging.Filter):
+class _NiyamLogFilter(logging.Filter):
     """Inject process_name into every record for the formatter."""
 
     def filter(self, record: logging.LogRecord) -> bool:
@@ -145,7 +144,7 @@ def _layer_from_logger(name: str) -> tuple[str, str]:
 
 
 _configured = False
-_root_handler_token = "_forge_root_console"
+_root_handler_token = "_niyam_root_console"
 
 
 def _want_color(settings: Any, process_name: str | None = None) -> bool:
@@ -180,7 +179,7 @@ def configure_logging(
     force: bool = False,
 ) -> None:
     """
-    Idempotent setup: root StreamHandler + Forge formatter, levels, third-party noise reduction.
+    Idempotent setup: root StreamHandler + Niyam formatter, levels, third-party noise reduction.
     Call from main (web), Celery signals (worker/beat), manage.py shell, etc.
 
     process_name: 'web' | 'worker' | 'beat' | 'shell' | 'app'
@@ -200,16 +199,16 @@ def configure_logging(
     root = logging.getLogger()
     root.setLevel(level)
 
-    # Remove previous Forge handler when forcing (Celery replaces handlers)
+    # Remove previous Niyam console handler when forcing (Celery replaces handlers)
     if force:
         root.handlers = [h for h in root.handlers if getattr(h, _root_handler_token, None) is None]
 
-    has_forge = any(getattr(h, _root_handler_token, None) for h in root.handlers)
-    if not has_forge or force:
+    has_niyam_handler = any(getattr(h, _root_handler_token, None) for h in root.handlers)
+    if not has_niyam_handler or force:
         handler = logging.StreamHandler(sys.stdout)
         setattr(handler, _root_handler_token, True)
-        handler.setFormatter(ForgeLogFormatter(use_color=use_color))
-        handler.addFilter(_ForgeFilter())
+        handler.setFormatter(NiyamLogFormatter(use_color=use_color))
+        handler.addFilter(_NiyamLogFilter())
         root.addHandler(handler)
 
     # App code
@@ -232,7 +231,7 @@ def configure_logging(
     for name in ("httpx", "httpcore", "celery.redirected", "kombu", "amqp"):
         logging.getLogger(name).setLevel(logging.WARNING)
 
-    # Celery / background: same log level as app; Forge formatter applies via root handler
+    # Celery / background: same log level as app; Niyam formatter applies via root handler
     if (process_name or _PROCESS_NAME) in ("worker", "beat"):
         for name in (
             "celery",

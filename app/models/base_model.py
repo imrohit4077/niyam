@@ -1,6 +1,6 @@
 """
 Base model with callbacks, timestamps, and ActiveRecord-style API.
-Rails equivalent: ApplicationRecord (base for all models).
+
 """
 
 from typing import Any, Callable, TypeVar, Optional

@@ -1,1 +1,1 @@
-"""Application package. Rails equivalent: app/ directory."""
+"""Application package (Niyam ATS)."""

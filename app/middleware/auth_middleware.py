@@ -1,6 +1,6 @@
 """
 Authentication middleware: validate JWT and set request.state.current_user (payload dict).
-Rails equivalent: before_action :authenticate_user!
+
 No model import — current_user is the decoded JWT payload. Your controller can load the model if needed.
 """
 

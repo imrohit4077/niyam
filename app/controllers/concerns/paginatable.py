@@ -1,6 +1,6 @@
 """
 Paginatable concern: paginate(query, page, per_page) with meta.
-Rails equivalent: .page().per()
+
 """
 
 from typing import Any

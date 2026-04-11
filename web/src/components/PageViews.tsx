@@ -348,7 +348,7 @@ function JobIconTrash() {
 }
 
 type JobsViewMode = 'list' | 'grid' | 'table'
-const JOBS_VIEW_STORAGE_KEY = 'forge_jobs_view_mode'
+const JOBS_VIEW_STORAGE_KEY = 'niyam_jobs_view_mode'
 
 function JobIconBriefcaseMini() {
   return (

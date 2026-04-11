@@ -19,7 +19,7 @@ from app.services.referral_account_settings_service import merged_referral_setti
 logger = get_logger(__name__)
 
 
-@celery_app.task(name="forge.referral_bonus_eligible_webhook")
+@celery_app.task(name="niyam.referral_bonus_eligible_webhook")
 def referral_bonus_eligible_webhook(bonus_id: int) -> None:
     db = SessionLocal()
     try:
@@ -50,7 +50,7 @@ def referral_bonus_eligible_webhook(bonus_id: int) -> None:
         secret = (settings.get("hris_webhook_secret") or "").strip()
         if secret:
             sig = hmac.new(secret.encode("utf-8"), raw.encode("utf-8"), hashlib.sha256).hexdigest()
-            headers["X-Forge-Signature"] = f"sha256={sig}"
+            headers["X-Niyam-Signature"] = f"sha256={sig}"
         timeout = 10.0 if get_settings().APP_ENV == "development" else 30.0
         with httpx.Client(timeout=timeout) as client:
             r = client.post(url, content=raw.encode("utf-8"), headers=headers)

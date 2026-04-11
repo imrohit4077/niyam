@@ -1,5 +1,5 @@
 """
-Pytest fixtures. Rails equivalent: test/test_helper.rb
+Pytest fixtures for Niyam API tests.
 Framework only — add your model fixtures in your app tests.
 """
 

@@ -1,16 +1,13 @@
 """
-Centralized periodic jobs (Celery Beat) — ATS equivalent of Rails schedule.rb / Whenever.
-
-  Rails:           config/schedule.rb   + cron OR Whenever → Sidekiq/ActiveJob
-  ATS:        THIS FILE            → Celery Beat → app/jobs/*_job.py
+Centralized periodic jobs (Celery Beat) for Niyam ATS.
 
 Rules:
   • List every repeating task here only — do not scatter crontab() in other modules.
-  • Each job must be a @celery_app.task with a stable ``name="forge.<task_name>"`` in app/jobs/.
+  • Each job must be a @celery_app.task with a stable ``name="niyam.<task_name>"`` in app/jobs/.
   • Beat process: ``celery -A config.celery beat`` (or ``python manage.py scheduler``).
 
 How to add a job:
-  1. Create ``app/jobs/my_task_job.py`` and register ``name="forge.my_task"``.
+  1. Create ``app/jobs/my_task_job.py`` and register ``name="niyam.my_task"``.
   2. Add an entry below using ``beat_entry(...)`` or a raw dict with the same shape.
   3. Deploy/restart the Beat process.
 
@@ -37,7 +34,7 @@ def beat_entry(
     """
     One Beat row: task dotted name, Celery schedule object, worker queue.
 
-    ``task`` must match the Celery task's ``name=`` (e.g. forge.audit_log_flush).
+    ``task`` must match the Celery task's ``name=`` (e.g. niyam.audit_log_flush).
     """
     opts: dict[str, Any] = {"queue": queue}
     opts.update(task_options)
@@ -50,7 +47,7 @@ def beat_entry(
 
 _REFERRAL_JOBS = {
     "referral-bonus-eligibility-daily": beat_entry(
-        task="forge.referral_bonus_eligibility_scan",
+        task="niyam.referral_bonus_eligibility_scan",
         schedule=crontab(hour=2, minute=17),
         queue="low_priority",
     ),
@@ -62,7 +59,7 @@ _REFERRAL_JOBS = {
 
 _AUDIT_JOBS = {
     "audit-log-flush": beat_entry(
-        task="forge.audit_log_flush",
+        task="niyam.audit_log_flush",
         schedule=crontab(minute="*/20"),
         queue="low_priority",
     ),
@@ -74,5 +71,5 @@ _AUDIT_JOBS = {
 
 CELERY_BEAT_SCHEDULE: dict[str, dict[str, Any]] = {**_REFERRAL_JOBS, **_AUDIT_JOBS}
 
-# Rails-like alias: ``from config.schedule import SCHEDULE``
+# Alias: ``from config.schedule import SCHEDULE``
 SCHEDULE = CELERY_BEAT_SCHEDULE

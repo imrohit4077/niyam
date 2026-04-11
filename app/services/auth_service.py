@@ -1,6 +1,6 @@
 """
 AuthService: login, refresh token logic.
-Rails equivalent: AuthenticationService
+
 """
 
 from datetime import datetime, timezone

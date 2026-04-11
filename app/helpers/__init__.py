@@ -1,4 +1,4 @@
-"""Helpers package. Rails equivalent: app/helpers/."""
+"""Helpers package."""
 
 from app.helpers.jwt_helper import JWTHelper
 from app.helpers.response_helper import success_response, error_response

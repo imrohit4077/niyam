@@ -9,7 +9,7 @@ from app.services.esign_automation_service import EsignAutomationService
 logger = get_logger(__name__)
 
 
-@celery_app.task(name="forge.esign_deliver_request")
+@celery_app.task(name="niyam.esign_deliver_request")
 def esign_deliver_request(request_id: int) -> None:
     logger.info("esign_deliver_request task", extra={"request_id": request_id})
     db = SessionLocal()

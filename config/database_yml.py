@@ -1,5 +1,5 @@
 """
-Database configuration from database.yml (Rails convention).
+Database configuration from database.yml (Project convention).
 Loads config/database.yml and builds DATABASE_URL for the current APP_ENV.
 """
 
@@ -31,7 +31,7 @@ def _load_yml() -> dict[str, Any]:
 
 def get_database_config(env: str | None = None) -> dict[str, Any]:
     """
-    Get database config for the given environment (Rails: config/database.yml).
+    Get database config for the given environment.
     env defaults to APP_ENV or 'development'. Returns merged default + env section.
     """
     data = _load_yml()

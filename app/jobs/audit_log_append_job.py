@@ -35,7 +35,7 @@ class AuditLogAppendTask(Task):
 @celery_app.task(
     bind=True,
     base=AuditLogAppendTask,
-    name="forge.audit_log_append",
+    name="niyam.audit_log_append",
     ignore_result=True,
     autoretry_for=(Exception,),
     retry_backoff=True,
