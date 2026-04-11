@@ -347,6 +347,233 @@ function JobIconTrash() {
   )
 }
 
+type JobsViewMode = 'list' | 'grid' | 'table'
+const JOBS_VIEW_STORAGE_KEY = 'forge_jobs_view_mode'
+
+function JobIconBriefcaseMini() {
+  return (
+    <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.65} aria-hidden>
+      <path
+        d="M20 7h-4V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2H4a2 2 0 00-2 2v11a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2zm-10-2h4v2h-4V5z"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+function JobIconBuildingMini() {
+  return (
+    <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.65} aria-hidden>
+      <path d="M3 21V7l9-4 9 4v14H3zm6-2h6v-4H9v4zm0-6h2V9H9v4zm4 0h2V9h-2v4z" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+function JobIconPinMini() {
+  return (
+    <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.65} aria-hidden>
+      <path d="M12 21s7-4.5 7-11a7 7 0 10-14 0c0 6.5 7 11 7 11z" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx={12} cy={10} r={2} />
+    </svg>
+  )
+}
+function JobIconFilterSliders() {
+  return (
+    <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.65} aria-hidden>
+      <path d="M4 6h16M8 12h8M10 18h4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+function JobIconList() {
+  return (
+    <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.65} aria-hidden>
+      <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+function JobIconGrid() {
+  return (
+    <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.65} aria-hidden>
+      <path d="M10 3H3v7h7V3zM21 3h-7v7h7V3zM21 14h-7v7h7v-7zM10 14H3v7h7v-7z" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+function JobIconTable() {
+  return (
+    <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.65} aria-hidden>
+      <path d="M3 5h18v2H3V5zm0 6h18v2H3v-2zm0 6h18v2H3v-2z" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function JobStatusBadge({ status }: { status: string }) {
+  const cls = STAGE_COLORS[status] ?? 'tag-gray'
+  const label = status.replace(/_/g, ' ').toUpperCase()
+  return <span className={`job-status-badge tag ${cls}`}>{label}</span>
+}
+
+function JobsJobActions({
+  job,
+  accountId,
+  navigate,
+  toast,
+  onDelete,
+}: {
+  job: Job
+  accountId: string
+  navigate: ReturnType<typeof useNavigate>
+  toast: { success: (title: string, message?: string) => void; error: (title: string, message?: string) => void }
+  onDelete: (j: Job) => void
+}) {
+  return (
+    <div className="jobs-actions-row">
+      <button
+        type="button"
+        className="btn-icon-round jobs-action-btn"
+        title="Edit job"
+        aria-label="Edit job"
+        onClick={() => navigate(`/account/${accountId}/jobs/${job.id}/edit`)}
+      >
+        <JobIconPencil />
+      </button>
+      {job.apply_token ? (
+        <>
+          <button
+            type="button"
+            className="btn-icon-round jobs-action-btn"
+            title={job.status === 'open' ? 'Open apply page' : 'Job must be Open to apply'}
+            aria-label="Open apply page"
+            disabled={job.status !== 'open'}
+            onClick={() => {
+              const u = `${window.location.origin}/apply/${encodeURIComponent(job.apply_token!)}`
+              window.open(u, '_blank', 'noopener,noreferrer')
+            }}
+          >
+            <JobIconExternal />
+          </button>
+          <button
+            type="button"
+            className="btn-icon-round jobs-action-btn"
+            title={job.status === 'open' ? 'Copy apply link' : 'Job must be Open'}
+            aria-label="Copy apply link"
+            disabled={job.status !== 'open'}
+            onClick={() => {
+              const u = `${window.location.origin}/apply/${encodeURIComponent(job.apply_token!)}`
+              void navigator.clipboard.writeText(u).then(
+                () => toast.success('Apply link copied', 'Share this URL with candidates.'),
+                () => toast.error('Copy failed', 'Open the apply page and copy from the address bar.'),
+              )
+            }}
+          >
+            <JobIconCopy />
+          </button>
+        </>
+      ) : null}
+      <button
+        type="button"
+        className="btn-icon-round btn-icon-round--danger jobs-action-btn"
+        title="Delete job"
+        aria-label="Delete job"
+        onClick={() => onDelete(job)}
+      >
+        <JobIconTrash />
+      </button>
+    </div>
+  )
+}
+
+function formatEmploymentType(t: string): string {
+  const m: Record<string, string> = {
+    full_time: 'Full-time',
+    part_time: 'Part-time',
+    contract: 'Contract',
+    internship: 'Internship',
+  }
+  return m[t] ?? t.replace(/_/g, ' ')
+}
+
+function formatWorkMode(t: string): string {
+  const m: Record<string, string> = {
+    onsite: 'On-site',
+    remote: 'Remote',
+    hybrid: 'Hybrid',
+  }
+  return m[t] ?? t
+}
+
+function formatExperienceLevel(level: string | null | undefined): string {
+  if (!level) return '—'
+  const map: Record<string, string> = {
+    '0-1': '0–1 yr',
+    '2-5': '2–5 yr',
+    '6-10': '6–10 yr',
+    '10+': '10+ yr',
+  }
+  return map[level] ?? level
+}
+
+function formatSalaryRange(job: Job): string | null {
+  if (!job.salary_visible) return null
+  const cur = job.salary_currency || 'USD'
+  const min = job.salary_min
+  const max = job.salary_max
+  if (min == null && max == null) return null
+  const fmt = (n: number) => n.toLocaleString(undefined, { maximumFractionDigits: 0 })
+  if (min != null && max != null) return `${cur} ${fmt(min)} – ${fmt(max)}`
+  if (min != null) return `${cur} ${fmt(min)}+`
+  if (max != null) return `Up to ${cur} ${fmt(max)}`
+  return null
+}
+
+function jobOpenSeats(job: Job): number {
+  return Math.max(1, job.open_positions ?? 1)
+}
+
+function JobsJobProfileDetails({ job }: { job: Job }) {
+  const salary = formatSalaryRange(job)
+  const published =
+    job.published_at && job.status !== 'draft'
+      ? new Date(job.published_at).toLocaleDateString(undefined, { dateStyle: 'medium' })
+      : null
+  return (
+    <div className="jobs-grid-card-details">
+      <div className="jobs-detail-row">
+        <span className="jobs-detail-label">Vacancies</span>
+        <span className="jobs-detail-value jobs-detail-value--strong">
+          {jobOpenSeats(job)} {jobOpenSeats(job) === 1 ? 'open seat' : 'open seats'}
+        </span>
+      </div>
+      <div className="jobs-detail-row">
+        <span className="jobs-detail-label">Work</span>
+        <span className="jobs-detail-value">
+          {formatEmploymentType(job.employment_type)} · {formatWorkMode(job.location_type)}
+        </span>
+      </div>
+      <div className="jobs-detail-row">
+        <span className="jobs-detail-label">Experience</span>
+        <span className="jobs-detail-value">{formatExperienceLevel(job.experience_level)}</span>
+      </div>
+      {salary ? (
+        <div className="jobs-detail-row">
+          <span className="jobs-detail-label">Salary</span>
+          <span className="jobs-detail-value">{salary}</span>
+        </div>
+      ) : null}
+      {job.requisition_id ? (
+        <div className="jobs-detail-row">
+          <span className="jobs-detail-label">Requisition</span>
+          <span className="jobs-detail-value jobs-detail-value--mono">{job.requisition_id}</span>
+        </div>
+      ) : null}
+      {published ? (
+        <div className="jobs-detail-row">
+          <span className="jobs-detail-label">Published</span>
+          <span className="jobs-detail-value">{published}</span>
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
 export function JobsView() {
   const { token, accountId } = useOutletContext<DashboardOutletContext>()
   const navigate = useNavigate()
@@ -362,6 +589,24 @@ export function JobsView() {
   const [locationFilter, setLocationFilter] = useState('')
   const [orgSettings, setOrgSettings] = useState<OrganizationSettings | null>(null)
   const [countries, setCountries] = useState<CountryRow[]>([])
+  const [viewMode, setViewMode] = useState<JobsViewMode>(() => {
+    try {
+      const v = sessionStorage.getItem(JOBS_VIEW_STORAGE_KEY)
+      if (v === 'list' || v === 'grid' || v === 'table') return v
+    } catch {
+      /* ignore */
+    }
+    return 'table'
+  })
+  const [filtersOpen, setFiltersOpen] = useState(false)
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(JOBS_VIEW_STORAGE_KEY, viewMode)
+    } catch {
+      /* ignore */
+    }
+  }, [viewMode])
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedQ(filterQ.trim()), 320)
@@ -440,15 +685,26 @@ export function JobsView() {
         />
       )}
       <div className="jobs-page">
-        <ListHeader
-          title="Jobs"
-          count={jobs.length}
-          onAction={() => navigate(`/account/${accountId}/jobs/new`)}
-          actionLabel="+ New Job"
-        />
+        <header className="jobs-page-header">
+          <div className="jobs-page-header-row">
+            <h1 className="jobs-page-title">
+              Jobs{' '}
+              <span className="jobs-page-count-pill" aria-live="polite">
+                ({jobs.length})
+              </span>
+            </h1>
+            <button
+              type="button"
+              className="btn-jobs-primary"
+              onClick={() => navigate(`/account/${accountId}/jobs/new`)}
+            >
+              + New Job
+            </button>
+          </div>
+        </header>
 
-        <div className="jobs-filters-toolbar" role="search" aria-label="Filter jobs">
-          <div className="jobs-filters-row jobs-filters-row--search">
+        <div className="jobs-toolbar" role="search" aria-label="Search and view options">
+          <div className="jobs-toolbar-search-wrap">
             <span className="jobs-filter-icon" aria-hidden>
               <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
                 <circle cx={11} cy={11} r={7} />
@@ -458,67 +714,130 @@ export function JobsView() {
             <input
               type="search"
               className="jobs-filter-search"
-              placeholder="Search title, description, versions…"
+              placeholder="Search title, department…"
               value={filterQ}
               onChange={e => setFilterQ(e.target.value)}
               aria-label="Search jobs"
             />
+            {filterQ.trim() ? (
+              <button
+                type="button"
+                className="jobs-search-clear"
+                onClick={() => setFilterQ('')}
+                aria-label="Clear search"
+              >
+                <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
+                  <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" />
+                </svg>
+              </button>
+            ) : null}
           </div>
-          <div className="jobs-filters-row jobs-filters-row--selects">
-            <label className="jobs-filter-field">
-              <span className="jobs-filter-label">Status</span>
-              <select
-                className="jobs-filter-select"
-                value={statusFilter}
-                onChange={e => setStatusFilter(e.target.value)}
+          <div className="jobs-toolbar-right">
+            <button
+              type="button"
+              className={`jobs-btn-filters${filtersOpen ? ' jobs-btn-filters--active' : ''}`}
+              onClick={() => setFiltersOpen(o => !o)}
+              aria-expanded={filtersOpen}
+              aria-controls="jobs-filters-panel"
+            >
+              <JobIconFilterSliders />
+              <span>Filters</span>
+            </button>
+            <div className="jobs-view-segment" role="group" aria-label="Layout">
+              <button
+                type="button"
+                className={viewMode === 'list' ? 'is-active' : ''}
+                onClick={() => setViewMode('list')}
+                aria-pressed={viewMode === 'list'}
               >
-                <option value="">All statuses</option>
-                <option value="draft">Draft</option>
-                <option value="open">Open</option>
-                <option value="paused">Paused</option>
-                <option value="closed">Closed</option>
-              </select>
-            </label>
-            <label className="jobs-filter-field">
-              <span className="jobs-filter-label">Department</span>
-              <select
-                className="jobs-filter-select"
-                value={departmentFilter}
-                onChange={e => setDepartmentFilter(e.target.value)}
+                <JobIconList />
+                <span>List</span>
+              </button>
+              <button
+                type="button"
+                className={viewMode === 'grid' ? 'is-active' : ''}
+                onClick={() => setViewMode('grid')}
+                aria-pressed={viewMode === 'grid'}
               >
-                <option value="">All departments</option>
-                {deptOptions.map(d => (
-                  <option key={d.id} value={d.name}>
-                    {d.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="jobs-filter-field">
-              <span className="jobs-filter-label">Location</span>
-              <select className="jobs-filter-select" value={locationFilter} onChange={e => setLocationFilter(e.target.value)}>
-                <option value="">All locations</option>
-                {locationOptions.map(c => (
-                  <option key={c.code} value={c.name}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+                <JobIconGrid />
+                <span>Grid</span>
+              </button>
+              <button
+                type="button"
+                className={viewMode === 'table' ? 'is-active' : ''}
+                onClick={() => setViewMode('table')}
+                aria-pressed={viewMode === 'table'}
+              >
+                <JobIconTable />
+                <span>Table</span>
+              </button>
+            </div>
           </div>
         </div>
 
-        <div className="list-table jobs-table">
-          <div className="list-table-head jobs-table-head">
-            <div className="list-col list-col-main">Title</div>
-            <div className="list-col">Department</div>
-            <div className="list-col">Location</div>
-            <div className="list-col">Status</div>
-            <div className="list-col list-col-actions">Actions</div>
+        {filtersOpen ? (
+          <div id="jobs-filters-panel" className="jobs-filters-panel">
+            <div className="jobs-filters-row jobs-filters-row--selects">
+              <label className="jobs-filter-field">
+                <span className="jobs-filter-label">Status</span>
+                <select
+                  className="jobs-filter-select"
+                  value={statusFilter}
+                  onChange={e => setStatusFilter(e.target.value)}
+                >
+                  <option value="">All statuses</option>
+                  <option value="draft">Draft</option>
+                  <option value="open">Open</option>
+                  <option value="paused">Paused</option>
+                  <option value="closed">Closed</option>
+                </select>
+              </label>
+              <label className="jobs-filter-field">
+                <span className="jobs-filter-label">Department</span>
+                <select
+                  className="jobs-filter-select"
+                  value={departmentFilter}
+                  onChange={e => setDepartmentFilter(e.target.value)}
+                >
+                  <option value="">All departments</option>
+                  {deptOptions.map(d => (
+                    <option key={d.id} value={d.name}>
+                      {d.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="jobs-filter-field">
+                <span className="jobs-filter-label">Location</span>
+                <select
+                  className="jobs-filter-select"
+                  value={locationFilter}
+                  onChange={e => setLocationFilter(e.target.value)}
+                >
+                  <option value="">All locations</option>
+                  {locationOptions.map(c => (
+                    <option key={c.code} value={c.name}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
           </div>
-          {loading && <LoadingRow />}
-          {err && <ErrorRow msg={err} />}
-          {!loading && !err && jobs.length === 0 && (
+        ) : null}
+
+        {loading ? (
+          <div className="jobs-panel-shell">
+            <LoadingRow />
+          </div>
+        ) : null}
+        {!loading && err ? (
+          <div className="jobs-panel-shell">
+            <ErrorRow msg={err} />
+          </div>
+        ) : null}
+        {!loading && !err && jobs.length === 0 ? (
+          <div className="jobs-panel-shell jobs-panel-shell--empty">
             <EmptyRow
               text={
                 debouncedQ || statusFilter || departmentFilter || locationFilter
@@ -526,78 +845,186 @@ export function JobsView() {
                   : 'No jobs yet. Create your first job to get started.'
               }
             />
-          )}
-          {jobs.map(j => (
-            <div key={j.id} className="list-row jobs-table-row">
-              <div className="list-col list-col-main">
-                <div>
-                  <div className="list-row-name">{j.title}</div>
-                  <div className="list-row-sub">{j.slug}</div>
-                </div>
-              </div>
-              <div className="list-col list-row-sub">{j.department || '—'}</div>
-              <div className="list-col list-row-sub">{j.location || '—'}</div>
-              <div className="list-col">
-                <span className={`tag ${STAGE_COLORS[j.status] ?? 'tag-gray'}`}>{j.status}</span>
-              </div>
-              <div className="list-col list-col-actions">
-                <div className="jobs-actions-row">
-                  <button
-                    type="button"
-                    className="btn-icon-round"
-                    title="Edit job"
-                    aria-label="Edit job"
-                    onClick={() => navigate(`/account/${accountId}/jobs/${j.id}/edit`)}
-                  >
-                    <JobIconPencil />
-                  </button>
-                  {j.apply_token ? (
-                    <>
-                      <button
-                        type="button"
-                        className="btn-icon-round"
-                        title={j.status === 'open' ? 'Open apply page' : 'Job must be Open to apply'}
-                        aria-label="Open apply page"
-                        disabled={j.status !== 'open'}
-                        onClick={() => {
-                          const u = `${window.location.origin}/apply/${encodeURIComponent(j.apply_token!)}`
-                          window.open(u, '_blank', 'noopener,noreferrer')
-                        }}
-                      >
-                        <JobIconExternal />
-                      </button>
-                      <button
-                        type="button"
-                        className="btn-icon-round"
-                        title={j.status === 'open' ? 'Copy apply link' : 'Job must be Open'}
-                        aria-label="Copy apply link"
-                        disabled={j.status !== 'open'}
-                        onClick={() => {
-                          const u = `${window.location.origin}/apply/${encodeURIComponent(j.apply_token!)}`
-                          void navigator.clipboard.writeText(u).then(
-                            () => toast.success('Apply link copied', 'Share this URL with candidates.'),
-                            () => toast.error('Copy failed', 'Open the apply page and copy from the address bar.'),
-                          )
-                        }}
-                      >
-                        <JobIconCopy />
-                      </button>
-                    </>
-                  ) : null}
-                  <button
-                    type="button"
-                    className="btn-icon-round btn-icon-round--danger"
-                    title="Delete job"
-                    aria-label="Delete job"
-                    onClick={() => setConfirmDelete(j)}
-                  >
-                    <JobIconTrash />
-                  </button>
-                </div>
-              </div>
+          </div>
+        ) : null}
+
+        {!loading && !err && jobs.length > 0 && viewMode === 'table' ? (
+          <div className="list-table jobs-table jobs-table--mgmt">
+            <div className="list-table-head jobs-table-head jobs-table-head--mgmt jobs-table-grid">
+              <div className="list-col list-col-main">Job title</div>
+              <div className="list-col jobs-col-dept">Department</div>
+              <div className="list-col jobs-col-loc">Location</div>
+              <div className="list-col jobs-col-vacancies">Vacancies</div>
+              <div className="list-col jobs-col-work">Work</div>
+              <div className="list-col jobs-col-exp">Experience</div>
+              <div className="list-col jobs-col-salary">Salary</div>
+              <div className="list-col jobs-col-status">Status</div>
+              <div className="list-col list-col-actions">Actions</div>
             </div>
-          ))}
-        </div>
+            {jobs.map(j => (
+              <div key={j.id} className="list-row jobs-table-row jobs-table-grid">
+                <div className="list-col list-col-main">
+                  <div className="jobs-cell-title">
+                    <div className="jobs-cell-title-text">
+                      <div className="list-row-name">{j.title}</div>
+                      <div className="list-row-sub jobs-table-slug" title={j.slug}>
+                        {j.slug}
+                      </div>
+                    </div>
+                    <span className="jobs-cell-title-icon" aria-hidden>
+                      <JobIconBriefcaseMini />
+                    </span>
+                  </div>
+                </div>
+                <div className="list-col jobs-col-dept jobs-cell-with-icon">
+                  <span className="jobs-cell-icon" aria-hidden>
+                    <JobIconBuildingMini />
+                  </span>
+                  <span className="jobs-cell-text">{j.department || '—'}</span>
+                </div>
+                <div className="list-col jobs-col-loc jobs-cell-with-icon">
+                  <span className="jobs-cell-icon" aria-hidden>
+                    <JobIconPinMini />
+                  </span>
+                  <span className="jobs-cell-text">{j.location || '—'}</span>
+                </div>
+                <div className="list-col jobs-col-vacancies">
+                  <span className="jobs-vacancy-num">{jobOpenSeats(j)}</span>
+                </div>
+                <div className="list-col jobs-col-work">
+                  <span className="jobs-cell-text jobs-cell-text--compact">
+                    {formatEmploymentType(j.employment_type)} · {formatWorkMode(j.location_type)}
+                  </span>
+                </div>
+                <div className="list-col jobs-col-exp">
+                  <span className="jobs-cell-text jobs-cell-text--muted">{formatExperienceLevel(j.experience_level)}</span>
+                </div>
+                <div className="list-col jobs-col-salary">
+                  <span className="jobs-cell-text jobs-cell-text--muted">{formatSalaryRange(j) ?? '—'}</span>
+                </div>
+                <div className="list-col jobs-col-status">
+                  <JobStatusBadge status={j.status} />
+                </div>
+                <div className="list-col list-col-actions">
+                  <JobsJobActions
+                    job={j}
+                    accountId={accountId}
+                    navigate={navigate}
+                    toast={toast}
+                    onDelete={setConfirmDelete}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : null}
+
+        {!loading && !err && jobs.length > 0 && viewMode === 'grid' ? (
+          <div className="jobs-grid">
+            {jobs.map(j => (
+              <article key={j.id} className="jobs-grid-card">
+                <div className="jobs-grid-card-top">
+                  <div className="jobs-grid-card-title-block">
+                    <div className="jobs-grid-card-title">{j.title}</div>
+                    <div className="jobs-grid-card-slug">{j.slug}</div>
+                  </div>
+                  <span className="jobs-grid-card-icon" aria-hidden>
+                    <JobIconBriefcaseMini />
+                  </span>
+                </div>
+                <div className="jobs-grid-card-meta">
+                  <span>
+                    <JobIconBuildingMini /> {j.department || '—'}
+                  </span>
+                  <span>
+                    <JobIconPinMini /> {j.location || '—'}
+                  </span>
+                </div>
+                <JobsJobProfileDetails job={j} />
+                <div className="jobs-grid-card-status">
+                  <JobStatusBadge status={j.status} />
+                </div>
+                <div className="jobs-grid-card-actions">
+                  <JobsJobActions
+                    job={j}
+                    accountId={accountId}
+                    navigate={navigate}
+                    toast={toast}
+                    onDelete={setConfirmDelete}
+                  />
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : null}
+
+        {!loading && !err && jobs.length > 0 && viewMode === 'list' ? (
+          <div className="jobs-list-view">
+            {jobs.map(j => (
+              <div key={j.id} className="jobs-list-view-row">
+                <div className="jobs-list-view-main">
+                  <div className="jobs-list-view-title">{j.title}</div>
+                  <div className="jobs-list-view-slug">{j.slug}</div>
+                  <div className="jobs-list-view-meta">
+                    <span>
+                      <JobIconBuildingMini /> {j.department || '—'}
+                    </span>
+                    <span>
+                      <JobIconPinMini /> {j.location || '—'}
+                    </span>
+                  </div>
+                  <div className="jobs-list-view-extra" aria-label="Job profile summary">
+                    <span className="jobs-list-chip jobs-list-chip--vacancy">
+                      <strong>{jobOpenSeats(j)}</strong> {jobOpenSeats(j) === 1 ? 'seat' : 'seats'}
+                    </span>
+                    <span className="jobs-list-sep" aria-hidden>
+                      ·
+                    </span>
+                    <span>
+                      {formatEmploymentType(j.employment_type)} · {formatWorkMode(j.location_type)}
+                    </span>
+                    {formatExperienceLevel(j.experience_level) !== '—' ? (
+                      <>
+                        <span className="jobs-list-sep" aria-hidden>
+                          ·
+                        </span>
+                        <span>{formatExperienceLevel(j.experience_level)}</span>
+                      </>
+                    ) : null}
+                    {formatSalaryRange(j) ? (
+                      <>
+                        <span className="jobs-list-sep" aria-hidden>
+                          ·
+                        </span>
+                        <span>{formatSalaryRange(j)}</span>
+                      </>
+                    ) : null}
+                    {j.requisition_id ? (
+                      <>
+                        <span className="jobs-list-sep" aria-hidden>
+                          ·
+                        </span>
+                        <code className="jobs-list-req">{j.requisition_id}</code>
+                      </>
+                    ) : null}
+                  </div>
+                </div>
+                <div className="jobs-list-view-status">
+                  <JobStatusBadge status={j.status} />
+                </div>
+                <div className="jobs-list-view-actions">
+                  <JobsJobActions
+                    job={j}
+                    accountId={accountId}
+                    navigate={navigate}
+                    toast={toast}
+                    onDelete={setConfirmDelete}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : null}
       </div>
     </>
   )

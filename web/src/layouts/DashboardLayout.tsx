@@ -59,6 +59,16 @@ export default function DashboardLayout() {
 
   const title = useMemo(() => deriveTitle(pathname), [pathname])
 
+  /** Jobs list / job editor wizard render their own titles — skip duplicate main header. */
+  const hideMainHeader =
+    /^\/account\/\d+\/jobs\/?$/.test(pathname) ||
+    /^\/account\/\d+\/jobs\/new\/?$/.test(pathname) ||
+    /^\/account\/\d+\/jobs\/\d+\/edit/.test(pathname)
+
+  /** Full-width light gray canvas for job editor (reliable without :has() support). */
+  const jobEditorWizard =
+    /^\/account\/\d+\/jobs\/new\/?$/.test(pathname) || /^\/account\/\d+\/jobs\/\d+\/edit/.test(pathname)
+
   const ctx: DashboardOutletContext = useMemo(
     () => ({
       token,
@@ -80,40 +90,44 @@ export default function DashboardLayout() {
         <Sidebar accountId={accountId} />
 
         <main className="main-content">
-          <div className="main-header">
-            <div className="main-header-left">
-              <h1 className="main-title">{title}</h1>
+          {!hideMainHeader ? (
+            <div className="main-header">
+              <div className="main-header-left">
+                <h1 className="main-title">{title}</h1>
+                {pathname.includes('/profile') && (
+                  <div className="main-header-meta">
+                    <span className={`status-badge status-${user.status}`}>{user.status}</span>
+                    {user.role && <span className="tag tag-blue">{user.role.name}</span>}
+                    {user.account?.plan && <span className="tag tag-orange">{user.account.plan}</span>}
+                  </div>
+                )}
+              </div>
               {pathname.includes('/profile') && (
-                <div className="main-header-meta">
-                  <span className={`status-badge status-${user.status}`}>{user.status}</span>
-                  {user.role && <span className="tag tag-blue">{user.role.name}</span>}
-                  {user.account?.plan && <span className="tag tag-orange">{user.account.plan}</span>}
+                <div className="main-header-user">
+                  <div className="main-header-avatar">
+                    {user.avatar ? (
+                      <img src={user.avatar} alt={user.name} />
+                    ) : (
+                      user.name
+                        .split(' ')
+                        .map(w => w[0])
+                        .join('')
+                        .slice(0, 2)
+                        .toUpperCase()
+                    )}
+                  </div>
+                  <div>
+                    <div className="main-header-name">{user.name}</div>
+                    <div className="main-header-email">{user.email}</div>
+                  </div>
                 </div>
               )}
             </div>
-            {pathname.includes('/profile') && (
-              <div className="main-header-user">
-                <div className="main-header-avatar">
-                  {user.avatar ? (
-                    <img src={user.avatar} alt={user.name} />
-                  ) : (
-                    user.name
-                      .split(' ')
-                      .map(w => w[0])
-                      .join('')
-                      .slice(0, 2)
-                      .toUpperCase()
-                  )}
-                </div>
-                <div>
-                  <div className="main-header-name">{user.name}</div>
-                  <div className="main-header-email">{user.email}</div>
-                </div>
-              </div>
-            )}
-          </div>
+          ) : null}
 
-          <div className="main-body">
+          <div
+            className={`main-body${hideMainHeader ? ' main-body--flush-top' : ''}${jobEditorWizard ? ' main-body--job-editor-wizard' : ''}`}
+          >
             <Outlet context={ctx} />
           </div>
 

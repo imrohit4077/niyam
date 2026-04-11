@@ -59,7 +59,7 @@ const ALL_STEP_DEFS: {
 }[] = [
   {
     id: 'basic_info',
-    label: 'Basic job info',
+    label: 'Basic Job Info',
     short: 'Title, location, description',
     railTitle: 'Anchor the requisition',
     railBody: 'Core metadata and rich posting copy. Add required and nice-to-have skills on the next step.',
@@ -214,18 +214,35 @@ function FormField({ label, children }: { label: string; children: React.ReactNo
   )
 }
 
+function JobEditorFieldInfo({ title }: { title: string }) {
+  return (
+    <span className="job-editor-field-info" title={title} aria-label={title}>
+      <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
+        <circle cx={12} cy={12} r={10} />
+        <path d="M12 16v-4M12 8h.01" strokeLinecap="round" />
+      </svg>
+    </span>
+  )
+}
+
 function JobEditorField({
   label,
   hint,
+  info,
   children,
 }: {
   label: string
   hint?: string
+  /** Short tooltip next to label (mockup-style info icon). */
+  info?: string
   children: React.ReactNode
 }) {
   return (
     <div className="job-editor-field">
-      <span className="job-editor-label">{label}</span>
+      <span className="job-editor-label-row">
+        <span className="job-editor-label">{label}</span>
+        {info ? <JobEditorFieldInfo title={info} /> : null}
+      </span>
       {hint ? <p className="job-editor-field-hint">{hint}</p> : null}
       {children}
     </div>
@@ -1495,7 +1512,7 @@ export default function JobEditorPage() {
     setControlVersionId(v?.id ?? null)
   }
 
-  const saveJob = async () => {
+  const saveJob = async (): Promise<boolean> => {
     setSaving(true)
     setErr('')
     try {
@@ -1506,16 +1523,18 @@ export default function JobEditorPage() {
         })
         toast.success('Job created', `"${created.title}" — continue with pipeline and interviews.`)
         navigate(`${jobsBase}/${created.id}/edit?${JOB_EDITOR_STEP_PARAM}=pipeline`, { replace: true })
-        return
+        return true
       }
       await jobsApi.update(token, editJobId, jobPayloadCore())
       await persistDescription(editJobId, form.descriptionHtml)
       toast.success('Job updated', form.title)
       await refreshJob(editJobId)
+      return true
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Failed to save'
       setErr(msg)
       toast.error('Save failed', msg)
+      return false
     } finally {
       setSaving(false)
     }
@@ -1539,6 +1558,13 @@ export default function JobEditorPage() {
     goToStepIndex(stepIndex + delta)
   }
 
+  const saveAndProceed = async () => {
+    const ok = await saveJob()
+    if (ok && !isNew && stepIndex < visibleSteps.length - 1) {
+      goStep(1)
+    }
+  }
+
   if (!isNew && (Number.isNaN(editJobId) || editJobId <= 0)) {
     return (
       <div className="job-editor-page">
@@ -1546,8 +1572,8 @@ export default function JobEditorPage() {
           <button type="button" className="job-editor-crumb-link" onClick={() => navigate(jobsBase)}>
             Jobs
           </button>
-          <span className="job-editor-crumb-div" aria-hidden>
-            /
+          <span className="job-editor-crumb-arrow" aria-hidden>
+            →
           </span>
           <span className="job-editor-crumb-current">Error</span>
         </nav>
@@ -1603,8 +1629,8 @@ export default function JobEditorPage() {
         <button type="button" className="job-editor-crumb-link" onClick={() => navigate(jobsBase)}>
           Jobs
         </button>
-        <span className="job-editor-crumb-div" aria-hidden>
-          /
+        <span className="job-editor-crumb-arrow" aria-hidden>
+          →
         </span>
         <span className="job-editor-crumb-current">{isNew ? 'New position' : job?.title || 'Edit position'}</span>
       </nav>
@@ -1624,47 +1650,77 @@ export default function JobEditorPage() {
                 <h1 className="job-editor-page-title">{currentStep?.label}</h1>
                 <p className="job-editor-page-sub">{currentStep?.short}</p>
               </div>
-              <button
-                type="button"
-                className="job-editor-btn-primary"
-                onClick={saveJob}
-                disabled={saving || (!isNew && !!loadErr)}
-              >
-                {saving ? 'Saving…' : isNew ? 'Create job' : 'Save changes'}
-              </button>
+              <div className="job-editor-sheet-head-actions">
+                {isNew ? (
+                  <button
+                    type="button"
+                    className="job-editor-btn-primary"
+                    onClick={() => void saveJob()}
+                    disabled={saving}
+                  >
+                    {saving ? 'Creating…' : 'Create job'}
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      className="job-editor-btn-outline"
+                      onClick={() => void saveJob()}
+                      disabled={saving || !!loadErr}
+                    >
+                      {saving ? 'Saving…' : 'Save Changes'}
+                    </button>
+                    <button
+                      type="button"
+                      className="job-editor-btn-primary"
+                      onClick={() => void saveJob()}
+                      disabled={saving || !!loadErr}
+                    >
+                      {saving ? 'Saving…' : 'Save changes'}
+                    </button>
+                  </>
+                )}
+              </div>
             </header>
 
             <div className="job-editor-sheet-body job-editor-sheet-body--step">
               {stepId === 'basic_info' && (
                 <section className="job-step-pane job-basic-pane">
-                  <div className="job-basic-top">
-                    <div className="job-basic-title-block">
-                      <JobEditorField label="Job title">
-                        <input
-                          className="job-editor-input job-editor-input--title"
-                          value={form.title}
-                          onChange={e => set('title', e.target.value)}
-                          placeholder="e.g. Senior Software Engineer"
-                          aria-required
-                        />
-                      </JobEditorField>
-                    </div>
-                    <div className="job-basic-status-block">
-                      <JobEditorField label="Status">
-                        <select className="job-editor-select" value={form.status} onChange={e => set('status', e.target.value)}>
-                          <option value="draft">Draft</option>
-                          <option value="open">Open</option>
-                          <option value="paused">Paused</option>
-                          <option value="closed">Closed</option>
-                        </select>
-                      </JobEditorField>
+                  <div className="job-basic-section job-basic-section--first">
+                    <h3 className="job-basic-section-title">Core details</h3>
+                    <div className="job-basic-top">
+                      <div className="job-basic-title-block">
+                        <JobEditorField label="Job title" info="Public job title shown on postings and listings.">
+                          <input
+                            className="job-editor-input job-editor-input--title"
+                            value={form.title}
+                            onChange={e => set('title', e.target.value)}
+                            placeholder="e.g. Senior Software Engineer"
+                            aria-required
+                          />
+                        </JobEditorField>
+                      </div>
+                      <div className="job-basic-status-block">
+                        <JobEditorField label="Status" info="Draft jobs are internal only. Open enables applications.">
+                          <select className="job-editor-select" value={form.status} onChange={e => set('status', e.target.value)}>
+                            <option value="draft">Draft</option>
+                            <option value="open">Open</option>
+                            <option value="paused">Paused</option>
+                            <option value="closed">Closed</option>
+                          </select>
+                        </JobEditorField>
+                      </div>
                     </div>
                   </div>
 
                   <div className="job-basic-section">
-                    <h3 className="job-basic-section-title">Where &amp; how</h3>
+                    <h3 className="job-basic-section-title">Location &amp; mode</h3>
                     <div className="job-basic-grid">
-                      <JobEditorField label="Department" hint="Workspace list (Settings → General).">
+                      <JobEditorField
+                        label="Department"
+                        hint="Workspace list (Settings → General)."
+                        info="Organizational unit for reporting and filters."
+                      >
                         <select
                           className="job-editor-select"
                           value={
@@ -1692,7 +1748,11 @@ export default function JobEditorPage() {
                           ) : null}
                         </select>
                       </JobEditorField>
-                      <JobEditorField label="Location" hint="Enabled countries (Settings → General).">
+                      <JobEditorField
+                        label="Location"
+                        hint="Enabled countries (Settings → General)."
+                        info="Primary location shown to candidates."
+                      >
                         <select
                           className="job-editor-select"
                           value={
@@ -1718,7 +1778,7 @@ export default function JobEditorPage() {
                           ) : null}
                         </select>
                       </JobEditorField>
-                      <JobEditorField label="Work mode">
+                      <JobEditorField label="Work mode" info="On-site, remote, or hybrid expectations.">
                         <select
                           className="job-editor-select"
                           value={form.location_type}
@@ -1733,8 +1793,8 @@ export default function JobEditorPage() {
                   </div>
 
                   <div className="job-basic-section">
-                    <h3 className="job-basic-section-title">Role</h3>
-                    <div className="job-basic-grid job-basic-grid--role">
+                    <h3 className="job-basic-section-title">Role characteristics</h3>
+                    <div className="job-basic-grid job-basic-grid--pair">
                       <JobEditorField label="Employment">
                         <select
                           className="job-editor-select"
@@ -1760,7 +1820,13 @@ export default function JobEditorPage() {
                           <option value="10+">10+ yr</option>
                         </select>
                       </JobEditorField>
-                      <JobEditorField label="Headcount">
+                    </div>
+                  </div>
+
+                  <div className="job-basic-section">
+                    <h3 className="job-basic-section-title">Requirements</h3>
+                    <div className="job-basic-grid job-basic-grid--headcount">
+                      <JobEditorField label="Headcount" info="Number of open seats for this requisition.">
                         <input
                           className="job-editor-input"
                           type="number"
@@ -2371,9 +2437,8 @@ export default function JobEditorPage() {
 
         <aside className="job-editor-rail" aria-label="Job setup steps">
           <div className="job-editor-rail-inner">
-            <p className="job-rail-eyebrow">{isNew ? 'New job' : 'Edit job'}</p>
             <h2 className="job-rail-heading">Setup</h2>
-            <ol className="job-stepper job-stepper--twelve" role="list">
+            <ol className="job-stepper job-stepper--twelve job-stepper--connected" role="list">
               {visibleSteps.map((s, idx) => {
                 const done = idx < stepIndex
                 const active = idx === stepIndex
@@ -2407,6 +2472,15 @@ export default function JobEditorPage() {
               <p className="job-rail-context-body">{currentStep?.railBody}</p>
             </div>
 
+            <button
+              type="button"
+              className="job-rail-cta"
+              onClick={() => void saveAndProceed()}
+              disabled={saving || (!isNew && !!loadErr)}
+            >
+              {saving ? 'Saving…' : stepIndex >= visibleSteps.length - 1 ? 'Save changes' : 'Save and Proceed'}
+            </button>
+
             <div className="job-rail-nav">
               <button
                 type="button"
@@ -2418,11 +2492,11 @@ export default function JobEditorPage() {
               </button>
               <button
                 type="button"
-                className="job-rail-nav-btn job-rail-nav-btn--primary"
+                className="job-rail-nav-btn job-rail-nav-btn--ghost job-rail-nav-btn--next"
                 onClick={() => goStep(1)}
                 disabled={stepIndex >= visibleSteps.length - 1}
               >
-                Next step
+                Next
               </button>
             </div>
           </div>
