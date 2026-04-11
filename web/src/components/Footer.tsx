@@ -1,3 +1,5 @@
+import NiyamLogo from './NiyamLogo'
+
 export default function Footer() {
   const year = new Date().getFullYear()
 
@@ -7,13 +9,11 @@ export default function Footer() {
         <div className="footer-left">
           <div className="footer-brand">
             <div className="footer-brand-icon">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M4 18L12 4L20 18H16L12 10L8 18H4Z" fill="currentColor" />
-              </svg>
+              <NiyamLogo width={20} height={20} alt="" />
             </div>
-            <span className="footer-brand-text">ATS</span>
+            <span className="footer-brand-text">Niyam</span>
           </div>
-          <span className="footer-copyright">&copy; {year} ATS. All rights reserved.</span>
+          <span className="footer-copyright">&copy; {year} Niyam. All rights reserved.</span>
         </div>
 
         <div className="footer-center">

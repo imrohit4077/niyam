@@ -159,12 +159,19 @@ a { color: inherit; text-decoration: none; }
 .header-brand-icon {
   width: 32px;
   height: 32px;
-  background: linear-gradient(135deg, var(--teal), #0891b2);
-  border-radius: var(--radius-sm);
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 8px rgba(0,180,216,0.3);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.header-brand-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
 }
 
 .header-brand-text {
@@ -436,12 +443,19 @@ a.header-dropdown-item {
 .footer-brand-icon {
   width: 20px;
   height: 20px;
-  background: var(--navy);
-  border-radius: 3px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--teal);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.footer-brand-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
 }
 
 .footer-brand-text {
@@ -10157,11 +10171,11 @@ textarea.esign-pro-input {
   letter-spacing: 0.02em;
 }
 .public-sign-brand-mark {
-  width: 10px;
-  height: 10px;
-  border-radius: 2px;
-  background: linear-gradient(135deg, #22d3ee, #0891b2);
-  box-shadow: 0 0 0 2px rgba(34, 211, 238, 0.35);
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  flex-shrink: 0;
+  display: block;
 }
 .public-sign-doc-label {
   font-size: 12px;

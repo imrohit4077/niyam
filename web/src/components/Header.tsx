@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import type { UserData } from '../api/auth'
+import NiyamLogo from './NiyamLogo'
 
 interface Props {
   user?: UserData | null
@@ -13,9 +14,7 @@ interface Props {
 function BrandIcon() {
   return (
     <div className="header-brand-icon">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path d="M4 18L12 4L20 18H16L12 10L8 18H4Z" fill="white" />
-      </svg>
+      <NiyamLogo width={32} height={32} alt="" />
     </div>
   )
 }
@@ -68,7 +67,7 @@ export default function Header({ user, onSignOut, variant = 'app', accountHomePa
         <div className="header-inner">
           <a className="header-brand" href="/">
             <BrandIcon />
-            <span className="header-brand-text">ATS</span>
+            <span className="header-brand-text">Niyam</span>
           </a>
         </div>
       </header>
@@ -82,12 +81,12 @@ export default function Header({ user, onSignOut, variant = 'app', accountHomePa
           {accountHomePath ? (
             <Link className="header-brand" to={accountHomePath}>
               <BrandIcon />
-              <span className="header-brand-text">ATS</span>
+              <span className="header-brand-text">Niyam</span>
             </Link>
           ) : (
             <a className="header-brand" href="/">
               <BrandIcon />
-              <span className="header-brand-text">ATS</span>
+              <span className="header-brand-text">Niyam</span>
             </a>
           )}
           <div className="header-search">

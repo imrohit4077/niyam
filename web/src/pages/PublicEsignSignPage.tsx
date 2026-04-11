@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { publicGetSignPage, publicSubmitSign } from '../api/esign'
+import NiyamLogo from '../components/NiyamLogo'
 import { SignaturePad, type SignaturePadHandle } from '../components/SignaturePad'
 import '../App.css'
 
@@ -85,7 +86,7 @@ export default function PublicEsignSignPage() {
       <header className="public-sign-bar">
         <div className="public-sign-bar-inner">
           <span className="public-sign-brand">
-            <span className="public-sign-brand-mark" aria-hidden />
+            <NiyamLogo className="public-sign-brand-mark" width={22} height={22} alt="" />
             Secure signing
           </span>
           {page.template_name && <span className="public-sign-doc-label">{page.template_name}</span>}

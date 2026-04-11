@@ -15,10 +15,17 @@
 }
 
 .public-apply-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   font-weight: 700;
   font-size: 15px;
   letter-spacing: -0.02em;
   color: #0d9488;
+}
+
+.public-apply-brand img {
+  flex-shrink: 0;
 }
 
 .public-apply-header-link {

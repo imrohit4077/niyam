@@ -2,7 +2,17 @@ import { useEffect, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { publicApplyApi, type PublicJobApplyPayload } from '../api/publicApply'
 import CustomAttributeFields from '../components/CustomAttributeFields'
+import NiyamLogo from '../components/NiyamLogo'
 import './PublicJobApplyPage.css'
+
+function ApplyPageBrand() {
+  return (
+    <span className="public-apply-brand">
+      <NiyamLogo width={28} height={28} alt="" />
+      Niyam
+    </span>
+  )
+}
 
 function formatSalary(s: PublicJobApplyPayload['salary']) {
   if (!s) return null
@@ -119,7 +129,7 @@ export default function PublicJobApplyPage() {
     return (
       <div className="public-apply-page">
         <header className="public-apply-header">
-          <span className="public-apply-brand">ATS</span>
+          <ApplyPageBrand />
           <Link to="/login" className="public-apply-header-link">
             Recruiter sign in
           </Link>
@@ -146,7 +156,7 @@ export default function PublicJobApplyPage() {
     return (
       <div className="public-apply-page">
         <header className="public-apply-header">
-          <span className="public-apply-brand">ATS</span>
+          <ApplyPageBrand />
         </header>
         <main className="public-apply-main public-apply-main--narrow">
           <div className="public-apply-card public-apply-success">
@@ -166,7 +176,7 @@ export default function PublicJobApplyPage() {
   return (
     <div className="public-apply-page">
       <header className="public-apply-header">
-        <span className="public-apply-brand">ATS</span>
+        <ApplyPageBrand />
         <Link to="/login" className="public-apply-header-link">
           Recruiter sign in
         </Link>
