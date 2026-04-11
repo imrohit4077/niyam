@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
-import { Link, NavLink, useLocation } from 'react-router-dom'
+import { NavLink, useLocation } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 
 export type SidebarPage =
@@ -210,12 +210,6 @@ export default function Sidebar({ accountId }: Props) {
   return (
     <aside className={`sidebar ${collapsed ? 'sidebar-collapsed' : ''}`} aria-label="Main navigation">
       <div className="sidebar-top">
-        <Link to={base} className="sidebar-brand" title="Home">
-          <span className="sidebar-brand-badge" aria-hidden>
-            A
-          </span>
-          {!collapsed && <span className="sidebar-brand-name">ATS</span>}
-        </Link>
         <button
           type="button"
           className="sidebar-toggle"
