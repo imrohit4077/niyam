@@ -38,6 +38,8 @@ from app.models.account_label import AccountLabel
 from app.models.label_assignment import LabelAssignment
 from app.models.communication_channel import CommunicationChannel
 from app.models.department import Department
+from app.models.job_setup_flow_section import JobSetupFlowSection
+from app.models.job_setup_flow_field import JobSetupFlowField
 
 __all__ = [
     "BaseModel", "Timestampable", "SoftDeletable", "Sluggable",
@@ -49,6 +51,7 @@ __all__ = [
     "AccountLabel", "LabelAssignment",
     "CommunicationChannel",
     "Department",
+    "JobSetupFlowSection", "JobSetupFlowField",
     "ReferralLink", "ReferralBonus",
     "AuditLogEntry", "AuditLogDeliveryFailure",
 ]

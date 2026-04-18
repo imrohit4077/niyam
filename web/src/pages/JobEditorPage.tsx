@@ -18,7 +18,6 @@ import { fetchCountriesCatalog, type CountryRow } from '../api/reference'
 import {
   DEFAULT_ENABLED_JOB_SETUP_SECTIONS,
   DEFAULT_JOB_SETUP_FIELDS_BY_SECTION,
-  type JobSetupSectionId,
 } from '../constants/jobSetupSections'
 
 function normalizeOrgSettings(row: OrganizationSettings): OrganizationSettings {
@@ -43,7 +42,7 @@ function normalizeOrgSettings(row: OrganizationSettings): OrganizationSettings {
   }
 }
 
-type JobStepId = JobSetupSectionId
+type JobStepId = string
 
 const JOB_EDITOR_STEP_PARAM = 'step'
 
@@ -161,6 +160,8 @@ const ALL_STEP_DEFS: {
     railBody: 'Requisition ID, compliance notes, approval narrative, and searchable tags.',
   },
 ]
+
+const BUILTIN_STEP_IDS = new Set(ALL_STEP_DEFS.map(s => s.id))
 
 const NEW_JOB_STEPS: JobStepId[] = ['basic_info', 'skills', 'compensation', 'hiring_team']
 
@@ -1504,15 +1505,30 @@ export default function JobEditorPage() {
     [enabledFieldMap],
   )
 
-  const visibleSteps = useMemo(
-    () =>
-      ALL_STEP_DEFS.filter(s => enabledStepIds.includes(s.id))
-        .filter(s => (enabledFieldMap[s.id]?.length ?? 1) > 0)
-        .filter(s =>
-        isNew ? NEW_JOB_STEPS.includes(s.id) : true,
-      ),
-    [isNew, enabledStepIds, enabledFieldMap],
-  )
+  const visibleSteps = useMemo(() => {
+    const catalog = orgSettings?.job_setup_catalog ?? []
+    const catalogById = new Map(catalog.map(s => [s.id, s]))
+    const orderedIds = [...enabledStepIds]
+    const steps = orderedIds
+      .filter(sid => (enabledFieldMap[sid]?.length ?? 0) > 0)
+      .map(sid => {
+        const def = ALL_STEP_DEFS.find(s => s.id === sid)
+        if (def) return def
+        const row = catalogById.get(sid)
+        const label = row?.label ?? sid
+        return {
+          id: sid,
+          label,
+          short: 'Workspace-defined step',
+          railTitle: label,
+          railBody: 'This step was configured in workspace Job setup flow settings.',
+        }
+      })
+    if (isNew) {
+      return steps.filter(s => NEW_JOB_STEPS.includes(s.id))
+    }
+    return steps
+  }, [isNew, enabledStepIds, enabledFieldMap, orgSettings?.job_setup_catalog])
 
   const customDefsByKey = useMemo(() => {
     const map = new Map<string, CustomAttributeDefinition>()
@@ -2972,6 +2988,16 @@ export default function JobEditorPage() {
                     />
                   </JobEditorField>
                   {renderSectionCustomFields('compliance')}
+                </section>
+              )}
+
+              {!BUILTIN_STEP_IDS.has(stepId) && (
+                <section className="job-step-pane">
+                  <p className="job-editor-muted">
+                    This step comes from your workspace <strong>Job setup flow</strong> settings. Add custom fields to
+                    the section in Settings → General → Job setup flow to collect structured data here.
+                  </p>
+                  {renderSectionCustomFields(stepId)}
                 </section>
               )}
             </div>

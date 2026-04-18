@@ -8336,12 +8336,32 @@ textarea.esign-pro-input {
   opacity: 0.52;
 }
 .job-setup-field-row {
-  display: inline-flex;
-  align-items: center;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
   gap: 10px;
   font-size: 13px;
   color: #334155;
   min-height: 24px;
+}
+.job-setup-field-row-inner {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+.job-setup-field-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.job-setup-inline-rename {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
 }
 .job-setup-field-row--custom span {
   color: #334155;

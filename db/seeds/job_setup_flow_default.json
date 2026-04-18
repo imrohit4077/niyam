@@ -1,0 +1,96 @@
+{
+  "sections": [
+    {
+      "section_key": "basic_info",
+      "label": "Basic Job Info",
+      "built_in": true,
+      "fields": [
+        { "field_key": "core_details", "label": "Core details", "built_in": true },
+        { "field_key": "location_mode", "label": "Location & mode", "built_in": true },
+        { "field_key": "role_characteristics", "label": "Role characteristics", "built_in": true },
+        { "field_key": "requirements", "label": "Requirements", "built_in": true },
+        { "field_key": "custom_fields", "label": "Custom fields", "built_in": true },
+        { "field_key": "labels", "label": "Labels", "built_in": true },
+        { "field_key": "description", "label": "Description", "built_in": true }
+      ]
+    },
+    {
+      "section_key": "skills",
+      "label": "Skills",
+      "built_in": true,
+      "fields": [{ "field_key": "main", "label": "Skills setup", "built_in": true }]
+    },
+    {
+      "section_key": "compensation",
+      "label": "Compensation & budget",
+      "built_in": true,
+      "fields": [{ "field_key": "main", "label": "Compensation details", "built_in": true }]
+    },
+    {
+      "section_key": "referral",
+      "label": "Employee referrals",
+      "built_in": true,
+      "fields": [{ "field_key": "main", "label": "Referral settings", "built_in": true }]
+    },
+    {
+      "section_key": "hiring_team",
+      "label": "Hiring team",
+      "built_in": true,
+      "fields": [{ "field_key": "main", "label": "Team setup", "built_in": true }]
+    },
+    {
+      "section_key": "pipeline",
+      "label": "Hiring pipeline",
+      "built_in": true,
+      "fields": [{ "field_key": "main", "label": "Pipeline setup", "built_in": true }]
+    },
+    {
+      "section_key": "interview",
+      "label": "Interview configuration",
+      "built_in": true,
+      "fields": [{ "field_key": "main", "label": "Interview setup", "built_in": true }]
+    },
+    {
+      "section_key": "evaluation",
+      "label": "Evaluation & scorecards",
+      "built_in": true,
+      "fields": [{ "field_key": "main", "label": "Evaluation setup", "built_in": true }]
+    },
+    {
+      "section_key": "posting",
+      "label": "Posting & visibility",
+      "built_in": true,
+      "fields": [{ "field_key": "main", "label": "Posting setup", "built_in": true }]
+    },
+    {
+      "section_key": "automation",
+      "label": "Automation & AI",
+      "built_in": true,
+      "fields": [{ "field_key": "main", "label": "Automation setup", "built_in": true }]
+    },
+    {
+      "section_key": "analytics",
+      "label": "Analytics & tracking",
+      "built_in": true,
+      "fields": [{ "field_key": "main", "label": "Analytics view", "built_in": true }]
+    },
+    {
+      "section_key": "attachments",
+      "label": "Attachments",
+      "built_in": true,
+      "fields": [{ "field_key": "main", "label": "Attachment management", "built_in": true }]
+    },
+    {
+      "section_key": "permissions",
+      "label": "Permissions",
+      "built_in": true,
+      "fields": [{ "field_key": "main", "label": "Permission matrix", "built_in": true }]
+    },
+    {
+      "section_key": "compliance",
+      "label": "Compliance & metadata",
+      "built_in": true,
+      "fields": [{ "field_key": "main", "label": "Compliance details", "built_in": true }]
+    }
+  ]
+}

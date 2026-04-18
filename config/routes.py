@@ -114,6 +114,7 @@ def draw_routes(app: "FastAPI") -> None:
     from app.controllers.esign_requests_controller import EsignRequestsController
     from app.controllers.account_esign_settings_controller import AccountEsignSettingsController
     from app.controllers.account_organization_settings_controller import AccountOrganizationSettingsController
+    from app.controllers.job_setup_flow_controller import JobSetupFlowController
     from app.controllers.account_appearance_settings_controller import AccountAppearanceSettingsController
     from app.controllers.account_referral_settings_controller import AccountReferralSettingsController
     from app.controllers.custom_attribute_definitions_controller import CustomAttributeDefinitionsController
@@ -201,6 +202,42 @@ def draw_routes(app: "FastAPI") -> None:
         "/account/organization_settings",
         _wrap(AccountOrganizationSettingsController, "update", lambda c: c.update()),
         methods=["PATCH"],
+    )
+
+    router.add_api_route(
+        "/account/job_setup_flow",
+        _wrap(JobSetupFlowController, "index", lambda c: c.index()),
+        methods=["GET"],
+    )
+    router.add_api_route(
+        "/account/job_setup_flow/sections",
+        _wrap(JobSetupFlowController, "create_section", lambda c: c.create_section()),
+        methods=["POST"],
+    )
+    router.add_api_route(
+        "/account/job_setup_flow/sections/{section_id:int}",
+        _wrap(JobSetupFlowController, "update_section", lambda c: c.update_section()),
+        methods=["PATCH"],
+    )
+    router.add_api_route(
+        "/account/job_setup_flow/sections/{section_id:int}",
+        _wrap(JobSetupFlowController, "destroy_section", lambda c: c.destroy_section()),
+        methods=["DELETE"],
+    )
+    router.add_api_route(
+        "/account/job_setup_flow/sections/{section_id:int}/fields",
+        _wrap(JobSetupFlowController, "create_field", lambda c: c.create_field()),
+        methods=["POST"],
+    )
+    router.add_api_route(
+        "/account/job_setup_flow/fields/{field_id:int}",
+        _wrap(JobSetupFlowController, "update_field", lambda c: c.update_field()),
+        methods=["PATCH"],
+    )
+    router.add_api_route(
+        "/account/job_setup_flow/fields/{field_id:int}",
+        _wrap(JobSetupFlowController, "destroy_field", lambda c: c.destroy_field()),
+        methods=["DELETE"],
     )
 
     router.add_api_route(

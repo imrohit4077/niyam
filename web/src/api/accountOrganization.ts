@@ -5,6 +5,25 @@ export interface OrganizationDepartment {
   name: string
 }
 
+export interface JobSetupCatalogField {
+  id: string
+  db_id: number
+  label: string
+  is_enabled?: boolean
+  built_in?: boolean
+  position?: number
+}
+
+export interface JobSetupCatalogSection {
+  id: string
+  db_id: number
+  label: string
+  is_enabled?: boolean
+  built_in?: boolean
+  position?: number
+  fields: JobSetupCatalogField[]
+}
+
 export interface OrganizationSettings {
   name: string
   slug: string
@@ -22,8 +41,8 @@ export interface OrganizationSettings {
   enabled_job_setup_sections: string[]
   /** Enabled field blocks by section for the job editor wizard. */
   enabled_job_setup_fields: Record<string, string[]>
-  /** Catalog loaded from backend YAML for section/field labels. */
-  job_setup_catalog: { id: string; label: string; fields: { id: string; label: string }[] }[]
+  /** Account-scoped job editor wizard catalog (sections + field blocks). */
+  job_setup_catalog: JobSetupCatalogSection[]
 }
 
 async function readApiJson(res: Response): Promise<{ success?: boolean; data?: unknown; error?: string }> {

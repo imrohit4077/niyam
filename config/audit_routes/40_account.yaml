@@ -23,7 +23,7 @@ rules:
     action_code: account.members
 
   - id: account_workspace_settings
-    pattern: '^/api/v1/account/(organization_settings|appearance_settings|referral_settings|esign_settings)'
+    pattern: '^/api/v1/account/(organization_settings|appearance_settings|referral_settings|esign_settings|job_setup_flow)'
     event_subtype: permission
     feature_area: Settings
     feature_label_from_group: 1
