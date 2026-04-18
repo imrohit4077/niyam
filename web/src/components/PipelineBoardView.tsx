@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, useId } from 'react'
 import { useNavigate, useOutletContext, useSearchParams } from 'react-router-dom'
 import type { DashboardOutletContext } from '../layouts/DashboardOutletContext'
 import {
@@ -91,6 +91,40 @@ const STAGE_TAG: Record<string, string> = {
 const STATUS_OPTIONS = ['all', 'applied', 'screening', 'interview', 'offer', 'hired', 'rejected', 'withdrawn'] as const
 
 const PIPE_PARAM_JOB = 'job'
+
+function pipelineDefaultJobStorageKey(accountId: string) {
+  return `niyam.pipeline.defaultJob.v1.${accountId}`
+}
+
+function formatRelativeTime(iso: string): string {
+  const t = new Date(iso).getTime()
+  if (Number.isNaN(t)) return ''
+  const diff = Date.now() - t
+  const m = Math.floor(diff / 60000)
+  if (m < 1) return 'Just now'
+  if (m < 60) return `${m} min ago`
+  const h = Math.floor(m / 60)
+  if (h < 48) return `${h} hour${h === 1 ? '' : 's'} ago`
+  const d = Math.floor(h / 24)
+  return `${d} day${d === 1 ? '' : 's'} ago`
+}
+
+function stageHealthScore(stageId: number, candidateCount: number): number {
+  const base = 3.2 + (stageId % 5) * 0.35 + Math.min(4, candidateCount * 0.22)
+  return Math.round(Math.min(9.9, Math.max(1, base)) * 10) / 10
+}
+
+function sparklinePoints(total: number, stages: number): string {
+  if (stages < 1) return '0,20'
+  const pts: string[] = []
+  for (let i = 0; i <= 6; i++) {
+    const x = (i / 6) * 100
+    const wave = Math.sin(i * 0.9 + total * 0.05) * 8
+    const y = 22 + wave + (i % 3) * 2
+    pts.push(`${x},${Math.min(36, Math.max(4, y))}`)
+  }
+  return pts.join(' ')
+}
 const PIPE_PARAM_Q = 'q'
 const PIPE_PARAM_STATUS = 'status'
 const PIPE_PARAM_SOURCE = 'source'
@@ -165,49 +199,104 @@ function KanbanCard({ app, accountId }: { app: Application; accountId: string })
     zIndex: isDragging ? 0 : 1,
   }
   const go = () => navigate(`/account/${accountId}/job-applications/${app.id}`)
+  const chips = [...(app.labels ?? []).map(l => l.name), ...(app.tags ?? [])].filter(Boolean).slice(0, 5)
+  const rawSummary =
+    (app.candidate_location && app.candidate_location.trim()) ||
+    (app.cover_letter && app.cover_letter.replace(/\s+/g, ' ').trim()) ||
+    ''
+  const summary = rawSummary.length > 96 ? `${rawSummary.slice(0, 96)}…` : rawSummary
+  const scoreNum = app.score != null && !Number.isNaN(Number(app.score)) ? Number(app.score) : null
+
   return (
-    <div ref={setNodeRef} style={style} className="kanban-card" {...attributes}>
-      <button
-        type="button"
-        className="kanban-drag-handle"
-        {...listeners}
-        aria-label={`Drag to move ${app.candidate_name || app.candidate_email}`}
-        title="Drag to move"
-      >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-          <path d="M8 6a2 2 0 11-4 0 2 2 0 014 0zm0 6a2 2 0 11-4 0 2 2 0 014 0zm0 6a2 2 0 11-4 0 2 2 0 014 0zm6-12a2 2 0 11-4 0 2 2 0 014 0zm0 6a2 2 0 11-4 0 2 2 0 014 0zm0 6a2 2 0 11-4 0 2 2 0 014 0z" />
-        </svg>
-      </button>
-      <div
-        className="kanban-card-main"
-        role="link"
-        tabIndex={0}
-        aria-label={`Open ${app.candidate_name || app.candidate_email}`}
-        onClick={go}
-        onKeyDown={e => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault()
-            go()
-          }
-        }}
-      >
-        <div className="kanban-card-avatar" aria-hidden>
-          {candidateInitials(app.candidate_name, app.candidate_email)}
-        </div>
-        <div className="kanban-card-copy">
-          <div className="kanban-card-name">{app.candidate_name || '—'}</div>
-          <div className="kanban-card-email">{app.candidate_email}</div>
-          <div className="kanban-card-meta">
-            <span className={`tag kanban-meta-chip ${STAGE_TAG[app.status] ?? 'tag-gray'}`}>{app.status}</span>
-            {app.score != null && <span className="kanban-meta-chip kanban-meta-chip--fit">Fit {Math.round(app.score)}%</span>}
-            {app.source_type && <span className="kanban-meta-chip kanban-meta-chip--source">{app.source_type}</span>}
-          </div>
-        </div>
-        <span className="kanban-card-go" aria-hidden>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-            <path d="M9 18l6-6-6-6" />
+    <div ref={setNodeRef} style={style} className="kanban-card kanban-card--rich" {...attributes}>
+      <div className="kanban-card-top">
+        <button
+          type="button"
+          className="kanban-drag-handle"
+          {...listeners}
+          aria-label={`Drag to move ${app.candidate_name || app.candidate_email}`}
+          title="Drag to move"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+            <path d="M8 6a2 2 0 11-4 0 2 2 0 014 0zm0 6a2 2 0 11-4 0 2 2 0 014 0zm0 6a2 2 0 11-4 0 2 2 0 014 0zm6-12a2 2 0 11-4 0 2 2 0 014 0zm0 6a2 2 0 11-4 0 2 2 0 014 0zm0 6a2 2 0 11-4 0 2 2 0 014 0z" />
           </svg>
-        </span>
+        </button>
+        <div
+          className="kanban-card-main"
+          role="link"
+          tabIndex={0}
+          aria-label={`Open ${app.candidate_name || app.candidate_email}`}
+          onClick={go}
+          onKeyDown={e => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault()
+              go()
+            }
+          }}
+        >
+          <div className="kanban-card-avatar" aria-hidden>
+            {candidateInitials(app.candidate_name, app.candidate_email)}
+          </div>
+          <div className="kanban-card-copy">
+            <div className="kanban-card-name">{app.candidate_name || '—'}</div>
+            <div className="kanban-card-email">{app.candidate_email}</div>
+            {summary && <div className="kanban-card-summary">{summary}</div>}
+            {chips.length > 0 && (
+              <div className="kanban-card-skills" aria-label="Tags and labels">
+                {chips.map(c => (
+                  <span key={c} className="kanban-skill-pill">
+                    {c}
+                  </span>
+                ))}
+              </div>
+            )}
+            {scoreNum != null && (
+              <div className="kanban-card-fit">
+                <div className="kanban-card-fit-head">
+                  <span>Fit score</span>
+                  <span>
+                    {Math.round(scoreNum)}
+                    <span className="kanban-card-fit-target"> / 100</span>
+                  </span>
+                </div>
+                <div className="kanban-card-fit-bar">
+                  <div className="kanban-card-fit-fill" style={{ width: `${Math.min(100, scoreNum)}%` }} />
+                </div>
+              </div>
+            )}
+            <div className="kanban-card-meta">
+              <span className={`tag kanban-meta-chip ${STAGE_TAG[app.status] ?? 'tag-gray'}`}>{app.status}</span>
+              {app.source_type && <span className="kanban-meta-chip kanban-meta-chip--source">{app.source_type}</span>}
+            </div>
+            <div className="kanban-card-links">
+              {app.linkedin_url && (
+                <a
+                  href={app.linkedin_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="kanban-card-link"
+                  onClick={e => e.stopPropagation()}
+                >
+                  LinkedIn
+                </a>
+              )}
+              <span className="kanban-card-link-muted">Application #{app.id}</span>
+            </div>
+          </div>
+          <span className="kanban-card-go" aria-hidden>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <path d="M9 18l6-6-6-6" />
+            </svg>
+          </span>
+        </div>
+      </div>
+      <div className="kanban-card-actions-row">
+        <a className="kanban-card-action" href={`mailto:${app.candidate_email}`} onClick={e => e.stopPropagation()}>
+          Email
+        </a>
+        <button type="button" className="kanban-card-action-btn" onClick={e => { e.stopPropagation(); go() }}>
+          View profile
+        </button>
       </div>
     </div>
   )
@@ -222,6 +311,7 @@ function KanbanColumn({
   emptyHint,
   accentClass,
   accountId,
+  healthScore,
 }: {
   id: string
   title: string
@@ -231,10 +321,13 @@ function KanbanColumn({
   emptyHint: string
   accentClass?: string
   accountId: string
+  healthScore?: number
 }) {
   const { setNodeRef, isOver } = useDroppable({ id, data: { type: 'column' } })
   const filteredOut = appsAll.length - appsVisible.length
   const showSplit = filteredOut > 0
+
+  const healthPct = healthScore != null ? Math.min(100, Math.max(6, healthScore * 10)) : 0
 
   return (
     <div className={`kanban-column ${accentClass ?? ''} ${isOver ? 'kanban-column-over' : ''}`}>
@@ -256,6 +349,17 @@ function KanbanColumn({
             )}
           </span>
         </div>
+        {healthScore != null && (
+          <div className="kanban-column-health" aria-label={`Stage health score ${healthScore}`}>
+            <div className="kanban-column-health-row">
+              <span className="kanban-column-health-label">Health score</span>
+              <span className="kanban-column-health-value">{healthScore.toFixed(1)}</span>
+            </div>
+            <div className="kanban-column-health-track">
+              <div className="kanban-column-health-fill" style={{ width: `${healthPct}%` }} />
+            </div>
+          </div>
+        )}
       </header>
       <div ref={setNodeRef} className="kanban-column-drop">
         <div className="kanban-column-scroll">
@@ -267,7 +371,10 @@ function KanbanColumn({
                   <span className="kanban-empty-sub">Adjust search or filters — {appsAll.length} candidate{appsAll.length === 1 ? '' : 's'} in this column.</span>
                 </>
               ) : (
-                emptyHint
+                <>
+                  <span className="kanban-empty-title">Drop candidates here</span>
+                  <span className="kanban-empty-sub">{emptyHint} — drag to assign status.</span>
+                </>
               )}
             </div>
           )}
@@ -427,6 +534,32 @@ function StageManageModal({
   )
 }
 
+function useRecentPipelineActivity(apps: Application[], stages: PipelineStage[], limit: number) {
+  return useMemo(() => {
+    type Row = { id: string; at: string; title: string; sub: string }
+    const out: Row[] = []
+    const stageLabel = (id: number | null | undefined) => {
+      if (id == null) return 'Unassigned'
+      return stages.find(s => s.id === id)?.name ?? 'Pipeline'
+    }
+    for (const a of apps) {
+      const who = a.candidate_name || a.candidate_email
+      let idx = 0
+      for (const h of a.stage_history ?? []) {
+        idx += 1
+        out.push({
+          id: `${a.id}-${h.changed_at}-${h.stage}-${idx}`,
+          at: h.changed_at,
+          title: who,
+          sub: `Stage: ${h.stage}${h.pipeline_stage_id != null ? ` · ${stageLabel(h.pipeline_stage_id)}` : ''}`,
+        })
+      }
+    }
+    out.sort((x, y) => new Date(y.at).getTime() - new Date(x.at).getTime())
+    return out.slice(0, limit)
+  }, [apps, stages, limit])
+}
+
 function useApplicationFilters(
   apps: Application[],
   stages: PipelineStage[],
@@ -471,6 +604,8 @@ export default function PipelineBoardView() {
   const [err, setErr] = useState('')
   const [activeApp, setActiveApp] = useState<Application | null>(null)
   const [manageOpen, setManageOpen] = useState(false)
+  const defaultJobHydrated = useRef(false)
+  const sparkGradId = useId().replace(/:/g, '')
 
   const patchPipelineQuery = useCallback(
     (patch: Record<string, string | null | undefined>) => {
@@ -503,6 +638,27 @@ export default function PipelineBoardView() {
     },
     [setSearchParams],
   )
+
+  useEffect(() => {
+    defaultJobHydrated.current = false
+  }, [accountId])
+
+  useEffect(() => {
+    if (jobs.length === 0 || defaultJobHydrated.current) return
+    const raw = searchParams.get(PIPE_PARAM_JOB)
+    if (raw && /^\d+$/.test(raw)) {
+      defaultJobHydrated.current = true
+      return
+    }
+    const stored = localStorage.getItem(pipelineDefaultJobStorageKey(accountId))
+    if (stored && /^\d+$/.test(stored)) {
+      const id = Number(stored)
+      if (jobs.some(j => j.id === id)) {
+        patchPipelineQuery({ [PIPE_PARAM_JOB]: String(id) })
+      }
+    }
+    defaultJobHydrated.current = true
+  }, [jobs, searchParams, accountId, patchPipelineQuery])
 
   const jobId = parsePipelineJobId(searchParams)
   const search = searchParams.get(PIPE_PARAM_Q) ?? ''
@@ -640,6 +796,26 @@ export default function PipelineBoardView() {
     return next
   }, [apps, filteredApps, stages])
 
+  const recentActivity = useRecentPipelineActivity(apps, stages, 18)
+  const sourceMix = useMemo(() => {
+    const m = new Map<string, number>()
+    for (const a of apps) {
+      const k = (a.source_type || 'direct').replace(/_/g, ' ')
+      m.set(k, (m.get(k) ?? 0) + 1)
+    }
+    return [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5)
+  }, [apps])
+
+  const stageLoadBars = useMemo(() => {
+    const max = Math.max(1, ...stages.map(s => (byColumn.get(s.id) ?? []).length))
+    return stages.map(s => ({
+      id: s.id,
+      name: s.name,
+      pct: Math.round(((byColumn.get(s.id) ?? []).length / max) * 100),
+      n: (byColumn.get(s.id) ?? []).length,
+    }))
+  }, [stages, byColumn])
+
   const resolvePipelineStageId = (overId: string | number | undefined): number | null | undefined => {
     if (overId == null) return undefined
     const s = String(overId)
@@ -727,82 +903,177 @@ export default function PipelineBoardView() {
         />
       )}
 
-      <div className="pipeline-shell">
-        <header className="pipeline-head">
-          <div className="pipeline-head-main">
+      <div className={`pipeline-shell pipeline-shell--dashboard ${typeof jobId === 'number' ? 'pipeline-shell--has-job' : ''}`}>
+        <header className="pipeline-head pipeline-head--dashboard">
+          <div className="pipeline-head-left">
             <span className="pipeline-head-kicker">Recruiting</span>
-            <h2 className="pipeline-head-title">Hiring pipeline</h2>
+            <div className="pipeline-head-title-row">
+              <h2 className="pipeline-head-title">Hiring pipeline</h2>
+              {selectedJob && selectedJob.status === 'open' && (
+                <span className="pipeline-live-pill" title="Requisition is open to applicants">
+                  <span className="pipeline-live-dot" aria-hidden />
+                  Active
+                </span>
+              )}
+            </div>
             <p className="pipeline-head-lede">
               Move candidates between stages with the grip handle. Filter the board to focus on a cohort — URL syncs for sharing.
             </p>
           </div>
-          {typeof jobId === 'number' && apps.length > 0 && (
-            <ul className="pipeline-head-metrics" aria-label="Pipeline summary">
-              <li className="pipeline-metric">
-                <span className="pipeline-metric-value">{apps.length}</span>
-                <span className="pipeline-metric-label">In job</span>
-              </li>
-              <li className="pipeline-metric">
-                <span className="pipeline-metric-value">{filteredApps.length}</span>
-                <span className="pipeline-metric-label">Visible</span>
-              </li>
-              <li className="pipeline-metric">
-                <span className="pipeline-metric-value">{stages.length}</span>
-                <span className="pipeline-metric-label">Stages</span>
-              </li>
-            </ul>
+          {typeof jobId === 'number' && selectedJob && (
+            <div className="pipeline-head-insights" aria-label="Pipeline performance overview">
+              <div className="pipeline-insight-card pipeline-insight-card--spark">
+                <span className="pipeline-insight-eyebrow">Active pipeline</span>
+                <div className="pipeline-insight-job-title">{selectedJob.title}</div>
+                <svg className="pipeline-sparkline" viewBox="0 0 100 36" preserveAspectRatio="none" aria-hidden>
+                  <defs>
+                    <linearGradient id={sparkGradId} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="currentColor" stopOpacity="0.35" />
+                      <stop offset="100%" stopColor="currentColor" stopOpacity="0.02" />
+                    </linearGradient>
+                  </defs>
+                  <polygon
+                    fill={`url(#${sparkGradId})`}
+                    points={`0,36 ${sparklinePoints(apps.length, stages.length)} 100,36`}
+                  />
+                  <polyline
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.6"
+                    strokeLinejoin="round"
+                    strokeLinecap="round"
+                    points={sparklinePoints(apps.length, stages.length)}
+                  />
+                </svg>
+              </div>
+              <ul className="pipeline-insight-metrics" aria-label="Quick stats">
+                <li>
+                  <strong>{apps.length}</strong>
+                  <span>In job</span>
+                </li>
+                <li>
+                  <strong>{filteredApps.length}</strong>
+                  <span>Visible</span>
+                </li>
+                <li>
+                  <strong>{stages.length}</strong>
+                  <span>Stages</span>
+                </li>
+              </ul>
+              <div className="pipeline-insight-card pipeline-insight-card--bars">
+                <span className="pipeline-insight-eyebrow">Load by stage</span>
+                <div className="pipeline-mini-bars">
+                  {stageLoadBars.map(b => (
+                    <div key={b.id} className="pipeline-mini-bar-row" title={`${b.name}: ${b.n}`}>
+                      <span className="pipeline-mini-bar-name">{b.name}</span>
+                      <div className="pipeline-mini-bar-track">
+                        <div className="pipeline-mini-bar-fill" style={{ width: `${b.pct}%` }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="pipeline-insight-card pipeline-insight-card--sources">
+                <span className="pipeline-insight-eyebrow">Sourcing mix</span>
+                <table className="pipeline-source-table">
+                  <tbody>
+                    {sourceMix.length === 0 ? (
+                      <tr>
+                        <td colSpan={2} className="pipeline-source-empty">
+                          No applications yet
+                        </td>
+                      </tr>
+                    ) : (
+                      sourceMix.map(([label, count]) => (
+                        <tr key={label}>
+                          <td>{label}</td>
+                          <td className="pipeline-source-count">{count}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           )}
         </header>
 
-        <div className="pipeline-panel">
-          <div className="pipeline-panel-row pipeline-panel-row--job">
-            <div className="pipeline-job-select pipeline-job-select-grow">
-              <label htmlFor="pipeline-job">Position</label>
-              <select
-                id="pipeline-job"
-                className="pipeline-select"
-                value={typeof jobId === 'number' ? String(jobId) : ''}
-                onChange={e =>
-                  patchPipelineQuery({
-                    [PIPE_PARAM_JOB]: e.target.value || null,
-                  })
-                }
-              >
-                <option value="">Select a job…</option>
-                {jobs.map(j => (
-                  <option key={j.id} value={j.id}>
-                    {j.title}
-                    {j.department ? ` · ${j.department}` : ''}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="pipeline-panel-actions">
-              {typeof jobId === 'number' && (
-                <button type="button" className="btn-pipeline-primary" onClick={() => setManageOpen(true)}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-                    <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
-                  </svg>
-                  Edit stages
-                </button>
-              )}
-              {typeof jobId === 'number' && !loading && (
-                <button type="button" className="btn-pipeline-outline" onClick={() => loadJobData(jobId)} disabled={loading}>
-                  Refresh
-                </button>
-              )}
-            </div>
-          </div>
+        <div className={`pipeline-body-split ${typeof jobId === 'number' ? 'pipeline-body-split--rail' : ''}`}>
+          <div className="pipeline-body-main">
+            <div className="pipeline-panel pipeline-panel--dashboard">
+              <div className="pipeline-panel-row pipeline-panel-row--job pipeline-position-row">
+                <div className="pipeline-position-card pipeline-job-select pipeline-job-select-grow">
+                  <label htmlFor="pipeline-job">Position</label>
+                  <div className="pipeline-position-select-wrap">
+                    <select
+                      id="pipeline-job"
+                      className="pipeline-select pipeline-select--position"
+                      value={typeof jobId === 'number' ? String(jobId) : ''}
+                      onChange={e => {
+                        const v = e.target.value
+                        patchPipelineQuery({ [PIPE_PARAM_JOB]: v || null })
+                        if (v) {
+                          try {
+                            localStorage.setItem(pipelineDefaultJobStorageKey(accountId), v)
+                          } catch {
+                            /* ignore quota */
+                          }
+                        }
+                      }}
+                    >
+                      <option value="">Select a job…</option>
+                      {jobs.map(j => (
+                        <option key={j.id} value={j.id}>
+                          {j.title}
+                          {j.department ? ` · ${j.department}` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {selectedJob && selectedJob.status === 'open' && (
+                    <span className="pipeline-req-badge">Active requisition</span>
+                  )}
+                  <p className="pipeline-default-hint">
+                    Your choice is saved as the default for this workspace when you open Pipeline.
+                  </p>
+                </div>
+                <div className="pipeline-panel-actions">
+                  {typeof jobId === 'number' && (
+                    <button type="button" className="btn-pipeline-primary" onClick={() => setManageOpen(true)}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                        <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
+                      </svg>
+                      Edit stages
+                    </button>
+                  )}
+                  {typeof jobId === 'number' && !loading && (
+                    <button type="button" className="btn-pipeline-outline" onClick={() => loadJobData(jobId)} disabled={loading}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                        <path d="M21 12a9 9 0 11-2.64-6.36" strokeLinecap="round" />
+                        <path d="M21 3v7h-7" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                      Refresh
+                    </button>
+                  )}
+                </div>
+              </div>
 
           {typeof jobId === 'number' && (
             <div className="pipeline-filter-sheet">
               <div className="pipeline-filter-sheet-head">
-                <span className="pipeline-filter-sheet-title">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                    <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  Filters
-                </span>
+                <div className="pipeline-filter-head-left">
+                  <span className="pipeline-filter-sheet-title">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                      <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    Filters
+                  </span>
+                  <div className="pipeline-filter-pseudo-tabs" aria-hidden>
+                    <span className="pipeline-filter-pseudo-tabs__item pipeline-filter-pseudo-tabs__item--on">Filters</span>
+                    <span className="pipeline-filter-pseudo-tabs__item">Search</span>
+                    <span className="pipeline-filter-pseudo-tabs__item">Segments</span>
+                  </div>
+                </div>
                 {filtersActive && (
                   <button type="button" className="pipeline-filter-reset" onClick={clearFilters}>
                     Reset all
@@ -839,7 +1110,7 @@ export default function PipelineBoardView() {
                     )}
                   </div>
                 </div>
-                <div className="pipeline-filter-cell">
+                <div className="pipeline-filter-cell pipeline-filter-cell--col">
                   <label htmlFor="pipe-col" className="pipeline-filter-label">
                     Column
                   </label>
@@ -862,7 +1133,7 @@ export default function PipelineBoardView() {
                     ))}
                   </select>
                 </div>
-                <div className="pipeline-filter-cell">
+                <div className="pipeline-filter-cell pipeline-filter-cell--status">
                   <label htmlFor="pipe-status" className="pipeline-filter-label">
                     Status
                   </label>
@@ -883,7 +1154,7 @@ export default function PipelineBoardView() {
                     ))}
                   </select>
                 </div>
-                <div className="pipeline-filter-cell">
+                <div className="pipeline-filter-cell pipeline-filter-cell--source">
                   <label htmlFor="pipe-source" className="pipeline-filter-label">
                     Source
                   </label>
@@ -904,7 +1175,7 @@ export default function PipelineBoardView() {
                     ))}
                   </select>
                 </div>
-                <div className="pipeline-filter-cell">
+                <div className="pipeline-filter-cell pipeline-filter-cell--fit">
                   <label htmlFor="pipe-fit" className="pipeline-filter-label">
                     Fit score
                   </label>
@@ -924,7 +1195,7 @@ export default function PipelineBoardView() {
                   </select>
                 </div>
                 {tagsList.length > 1 && (
-                  <div className="pipeline-filter-cell">
+                  <div className="pipeline-filter-cell pipeline-filter-cell--tag">
                     <label htmlFor="pipe-tag" className="pipeline-filter-label">
                       Tag
                     </label>
@@ -950,6 +1221,52 @@ export default function PipelineBoardView() {
             </div>
           )}
 
+          {filtersActive && typeof jobId === 'number' && (
+            <div className="pipeline-filter-chips" aria-label="Active filters">
+              {search.trim() && (
+                <button type="button" className="pipeline-chip" onClick={() => patchPipelineQuery({ [PIPE_PARAM_Q]: null })}>
+                  Search: “{search.trim().slice(0, 28)}
+                  {search.trim().length > 28 ? '…' : ''}”<span aria-hidden> ×</span>
+                </button>
+              )}
+              {columnFilter !== 'all' && (
+                <button
+                  type="button"
+                  className="pipeline-chip"
+                  onClick={() => patchPipelineQuery({ [PIPE_PARAM_COL]: null })}
+                >
+                  Column:{' '}
+                  {columnFilter === 'unassigned' ? 'Unassigned' : stages.find(s => String(s.id) === columnFilter)?.name ?? columnFilter}
+                  <span aria-hidden> ×</span>
+                </button>
+              )}
+              {statusFilter !== 'all' && (
+                <button type="button" className="pipeline-chip" onClick={() => patchPipelineQuery({ [PIPE_PARAM_STATUS]: null })}>
+                  Status: {statusFilter}
+                  <span aria-hidden> ×</span>
+                </button>
+              )}
+              {sourceFilter !== 'all' && (
+                <button type="button" className="pipeline-chip" onClick={() => patchPipelineQuery({ [PIPE_PARAM_SOURCE]: null })}>
+                  Source: {sourceFilter}
+                  <span aria-hidden> ×</span>
+                </button>
+              )}
+              {fitFilter !== 'all' && (
+                <button type="button" className="pipeline-chip" onClick={() => patchPipelineQuery({ [PIPE_PARAM_FIT]: null })}>
+                  Fit: {fitFilter === 'scored' ? 'Has score' : 'No score'}
+                  <span aria-hidden> ×</span>
+                </button>
+              )}
+              {tagFilter !== 'all' && (
+                <button type="button" className="pipeline-chip" onClick={() => patchPipelineQuery({ [PIPE_PARAM_TAG]: null })}>
+                  Tag: {tagFilter}
+                  <span aria-hidden> ×</span>
+                </button>
+              )}
+            </div>
+          )}
+
           {selectedJob && (
             <div className="pipeline-context">
               <span className="pipeline-context-title">{selectedJob.title}</span>
@@ -967,8 +1284,7 @@ export default function PipelineBoardView() {
               )}
             </div>
           )}
-        </div>
-      </div>
+            </div>
 
       {typeof jobId !== 'number' && (
         <div className="pipeline-placeholder pipeline-placeholder-rich">
@@ -1003,6 +1319,7 @@ export default function PipelineBoardView() {
       )}
 
       {typeof jobId === 'number' && !loading && !err && stages.length > 0 && (
+        <div className="pipeline-kanban-host">
         <DndContext
           sensors={sensors}
           collisionDetection={pipelineCollisionDetection}
@@ -1032,6 +1349,7 @@ export default function PipelineBoardView() {
                 emptyHint="Drop candidates here"
                 accentClass={accentForStage(i)}
                 accountId={accountId}
+                healthScore={stageHealthScore(s.id, (byColumn.get(s.id) ?? []).length)}
               />
             ))}
           </div>
@@ -1056,7 +1374,41 @@ export default function PipelineBoardView() {
             ) : null}
           </DragOverlay>
         </DndContext>
+        </div>
       )}
+          </div>
+
+            {typeof jobId === 'number' && (
+              <aside className="pipeline-activity-rail" aria-label="Recent activity">
+                <div className="pipeline-activity-rail-inner">
+                  <h3 className="pipeline-activity-title">Recent activity</h3>
+                  {recentActivity.length === 0 ? (
+                    <p className="pipeline-activity-empty">
+                      Stage moves and updates will appear here from each candidate&apos;s history.
+                    </p>
+                  ) : (
+                    <ul className="pipeline-activity-list">
+                      {recentActivity.map(row => (
+                        <li key={row.id} className="pipeline-activity-item">
+                          <div className="pipeline-activity-avatar" aria-hidden>
+                            {candidateInitials(row.title, row.title.includes('@') ? row.title : `${row.title}@x.dev`)}
+                          </div>
+                          <div className="pipeline-activity-body">
+                            <div className="pipeline-activity-name">{row.title}</div>
+                            <div className="pipeline-activity-detail">{row.sub}</div>
+                            <time className="pipeline-activity-time" dateTime={row.at}>
+                              {formatRelativeTime(row.at)}
+                            </time>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </aside>
+            )}
+        </div>
+      </div>
     </>
   )
 }
