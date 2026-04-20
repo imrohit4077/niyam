@@ -495,7 +495,7 @@ export default function HomeDashboardPage() {
         title: 'New application',
         subtitle: `${a.candidate_name || a.candidate_email} · Job #${a.job_id}`,
         at: a.created_at,
-        href: `/account/${accountId}/jobs/${a.job_id}/pipeline`,
+        href: `/account/${accountId}/pipeline?job=${a.job_id}`,
       })
     }
 
@@ -520,7 +520,7 @@ export default function HomeDashboardPage() {
         title: 'Candidate hired',
         subtitle: `${a.candidate_name || a.candidate_email}`,
         at: a.updated_at,
-        href: `/account/${accountId}/jobs/${a.job_id}/pipeline`,
+        href: `/account/${accountId}/pipeline?job=${a.job_id}`,
       })
     }
 
