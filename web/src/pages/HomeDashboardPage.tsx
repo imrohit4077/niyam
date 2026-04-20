@@ -593,6 +593,23 @@ export default function HomeDashboardPage() {
     [allApplications],
   )
 
+  const selectedJobSourceSlices = useMemo(
+    () =>
+      makeDashboardSlices(
+        Object.entries(
+          jobApplications.reduce<Record<string, number>>((acc, application) => {
+            const source = application.source_type || 'unknown'
+            acc[source] = (acc[source] ?? 0) + 1
+            return acc
+          }, {}),
+        ),
+      ),
+    [jobApplications],
+  )
+  const maxSelectedSourceValue = Math.max(...selectedJobSourceSlices.map(s => s.value), 0)
+  const selectedSourceTopLabel =
+    selectedJobSourceSlices.find(s => s.value === maxSelectedSourceValue)?.label ?? 'No data'
+
   const jobDistributionRows = useMemo(() => applicantsPerJob(allApplications, jobs, 8), [allApplications, jobs])
 
   const activityItems = useMemo(() => buildActivityFeed(allApplications, interviews), [allApplications, interviews])
@@ -1139,6 +1156,45 @@ export default function HomeDashboardPage() {
                   </div>
                 </div>
                 <div className="dashboard-footnote">Click a metric card to inspect candidate-level records in detail.</div>
+              </>
+            )}
+          </div>
+        </DashboardPanel>
+
+        <DashboardPanel title="Applicant Sources (Selected Job)">
+          <div className="dashboard-panel-content">
+            {analyticsLoading ? (
+              <div className="dashboard-chart-skeleton" />
+            ) : selectedJobSourceSlices.length === 0 ? (
+              <div className="dashboard-empty">No source data is available for this job.</div>
+            ) : (
+              <>
+                <div className="dashboard-chart-shell dashboard-chart-shell-short">
+                  <Bar
+                    data={{
+                      labels: selectedJobSourceSlices.map(slice => slice.label),
+                      datasets: [
+                        {
+                          data: selectedJobSourceSlices.map(slice => slice.value),
+                          backgroundColor: selectedJobSourceSlices.map(slice => slice.color),
+                          borderRadius: 8,
+                          maxBarThickness: 36,
+                        },
+                      ],
+                    }}
+                    options={barOptionsVertical}
+                  />
+                </div>
+                <div className="dashboard-insight-row">
+                  <div className="dashboard-insight-card">
+                    <strong>{selectedSourceTopLabel}</strong>
+                    <span>Top source channel</span>
+                  </div>
+                  <div className="dashboard-insight-card">
+                    <strong>{selectedJobSourceSlices.length}</strong>
+                    <span>Distinct source channels</span>
+                  </div>
+                </div>
               </>
             )}
           </div>
