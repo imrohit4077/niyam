@@ -199,7 +199,7 @@ function KanbanCard({ app, accountId }: { app: Application; accountId: string })
     zIndex: isDragging ? 0 : 1,
   }
   const go = () => navigate(`/account/${accountId}/job-applications/${app.id}`)
-  const chips = [...(app.labels ?? []).map(l => l.name), ...(app.tags ?? [])].filter(Boolean).slice(0, 5)
+  const chips = [...(app.labels ?? []).map(l => l.title), ...(app.tags ?? [])].filter(Boolean).slice(0, 5)
   const rawSummary =
     (app.candidate_location && app.candidate_location.trim()) ||
     (app.cover_letter && app.cover_letter.replace(/\s+/g, ' ').trim()) ||
