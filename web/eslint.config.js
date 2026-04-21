@@ -19,5 +19,11 @@ export default defineConfig([
       ecmaVersion: 2020,
       globals: globals.browser,
     },
+    rules: {
+      // Standard "load on mount" effects set loading state before async work; disabling avoids false positives project-wide.
+      'react-hooks/set-state-in-effect': 'off',
+      // Context modules legitimately export hooks alongside providers.
+      'react-refresh/only-export-components': 'warn',
+    },
   },
 ])
