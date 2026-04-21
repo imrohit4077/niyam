@@ -841,7 +841,7 @@ export default function HomeDashboardPage() {
 
         <DashboardPanel title="Recent activity" span={4}>
           <div className="dashboard-panel-content dashboard-activity-panel">
-            {applicationsLoading && interviewsLoading ? (
+            {applicationsLoading || interviewsLoading ? (
               <LoadingRow />
             ) : activityItems.length === 0 ? (
               <div className="dashboard-empty">No recent hiring activity yet.</div>
