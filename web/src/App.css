@@ -1475,8 +1475,12 @@ a.sidebar-item {
 .dashboard-kpi-grid {
   margin-bottom: 20px;
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.dashboard-kpi-grid-skeleton {
+  margin-bottom: 20px;
 }
 
 .dashboard-kpi-card {
@@ -1485,6 +1489,104 @@ a.sidebar-item {
   border: 1px solid rgba(15, 23, 42, 0.08);
   background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
   box-shadow: 0 10px 26px rgba(15, 23, 42, 0.05);
+}
+
+.dashboard-kpi-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.dashboard-kpi-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(14, 165, 233, 0.1);
+  color: #0284c7;
+}
+
+.dashboard-kpi-primary .dashboard-kpi-icon {
+  background: rgba(255, 255, 255, 0.18);
+  color: #f0f9ff;
+}
+
+.dashboard-kpi-trend {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.dashboard-kpi-trend-up {
+  color: #059669;
+}
+
+.dashboard-kpi-trend-down {
+  color: #dc2626;
+}
+
+.dashboard-kpi-trend-neutral {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.dashboard-skeleton {
+  border-radius: 8px;
+  background: linear-gradient(90deg, rgba(226, 232, 240, 0.55) 0%, rgba(241, 245, 249, 0.95) 50%, rgba(226, 232, 240, 0.55) 100%);
+  background-size: 200% 100%;
+  animation: dashboard-shimmer 1.2s ease-in-out infinite;
+}
+
+.dashboard-skeleton-card {
+  min-height: 118px;
+}
+
+.dashboard-skeleton-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  margin-bottom: 10px;
+}
+
+.dashboard-skeleton-line {
+  height: 10px;
+  margin-bottom: 8px;
+}
+
+.dashboard-skeleton-line.sm {
+  width: 42%;
+  height: 9px;
+}
+
+.dashboard-skeleton-line.md {
+  width: 72%;
+}
+
+.dashboard-skeleton-line.lg {
+  width: 48%;
+  height: 22px;
+  margin-bottom: 10px;
+}
+
+.dashboard-panel-skeleton {
+  padding: 8px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+@keyframes dashboard-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
 }
 
 .dashboard-kpi-primary {
@@ -1531,6 +1633,10 @@ a.sidebar-item {
 
 .dashboard-panel {
   grid-column: span 6;
+}
+
+.dashboard-panel-span-12 {
+  grid-column: span 12;
 }
 
 .dashboard-modern-panel {
@@ -1813,6 +1919,101 @@ a.sidebar-item {
   margin-top: 14px;
   font-size: 12px;
   color: var(--text-muted);
+}
+
+.dashboard-activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.dashboard-activity-item {
+  display: flex;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.dashboard-activity-item:last-child {
+  border-bottom: none;
+}
+
+.dashboard-activity-dot {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  margin-top: 6px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #0ea5e9, #2563eb);
+}
+
+.dashboard-activity-body {
+  min-width: 0;
+}
+
+.dashboard-activity-body strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.dashboard-activity-body span {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.dashboard-activity-time {
+  flex-shrink: 0;
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.dashboard-table-wrap {
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.dashboard-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.dashboard-table th,
+.dashboard-table td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.dashboard-table th {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background: rgba(248, 250, 252, 0.95);
+}
+
+.dashboard-table tbody tr:hover td {
+  background: rgba(14, 165, 233, 0.04);
+}
+
+.dashboard-table td a {
+  font-weight: 600;
+  color: var(--teal);
+  text-decoration: none;
+}
+
+.dashboard-table td a:hover {
+  text-decoration: underline;
 }
 
 .dashboard-panel-footer {
