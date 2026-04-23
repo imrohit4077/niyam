@@ -411,12 +411,12 @@ export default function HomeDashboardPage() {
   const interviewsPrev = countByMonth(interviews, r => r.scheduled_at ?? r.created_at, trendMonthPrev)
   const interviewsTrend = percentChange(interviewsPrev, interviewsCur)
 
-  const offersReleased = allApplications.filter(a => a.status === 'offer' || a.status === 'hired').length
+  const offersReleased = allApplications.filter(a => a.status === 'offer').length
   const offersCur = allApplications.filter(
-    a => monthKeyUtc(a.updated_at) === trendMonthCur && (a.status === 'offer' || a.status === 'hired'),
+    a => monthKeyUtc(a.updated_at) === trendMonthCur && a.status === 'offer',
   ).length
   const offersPrev = allApplications.filter(
-    a => monthKeyUtc(a.updated_at) === trendMonthPrev && (a.status === 'offer' || a.status === 'hired'),
+    a => monthKeyUtc(a.updated_at) === trendMonthPrev && a.status === 'offer',
   ).length
   const offersTrend = percentChange(offersPrev, offersCur)
 
@@ -734,7 +734,7 @@ export default function HomeDashboardPage() {
           icon={<IconGift />}
           label="Offers released"
           value={offersReleased}
-          hint="Offer or hired outcomes"
+          hint="Candidates in offer stage"
           trendPercent={offersTrend.pct}
           trendDirection={offersTrend.direction}
           loading={summaryLoading}
