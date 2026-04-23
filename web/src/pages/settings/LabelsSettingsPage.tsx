@@ -38,12 +38,12 @@ export default function LabelsSettingsPage() {
     void load()
   }, [load])
 
-  const resetForm = () => {
+  const resetForm = useCallback(() => {
     setTitle('')
     setDescription('')
     setColor('')
     setEditing(null)
-  }
+  }, [])
 
   const openCreate = () => {
     resetForm()
@@ -58,10 +58,10 @@ export default function LabelsSettingsPage() {
     setModalOpen(true)
   }
 
-  const closeModal = () => {
+  const closeModal = useCallback(() => {
     setModalOpen(false)
     resetForm()
-  }
+  }, [resetForm])
 
   useEffect(() => {
     if (!modalOpen) return
@@ -78,7 +78,7 @@ export default function LabelsSettingsPage() {
       document.body.style.overflow = prev
       document.removeEventListener('keydown', onKey)
     }
-  }, [modalOpen])
+  }, [modalOpen, closeModal])
 
   useEffect(() => {
     if (!modalOpen) return
