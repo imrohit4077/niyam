@@ -413,13 +413,12 @@ export default function HomeDashboardPage() {
     return offerEntry?.changed_at ?? null
   }
   const offersReleasedWorkspace = useMemo(
-    () => allApplications.filter(a => a.status === 'offer' || a.status === 'hired').length,
+    () => allApplications.filter(a => a.status === 'offer').length,
     [allApplications],
   )
   const offersReleasedThisMonth = useMemo(
     () =>
       allApplications.filter(a => {
-        if (a.status !== 'offer' && a.status !== 'hired') return false
         const at = offerEnteredAt(a)
         return at ? isDateInRange(at, curMonth.start, curMonth.end) : false
       }).length,
@@ -428,7 +427,6 @@ export default function HomeDashboardPage() {
   const offersReleasedPrevMonth = useMemo(
     () =>
       allApplications.filter(a => {
-        if (a.status !== 'offer' && a.status !== 'hired') return false
         const at = offerEnteredAt(a)
         return at ? isDateInRange(at, prevMonth.start, prevMonth.end) : false
       }).length,
@@ -787,7 +785,7 @@ export default function HomeDashboardPage() {
           value={offersReleasedWorkspace}
           loading={summaryKpisLoading}
           trend={summaryKpisLoading ? null : offerTrend}
-          subtitle="Offer or hired (ever in pipeline)"
+          subtitle="Candidates currently in offer stage"
           icon={
             <KpiIcon>
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
