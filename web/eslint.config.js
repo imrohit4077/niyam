@@ -19,5 +19,11 @@ export default defineConfig([
       ecmaVersion: 2020,
       globals: globals.browser,
     },
+    rules: {
+      /** Data-fetching and health checks commonly set loading state at effect start. */
+      'react-hooks/set-state-in-effect': 'off',
+      /** Context modules legitimately export hooks alongside providers. */
+      'react-refresh/only-export-components': 'off',
+    },
   },
 ])
