@@ -4,8 +4,6 @@ import type { Job } from '../../api/jobs'
 
 export type TrendDirection = 'up' | 'down' | 'flat'
 
-const MS_DAY = 86_400_000
-
 function monthKey(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
 }
@@ -16,15 +14,6 @@ function startOfMonth(d: Date) {
 
 function addMonths(d: Date, n: number) {
   return new Date(d.getFullYear(), d.getMonth() + n, 1)
-}
-
-export function countInMonthKeys(isoDates: string[], keys: Set<string>) {
-  let n = 0
-  for (const iso of isoDates) {
-    const k = monthKey(new Date(iso))
-    if (keys.has(k)) n += 1
-  }
-  return n
 }
 
 /** Current and previous calendar month keys for trend comparisons */
@@ -173,14 +162,4 @@ export function applicationsInStatusUpdatedInMonth(applications: Application[], 
 
 export function newApplicationsInMonth(applications: Application[], monthKeyStr: string) {
   return applications.filter(a => monthKey(new Date(a.created_at)) === monthKeyStr).length
-}
-
-/** Approximate "active pipeline" candidates (in-progress stages) */
-export function activePipelineCandidates(applications: Application[]) {
-  const active = new Set(['applied', 'screening', 'interview', 'offer'])
-  return applications.filter(a => active.has(a.status)).length
-}
-
-export function daysAgoIso(days: number) {
-  return new Date(Date.now() - days * MS_DAY).toISOString()
 }
