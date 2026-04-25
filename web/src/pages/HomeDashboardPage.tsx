@@ -292,6 +292,7 @@ export default function HomeDashboardPage() {
       queueMicrotask(() => {
         setJobApplications([])
         setAnalyticsError('')
+        setAnalyticsLoading(false)
       })
       return
     }
