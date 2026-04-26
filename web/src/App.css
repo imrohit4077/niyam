@@ -1628,7 +1628,7 @@ a.sidebar-item {
   color: #eff6ff;
 }
 
-.dashboard-kpi-card span {
+.dashboard-kpi-card:not(.dashboard-kpi-card--rich) span {
   display: block;
   font-size: 11px;
   letter-spacing: 0.08em;
@@ -1637,25 +1637,34 @@ a.sidebar-item {
   margin-bottom: 8px;
 }
 
-.dashboard-kpi-primary span {
+.dashboard-kpi-primary:not(.dashboard-kpi-card--rich) span {
   color: rgba(239, 246, 255, 0.85);
 }
 
-.dashboard-kpi-card strong {
+.dashboard-kpi-card:not(.dashboard-kpi-card--rich) strong {
   display: block;
   font-size: 30px;
   line-height: 1.05;
   letter-spacing: -0.03em;
 }
 
-.dashboard-kpi-card p {
+.dashboard-kpi-card:not(.dashboard-kpi-card--rich) p {
   margin: 8px 0 0;
   font-size: 12px;
   color: var(--text-secondary);
 }
 
-.dashboard-kpi-primary p {
+.dashboard-kpi-primary:not(.dashboard-kpi-card--rich) p {
   color: rgba(239, 246, 255, 0.9);
+}
+
+.dashboard-kpi-card--rich .dashboard-kpi-trend span {
+  display: inline;
+  margin-bottom: 0;
+  font-size: inherit;
+  letter-spacing: normal;
+  text-transform: none;
+  color: inherit;
 }
 
 .dashboard-secondary-metrics {
