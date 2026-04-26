@@ -471,16 +471,20 @@ export default function HomeDashboardPage() {
   type FeedItem = { id: string; at: string; title: string; subtitle: string; href?: string }
   const activityFeed = useMemo(() => {
     const items: FeedItem[] = []
-    for (const a of allApplications) {
+    const recentApps = [...allApplications]
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(0, 400)
+    const jobTitleById = new Map(jobs.map(j => [j.id, j.title]))
+    for (const a of recentApps) {
       items.push({
         id: `app-${a.id}-created`,
         at: a.created_at,
         title: 'Application received',
-        subtitle: `${a.candidate_name || a.candidate_email} · ${jobs.find(j => j.id === a.job_id)?.title ?? `Job #${a.job_id}`}`,
+        subtitle: `${a.candidate_name || a.candidate_email} · ${jobTitleById.get(a.job_id) ?? `Job #${a.job_id}`}`,
         href: `/account/${accountId}/job-applications/${a.id}`,
       })
     }
-    for (const a of allApplications) {
+    for (const a of recentApps) {
       if (a.status === 'hired') {
         items.push({
           id: `app-${a.id}-hired`,
