@@ -462,7 +462,7 @@ export default function HomeDashboardPage() {
   )
 
   const workspaceOffersReleased = useMemo(
-    () => allApplications.filter(a => a.status === 'offer' || a.status === 'hired').length,
+    () => allApplications.filter(a => a.status === 'offer').length,
     [allApplications],
   )
 
@@ -719,7 +719,7 @@ export default function HomeDashboardPage() {
               icon="offers"
               title="Offers released"
               value={workspaceOffersReleased}
-              subtitle="Offer or hired (workspace)"
+              subtitle="In offer stage (workspace)"
               trend={{ direction: offersTrend.direction, text: formatTrendForCard(offersTrend) }}
             />
           </>
