@@ -20,4 +20,11 @@ export default defineConfig([
       globals: globals.browser,
     },
   },
+  {
+    files: ['src/pages/HomeDashboardPage.tsx'],
+    rules: {
+      // Data-fetch effects reset loading/error state before async calls (same pattern as rest of app).
+      'react-hooks/set-state-in-effect': 'off',
+    },
+  },
 ])
