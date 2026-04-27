@@ -1840,6 +1840,309 @@ a.sidebar-item {
   padding-right: 16px;
 }
 
+/* —— Homepage summary + charts band —— */
+.dashboard-summary-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.dashboard-summary-card {
+  padding: 16px 18px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: linear-gradient(165deg, #ffffff 0%, #f8fafc 100%);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+}
+
+.dashboard-summary-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.dashboard-summary-card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  color: #0369a1;
+  background: linear-gradient(145deg, rgba(14, 165, 233, 0.14), rgba(59, 130, 246, 0.1));
+  border: 1px solid rgba(14, 165, 233, 0.2);
+}
+
+.dashboard-summary-card-trend {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.dashboard-summary-card-trend-up {
+  color: #059669;
+}
+
+.dashboard-summary-card-trend-down {
+  color: #dc2626;
+}
+
+.dashboard-summary-card-trend-flat {
+  color: var(--text-muted);
+}
+
+.dashboard-summary-card-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.dashboard-summary-card-value {
+  display: block;
+  font-size: 28px;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.dashboard-summary-card-subtitle {
+  margin: 8px 0 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+
+.dashboard-summary-card-skeleton .dashboard-skeleton-block {
+  border-radius: 8px;
+  background: linear-gradient(90deg, #f1f5f9 0%, #e2e8f0 50%, #f1f5f9 100%);
+  background-size: 200% 100%;
+  animation: dashboard-shimmer 1.2s ease-in-out infinite;
+}
+
+.dashboard-skeleton-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+}
+
+.dashboard-skeleton-trend {
+  width: 48px;
+  height: 18px;
+}
+
+.dashboard-skeleton-label {
+  height: 12px;
+  width: 55%;
+  margin-bottom: 10px;
+}
+
+.dashboard-skeleton-value {
+  height: 26px;
+  width: 40%;
+  margin-bottom: 10px;
+}
+
+.dashboard-skeleton-subtitle {
+  height: 11px;
+  width: 72%;
+}
+
+@keyframes dashboard-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+.dashboard-charts-band {
+  margin-bottom: 22px;
+}
+
+.dashboard-charts-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.dashboard-charts-grid .dashboard-panel {
+  grid-column: span 6;
+}
+
+.dashboard-panel-span-6 {
+  grid-column: span 6;
+}
+
+.dashboard-chart-shell-funnel {
+  height: 260px;
+}
+
+.dashboard-chart-shell-jobs-bar {
+  height: 280px;
+}
+
+.dashboard-chart-shell-pie {
+  height: 280px;
+}
+
+.dashboard-activity-jobs-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.dashboard-panel-activity,
+.dashboard-panel-jobs-table {
+  grid-column: auto;
+}
+
+.dashboard-activity-body {
+  padding-top: 12px;
+  max-height: min(420px, 55vh);
+  overflow-y: auto;
+}
+
+.dashboard-activity-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.dashboard-activity-item {
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.dashboard-activity-item:last-child {
+  border-bottom: none;
+}
+
+.dashboard-activity-link,
+.dashboard-activity-static {
+  display: block;
+  padding: 12px 4px 12px 2px;
+  text-decoration: none;
+  color: inherit;
+  border-radius: 10px;
+  transition: background var(--transition);
+}
+
+.dashboard-activity-link:hover {
+  background: rgba(14, 165, 233, 0.06);
+}
+
+.dashboard-activity-title {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.dashboard-activity-sub {
+  display: block;
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+
+.dashboard-activity-time {
+  display: block;
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.dashboard-jobs-table-wrap {
+  padding-top: 8px;
+}
+
+.dashboard-table-scroll {
+  overflow-x: auto;
+  max-height: min(440px, 58vh);
+  overflow-y: auto;
+}
+
+.dashboard-jobs-data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.dashboard-jobs-data-table th {
+  text-align: left;
+  padding: 10px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(248, 250, 252, 0.95);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.dashboard-jobs-data-table td {
+  padding: 12px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  vertical-align: middle;
+}
+
+.dashboard-jobs-data-table tr:last-child td {
+  border-bottom: none;
+}
+
+.dashboard-jobs-table-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.dashboard-jobs-title-btn {
+  display: inline;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  color: #0c4a6e;
+  text-align: left;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 3px;
+  transition: color var(--transition), text-decoration-color var(--transition);
+}
+
+.dashboard-jobs-title-btn:hover {
+  color: #0369a1;
+  text-decoration-color: rgba(3, 105, 161, 0.35);
+}
+
+.dashboard-jobs-title-btn-active {
+  color: #1d4ed8;
+}
+
+.dashboard-detail-grid {
+  margin-top: 0;
+}
+
 
 /* ════════════════════════════════════════════════════════════════════
    LIST TABLE
@@ -12098,11 +12401,28 @@ textarea.esign-pro-input {
   .dashboard-panel {
     grid-column: span 12;
   }
+
+  .dashboard-charts-grid .dashboard-panel,
+  .dashboard-panel-span-6 {
+    grid-column: span 12;
+  }
+
+  .dashboard-activity-jobs-row {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-summary-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 760px) {
   .dashboard-title {
     font-size: 22px;
+  }
+
+  .dashboard-summary-row {
+    grid-template-columns: 1fr;
   }
 
   .dashboard-kpi-grid {
