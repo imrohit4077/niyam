@@ -179,9 +179,20 @@ function buildActivityFeed(
   jobTitleById: Map<number, string>,
   limit: number,
 ): ActivityItem[] {
+  const perSource = Math.max(limit, 20)
+  const recentApps = [...apps]
+    .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+    .slice(0, perSource)
+  const recentInterviews = [...interviews]
+    .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+    .slice(0, perSource)
+  const recentJobs = [...jobList]
+    .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+    .slice(0, perSource)
+
   const items: ActivityItem[] = []
 
-  apps.forEach(a => {
+  recentApps.forEach(a => {
     const jobTitle = jobTitleById.get(a.job_id) ?? `Job #${a.job_id}`
     items.push({
       id: `app-${a.id}`,
@@ -192,7 +203,7 @@ function buildActivityFeed(
     })
   })
 
-  interviews.forEach(row => {
+  recentInterviews.forEach(row => {
     const name = row.application?.candidate_name || row.application?.candidate_email || 'Candidate'
     const jobTitle = row.job?.title ?? (row.application?.job_id != null ? jobTitleById.get(row.application.job_id) ?? 'Role' : 'Role')
     items.push({
@@ -204,7 +215,7 @@ function buildActivityFeed(
     })
   })
 
-  jobList.forEach(j => {
+  recentJobs.forEach(j => {
     items.push({
       id: `job-${j.id}`,
       kind: 'job',
