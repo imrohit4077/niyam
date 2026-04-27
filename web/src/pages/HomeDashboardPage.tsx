@@ -369,6 +369,10 @@ export default function HomeDashboardPage() {
   const scheduledInterviews = interviewPanelRows.length
   const totalHiredCandidates = allApplications.filter(application => application.status === 'hired').length
   const totalApplicantsAcrossJobs = allApplications.length
+  const uniqueCandidateCount = useMemo(
+    () => new Set(allApplications.map(a => a.candidate_email.toLowerCase())).size,
+    [allApplications],
+  )
   const totalOpenings = jobs.reduce((sum, job) => sum + (job.open_positions ?? 0), 0)
   const openingFillRate = totalOpenings > 0 ? Math.round((totalHiredCandidates / totalOpenings) * 100) : 0
   const avgApplicantsPerJob = jobs.length > 0 ? (totalApplicantsAcrossJobs / jobs.length).toFixed(1) : '0.0'
@@ -739,8 +743,8 @@ export default function HomeDashboardPage() {
               </svg>
             }
             label="Total candidates"
-            value={totalApplicantsAcrossJobs}
-            hint="Unique applicants (all jobs)"
+            value={uniqueCandidateCount}
+            hint={`${totalApplicantsAcrossJobs} application records`}
             trendPercent={candidateTrend.pct}
             trendDirection={candidateTrend.dir}
           />
