@@ -96,6 +96,23 @@ function countInDateRange<T extends { created_at?: string; updated_at?: string }
   }).length
 }
 
+function countStageHistoryEntries(
+  applications: Application[],
+  stage: string,
+  start: Date,
+  end: Date,
+) {
+  const t0 = start.getTime()
+  const t1 = end.getTime()
+  return applications.filter(app =>
+    (app.stage_history ?? []).some(h => {
+      if (h.stage !== stage) return false
+      const t = new Date(h.changed_at).getTime()
+      return t >= t0 && t < t1
+    }),
+  ).length
+}
+
 function buildTrend(current: number, previous: number, comparisonLabel: string): SummaryTrend | null {
   if (previous === 0 && current === 0) {
     return { direction: 'flat', percent: 0, comparisonLabel }
@@ -521,11 +538,6 @@ export default function HomeDashboardPage() {
     countInDateRange(allApplications, start60, mid30, 'created_at', () => true),
     'vs prior 30 days',
   )
-  const jobsTrend = buildTrend(
-    countInDateRange(jobs as { created_at: string }[], start30, rangeEndExclusive, 'created_at', () => true),
-    countInDateRange(jobs as { created_at: string }[], start60, mid30, 'created_at', () => true),
-    'vs prior 30 days',
-  )
   const interviewsTrend = buildTrend(
     countInDateRange(interviews, start30, rangeEndExclusive, 'created_at', r =>
       r.status === 'scheduled' || r.status === 'pending' || !!r.scheduled_at,
@@ -536,8 +548,8 @@ export default function HomeDashboardPage() {
     'vs prior 30 days',
   )
   const offersTrend = buildTrend(
-    countInDateRange(allApplications, start30, rangeEndExclusive, 'updated_at', a => a.status === 'offer'),
-    countInDateRange(allApplications, start60, mid30, 'updated_at', a => a.status === 'offer'),
+    countStageHistoryEntries(allApplications, 'offer', start30, rangeEndExclusive),
+    countStageHistoryEntries(allApplications, 'offer', start60, mid30),
     'vs prior 30 days',
   )
 
@@ -848,7 +860,7 @@ export default function HomeDashboardPage() {
               label="Active jobs"
               value={activeJobsForKpi}
               hint={`${jobs.length} total listings`}
-              trend={jobsTrend}
+              trend={null}
             />
             <SummaryStatCard
               icon={
