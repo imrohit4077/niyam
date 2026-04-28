@@ -1479,12 +1479,127 @@ a.sidebar-item {
   gap: 10px;
 }
 
+.dashboard-kpi-grid-summary {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
 .dashboard-kpi-card {
-  padding: 14px 14px 12px;
+  padding: 16px 16px 14px;
   border-radius: 14px;
   border: 1px solid rgba(15, 23, 42, 0.08);
   background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
   box-shadow: 0 10px 26px rgba(15, 23, 42, 0.05);
+}
+
+.dashboard-kpi-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.dashboard-kpi-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.06);
+  color: var(--text-primary);
+}
+
+.dashboard-kpi-primary .dashboard-kpi-icon {
+  background: rgba(255, 255, 255, 0.2);
+  color: #eff6ff;
+}
+
+.dashboard-kpi-trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.dashboard-kpi-trend-arrow {
+  font-size: 11px;
+  line-height: 1;
+}
+
+.dashboard-kpi-trend-label {
+  font-variant-numeric: tabular-nums;
+}
+
+.dashboard-kpi-trend--up {
+  color: #059669;
+}
+
+.dashboard-kpi-trend--down {
+  color: #dc2626;
+}
+
+.dashboard-kpi-trend--flat {
+  color: var(--text-muted);
+}
+
+.dashboard-kpi-trend--muted {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.dashboard-kpi-card-title {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.dashboard-kpi-primary .dashboard-kpi-card-title {
+  color: rgba(239, 246, 255, 0.85);
+}
+
+.dashboard-kpi-value {
+  display: block;
+  font-size: 30px;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+}
+
+.dashboard-kpi-skeleton-wrap {
+  min-height: 132px;
+  display: flex;
+  align-items: center;
+}
+
+.dashboard-skeleton {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dashboard-skeleton-line {
+  height: 10px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, rgba(148, 163, 184, 0.2) 0%, rgba(148, 163, 184, 0.38) 50%, rgba(148, 163, 184, 0.2) 100%);
+  background-size: 200% 100%;
+  animation: dashboard-shimmer 1.2s ease-in-out infinite;
+}
+
+@keyframes dashboard-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
 }
 
 .dashboard-kpi-primary {
@@ -1493,7 +1608,7 @@ a.sidebar-item {
   color: #eff6ff;
 }
 
-.dashboard-kpi-card span {
+.dashboard-kpi-card > span:not(.dashboard-kpi-card-title):not(.dashboard-kpi-icon) {
   display: block;
   font-size: 11px;
   letter-spacing: 0.08em;
@@ -1533,6 +1648,26 @@ a.sidebar-item {
   grid-column: span 6;
 }
 
+.dashboard-panel.dashboard-panel-span-4 {
+  grid-column: span 4;
+}
+
+.dashboard-panel.dashboard-panel-span-5 {
+  grid-column: span 5;
+}
+
+.dashboard-panel.dashboard-panel-span-6 {
+  grid-column: span 6;
+}
+
+.dashboard-panel.dashboard-panel-span-7 {
+  grid-column: span 7;
+}
+
+.dashboard-panel.dashboard-panel-span-8 {
+  grid-column: span 8;
+}
+
 .dashboard-modern-panel {
   border-radius: 16px;
   border: 1px solid rgba(15, 23, 42, 0.08);
@@ -1568,6 +1703,16 @@ a.sidebar-item {
 
 .dashboard-chart-shell-short {
   height: 250px;
+}
+
+.dashboard-chart-shell-tall {
+  height: 280px;
+}
+
+.dashboard-chart-shell-pie {
+  height: 260px;
+  max-width: 420px;
+  margin: 0 auto;
 }
 
 .dashboard-panel-headline {
@@ -1833,6 +1978,118 @@ a.sidebar-item {
   margin-bottom: 14px;
   font-size: 13px;
   color: var(--text-secondary);
+}
+
+.dashboard-activity-feed {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.dashboard-activity-feed-item {
+  display: grid;
+  grid-template-columns: 10px 1fr auto;
+  gap: 12px 14px;
+  align-items: flex-start;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.dashboard-activity-feed-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.dashboard-activity-feed-dot {
+  width: 8px;
+  height: 8px;
+  margin-top: 6px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0ea5e9, #2563eb);
+  flex-shrink: 0;
+}
+
+.dashboard-activity-feed-body strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+  line-height: 1.35;
+}
+
+.dashboard-activity-feed-meta {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.dashboard-activity-feed-time {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.dashboard-table-wrap {
+  padding: 0;
+  overflow-x: auto;
+}
+
+.dashboard-jobs-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.dashboard-jobs-table thead th {
+  text-align: left;
+  padding: 10px 18px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background: rgba(248, 250, 252, 0.95);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.dashboard-jobs-table tbody td {
+  padding: 12px 18px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  vertical-align: middle;
+}
+
+.dashboard-jobs-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.dashboard-jobs-table tbody tr:hover td {
+  background: rgba(14, 165, 233, 0.04);
+}
+
+.dashboard-jobs-table-row-active td {
+  background: rgba(37, 99, 235, 0.06);
+}
+
+.dashboard-jobs-table-title {
+  display: inline;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  color: #1d4ed8;
+  cursor: pointer;
+  text-align: left;
+  text-decoration: none;
+}
+
+.dashboard-jobs-table-title:hover {
+  text-decoration: underline;
 }
 
 .dashboard-snapshot .panel-row {
@@ -12098,6 +12355,14 @@ textarea.esign-pro-input {
   .dashboard-panel {
     grid-column: span 12;
   }
+
+  .dashboard-panel.dashboard-panel-span-4,
+  .dashboard-panel.dashboard-panel-span-5,
+  .dashboard-panel.dashboard-panel-span-6,
+  .dashboard-panel.dashboard-panel-span-7,
+  .dashboard-panel.dashboard-panel-span-8 {
+    grid-column: span 12;
+  }
 }
 
 @media (max-width: 760px) {
@@ -12106,6 +12371,10 @@ textarea.esign-pro-input {
   }
 
   .dashboard-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dashboard-kpi-grid-summary {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 

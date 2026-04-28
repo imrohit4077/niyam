@@ -13,11 +13,19 @@ import {
   Tooltip,
   type ChartOptions,
 } from 'chart.js'
-import { Bar, Doughnut, Line } from 'react-chartjs-2'
+import { Bar, Doughnut, Line, Pie } from 'react-chartjs-2'
 import type { DashboardOutletContext } from '../layouts/DashboardOutletContext'
 import { jobsApi, type Job } from '../api/jobs'
 import { applicationsApi, type Application } from '../api/applications'
 import { interviewsApi, type InterviewAssignmentRow } from '../api/interviews'
+import {
+  DashboardKpiIconBriefcase,
+  DashboardKpiIconCalendar,
+  DashboardKpiIconCandidates,
+  DashboardKpiIconOffer,
+  DashboardSummaryCard,
+  type DashboardTrend,
+} from '../components/dashboard/DashboardSummaryCard'
 
 const STAGE_COLORS: Record<string, string> = {
   applied: 'tag-blue',
@@ -59,6 +67,70 @@ function LoadingRow() {
   )
 }
 
+function DashboardPanelSkeleton({ lines = 4 }: { lines?: number }) {
+  return (
+    <div className="dashboard-skeleton" aria-hidden>
+      {Array.from({ length: lines }, (_, i) => (
+        <div key={i} className="dashboard-skeleton-line" style={{ width: `${68 + (i % 3) * 10}%` }} />
+      ))}
+    </div>
+  )
+}
+
+function daysAgo(n: number) {
+  const d = new Date()
+  d.setHours(0, 0, 0, 0)
+  d.setDate(d.getDate() - n)
+  return d
+}
+
+function countInDateRange<T>(items: T[], getDate: (item: T) => string | null | undefined, start: Date, end: Date) {
+  const t0 = start.getTime()
+  const t1 = end.getTime()
+  return items.filter(item => {
+    const raw = getDate(item)
+    if (!raw) return false
+    const t = new Date(raw).getTime()
+    return t >= t0 && t < t1
+  }).length
+}
+
+function trendFromPeriodCompare(current: number, previous: number): DashboardTrend {
+  if (previous === 0 && current === 0) return { direction: 'flat', label: '0%' }
+  if (previous === 0 && current > 0) return { direction: 'up', label: 'vs prior 30d' }
+  const pct = Math.round(((current - previous) / previous) * 100)
+  if (pct > 0) return { direction: 'up', label: `${pct}%` }
+  if (pct < 0) return { direction: 'down', label: `${pct}%` }
+  return { direction: 'flat', label: '0%' }
+}
+
+function formatDashboardLabel(value: string) {
+  return value
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, ch => ch.toUpperCase())
+}
+
+const PIPELINE_FUNNEL_KEYS = ['applied', 'screening', 'interview', 'offer', 'hired'] as const
+
+function aggregateStatusCounts(applications: Application[]) {
+  return applications.reduce<Record<string, number>>((acc, application) => {
+    acc[application.status] = (acc[application.status] ?? 0) + 1
+    return acc
+  }, {})
+}
+
+function dominantStageLabel(jobId: number, applications: Application[]): string {
+  const forJob = applications.filter(a => a.job_id === jobId)
+  if (forJob.length === 0) return '—'
+  const counts = aggregateStatusCounts(forJob)
+  const order = ['hired', 'offer', 'interview', 'screening', 'applied', 'rejected', 'withdrawn']
+  for (const st of order) {
+    if ((counts[st] ?? 0) > 0) return formatDashboardLabel(st)
+  }
+  const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]
+  return top ? formatDashboardLabel(top[0]) : '—'
+}
+
 function ErrorRow({ msg }: { msg: string }) {
   return (
     <div
@@ -73,12 +145,6 @@ function ErrorRow({ msg }: { msg: string }) {
       {msg}
     </div>
   )
-}
-
-function formatDashboardLabel(value: string) {
-  return value
-    .replace(/_/g, ' ')
-    .replace(/\b\w/g, ch => ch.toUpperCase())
 }
 
 function formatDateTimeShort(value: string | null) {
@@ -142,9 +208,9 @@ function DashboardDoughnutChart({
   )
 }
 
-function DashboardPanel({ title, children }: { title: string; children: ReactNode }) {
+function DashboardPanel({ title, children, className }: { title: string; children: ReactNode; className?: string }) {
   return (
-    <section className="panel dashboard-panel dashboard-modern-panel">
+    <section className={['panel', 'dashboard-panel', 'dashboard-modern-panel', className].filter(Boolean).join(' ')}>
       <div className="panel-header dashboard-modern-panel-header">
         <span className="panel-header-title">{title}</span>
       </div>
@@ -163,6 +229,7 @@ export default function HomeDashboardPage() {
   const [interviewsLoading, setInterviewsLoading] = useState(true)
   const [interviewsError, setInterviewsError] = useState('')
   const [allApplications, setAllApplications] = useState<Application[]>([])
+  const [applicationsLoading, setApplicationsLoading] = useState(true)
   const [jobApplications, setJobApplications] = useState<Application[]>([])
   const [analyticsLoading, setAnalyticsLoading] = useState(false)
   const [analyticsError, setAnalyticsError] = useState('')
@@ -224,6 +291,7 @@ export default function HomeDashboardPage() {
 
   useEffect(() => {
     let cancelled = false
+    setApplicationsLoading(true)
 
     applicationsApi
       .list(token)
@@ -232,6 +300,9 @@ export default function HomeDashboardPage() {
       })
       .catch(() => {
         if (!cancelled) setAllApplications([])
+      })
+      .finally(() => {
+        if (!cancelled) setApplicationsLoading(false)
       })
 
     return () => {
@@ -347,12 +418,87 @@ export default function HomeDashboardPage() {
     })
     return keys.map(item => ({ label: item.label, value: counters[item.key] ?? 0 }))
   }, [allApplications])
-  const currentMonthApplications = monthlyTrend[monthlyTrend.length - 1]?.value ?? 0
-  const previousMonthApplications = monthlyTrend[monthlyTrend.length - 2]?.value ?? 0
-  const monthlyDelta = currentMonthApplications - previousMonthApplications
-  const monthlyDeltaLabel = `${monthlyDelta > 0 ? '+' : ''}${monthlyDelta}`
   const maxSourceValue = Math.max(...sourceSlices.map(slice => slice.value), 0)
   const sourceTopLabel = sourceSlices.find(slice => slice.value === maxSourceValue)?.label ?? 'No data'
+
+  const workspaceStatusCounts = useMemo(() => aggregateStatusCounts(allApplications), [allApplications])
+  const workspaceOffersReleased = allApplications.filter(a => a.status === 'offer' || a.status === 'hired').length
+  const now = new Date()
+  const periodEnd = new Date(now)
+  periodEnd.setHours(23, 59, 59, 999)
+  const period30Start = daysAgo(30)
+  const period60Start = daysAgo(60)
+  const period60End = period30Start
+
+  const candidates30 = countInDateRange(allApplications, a => a.created_at, period30Start, periodEnd)
+  const candidatesPrev30 = countInDateRange(allApplications, a => a.created_at, period60Start, period60End)
+  const jobs30 = countInDateRange(jobs, j => j.created_at, period30Start, periodEnd)
+  const jobsPrev30 = countInDateRange(jobs, j => j.created_at, period60Start, period60End)
+  const interviews30 = countInDateRange(interviews, r => r.created_at, period30Start, periodEnd)
+  const interviewsPrev30 = countInDateRange(interviews, r => r.created_at, period60Start, period60End)
+  const offers30 = allApplications.filter(a => {
+    if (a.status !== 'offer' && a.status !== 'hired') return false
+    const t = new Date(a.updated_at).getTime()
+    return t >= period30Start.getTime() && t <= periodEnd.getTime()
+  }).length
+  const offersPrev30 = allApplications.filter(a => {
+    if (a.status !== 'offer' && a.status !== 'hired') return false
+    const t = new Date(a.updated_at).getTime()
+    return t >= period60Start.getTime() && t < period30Start.getTime()
+  }).length
+
+  const activityFeed = useMemo(() => {
+    type FeedItem = { id: string; at: number; title: string; meta: string }
+    const items: FeedItem[] = []
+    allApplications.forEach(a => {
+      items.push({
+        id: `app-${a.id}`,
+        at: new Date(a.created_at).getTime(),
+        title: `Candidate added: ${a.candidate_name || a.candidate_email}`,
+        meta: jobs.find(j => j.id === a.job_id)?.title ? `Applied to ${jobs.find(j => j.id === a.job_id)!.title}` : 'New application',
+      })
+    })
+    interviews.forEach(r => {
+      const name = r.application?.candidate_name || r.application?.candidate_email || 'Candidate'
+      const jobTitle = r.job?.title ?? 'Role'
+      items.push({
+        id: `int-${r.id}`,
+        at: new Date(r.scheduled_at || r.updated_at).getTime(),
+        title: r.scheduled_at ? `Interview scheduled: ${name}` : `Interview update: ${name}`,
+        meta: jobTitle,
+      })
+    })
+    return items.sort((a, b) => b.at - a.at).slice(0, 12)
+  }, [allApplications, interviews, jobs])
+
+  const funnelStageLabels = PIPELINE_FUNNEL_KEYS.map(k => formatDashboardLabel(k))
+  const funnelRawValues = PIPELINE_FUNNEL_KEYS.map(k => workspaceStatusCounts[k] ?? 0)
+  const funnelMax = Math.max(...funnelRawValues, 1)
+  const funnelDisplayValues = funnelRawValues.map(v => (v === 0 ? Math.max(1, Math.round(funnelMax * 0.04)) : v))
+
+  const jobWiseSlices = useMemo(() => {
+    const map = allApplications.reduce<Record<string, number>>((acc, a) => {
+      const title = jobs.find(j => j.id === a.job_id)?.title ?? `Job #${a.job_id}`
+      acc[title] = (acc[title] ?? 0) + 1
+      return acc
+    }, {})
+    return makeDashboardSlices(Object.entries(map)).sort((a, b) => b.value - a.value).slice(0, 8)
+  }, [allApplications, jobs])
+
+  const workspaceSourceSlices = useMemo(
+    () =>
+      makeDashboardSlices(
+        Object.entries(
+          allApplications.reduce<Record<string, number>>((acc, application) => {
+            const source = application.source_type || 'unknown'
+            acc[source] = (acc[source] ?? 0) + 1
+            return acc
+          }, {}),
+        ),
+      ),
+    [allApplications],
+  )
+
   const barOptions: ChartOptions<'bar'> = {
     responsive: true,
     maintainAspectRatio: false,
@@ -369,6 +515,48 @@ export default function HomeDashboardPage() {
         ticks: { color: '#6b7280', precision: 0, font: { size: 11 } },
         grid: { color: 'rgba(148,163,184,0.22)' },
       },
+    },
+  }
+
+  const barHorizontalOptions: ChartOptions<'bar'> = {
+    indexAxis: 'y',
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: {
+        beginAtZero: true,
+        ticks: { color: '#6b7280', precision: 0, font: { size: 11 } },
+        grid: { color: 'rgba(148,163,184,0.22)' },
+      },
+      y: {
+        ticks: { color: '#6b7280', font: { size: 11 } },
+        grid: { display: false },
+      },
+    },
+  }
+
+  const funnelBarOptions: ChartOptions<'bar'> = {
+    ...barOptions,
+    plugins: {
+      ...barOptions.plugins,
+      tooltip: {
+        callbacks: {
+          label: ctx => {
+            const i = ctx.dataIndex
+            const real = funnelRawValues[i] ?? 0
+            return `${funnelStageLabels[i]}: ${real}`
+          },
+        },
+      },
+    },
+  }
+
+  const pieOptions: ChartOptions<'pie'> = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'right', labels: { boxWidth: 10, usePointStyle: true, pointStyle: 'circle', font: { size: 11 } } },
     },
   }
   const lineOptions: ChartOptions<'line'> = {
@@ -499,58 +687,259 @@ export default function HomeDashboardPage() {
 
       <div className="dashboard-hero dashboard-hero-modern">
         <div className="dashboard-hero-main">
-          <p className="dashboard-eyebrow">Talent intelligence</p>
-          <h2 className="dashboard-title">{user.account?.name ?? 'Your Workspace'} Hiring Overview</h2>
+          <p className="dashboard-eyebrow">Overview</p>
+          <h2 className="dashboard-title">{user.account?.name ?? 'Your Workspace'}</h2>
           <p className="dashboard-subtitle">
-            Beautiful, real-time visibility into pipeline velocity, candidate quality, source performance, and hiring outcomes.
+            Pipeline health, hiring velocity, and role performance at a glance. Select a job below to drill into sources and stage mix.
           </p>
         </div>
         <div className="dashboard-hero-meta">
           <div className="dashboard-hero-meta-item">
-            <span>Pipeline Health</span>
-            <strong>{conversionRate >= 25 ? 'Strong' : conversionRate >= 10 ? 'Stable' : 'Needs Attention'}</strong>
+            <span>Selected job conversion</span>
+            <strong>{selectedJob ? `${conversionRate}%` : '—'}</strong>
           </div>
           <div className="dashboard-hero-meta-item">
-            <span>Openings Fill Rate</span>
+            <span>Openings fill rate</span>
             <strong>{openingFillRate}%</strong>
           </div>
           <div className="dashboard-hero-meta-item">
-            <span>Avg Applicants / Job</span>
+            <span>Avg applicants / job</span>
             <strong>{avgApplicantsPerJob}</strong>
           </div>
         </div>
       </div>
 
-      <div className="dashboard-kpi-grid">
-        <article className="dashboard-kpi-card dashboard-kpi-primary">
-          <span>Jobs Listed</span>
-          <strong>{jobs.length}</strong>
-          <p>{openJobs} currently open roles</p>
-        </article>
-        <article className="dashboard-kpi-card">
-          <span>Upcoming Interviews</span>
-          <strong>{workspaceUpcomingInterviews}</strong>
-          <p>{scheduledInterviews} for selected job</p>
-        </article>
-        <article className="dashboard-kpi-card">
-          <span>Total Hired</span>
-          <strong>{totalHiredCandidates}</strong>
-          <p>{openingFillRate}% fill rate across openings</p>
-        </article>
-        <article className="dashboard-kpi-card">
-          <span>Monthly Pipeline Delta</span>
-          <strong>{monthlyDeltaLabel}</strong>
-          <p>{currentMonthApplications} this month vs {previousMonthApplications} last month</p>
-        </article>
-        <article className="dashboard-kpi-card">
-          <span>Total Applicants</span>
-          <strong>{totalApplicantsAcrossJobs}</strong>
-          <p>{avgApplicantsPerJob} average applicants per job</p>
-        </article>
+      <div className="dashboard-kpi-grid dashboard-kpi-grid-summary">
+        {jobsLoading || applicationsLoading ? (
+          <>
+            {[0, 1, 2, 3].map(i => (
+              <div key={i} className="dashboard-kpi-card dashboard-kpi-skeleton-wrap">
+                <DashboardPanelSkeleton lines={3} />
+              </div>
+            ))}
+          </>
+        ) : (
+          <>
+            <DashboardSummaryCard
+              title="Total candidates"
+              value={totalApplicantsAcrossJobs}
+              icon={<DashboardKpiIconCandidates />}
+              trend={trendFromPeriodCompare(candidates30, candidatesPrev30)}
+              subtitle="Unique applications across all jobs"
+              variant="primary"
+            />
+            <DashboardSummaryCard
+              title="Active jobs"
+              value={openJobs}
+              icon={<DashboardKpiIconBriefcase />}
+              trend={trendFromPeriodCompare(jobs30, jobsPrev30)}
+              subtitle={`${jobs.length} total listings`}
+            />
+            <DashboardSummaryCard
+              title="Interviews scheduled"
+              value={workspaceUpcomingInterviews}
+              icon={<DashboardKpiIconCalendar />}
+              trend={trendFromPeriodCompare(interviews30, interviewsPrev30)}
+              subtitle="Upcoming & pending on your calendar"
+            />
+            <DashboardSummaryCard
+              title="Offers released"
+              value={workspaceOffersReleased}
+              icon={<DashboardKpiIconOffer />}
+              trend={trendFromPeriodCompare(offers30, offersPrev30)}
+              subtitle="Offer or hired (all time)"
+            />
+          </>
+        )}
       </div>
 
       <div className="dashboard-grid">
-        <DashboardPanel title="Jobs By Status">
+        <DashboardPanel title="Pipeline funnel (workspace)" className="dashboard-panel-span-6">
+          <div className="dashboard-panel-content">
+            {applicationsLoading ? (
+              <DashboardPanelSkeleton lines={5} />
+            ) : funnelRawValues.every(v => v === 0) ? (
+              <div className="dashboard-empty">No applications yet. Funnel stages appear as candidates move through Applied → Hired.</div>
+            ) : (
+              <div className="dashboard-chart-shell dashboard-chart-shell-short">
+                <Bar
+                  data={{
+                    labels: funnelStageLabels,
+                    datasets: [
+                      {
+                        label: 'Candidates',
+                        data: funnelDisplayValues,
+                        backgroundColor: ['#38bdf8', '#3b82f6', '#6366f1', '#22c55e', '#0d9488'],
+                        borderRadius: 8,
+                        maxBarThickness: 48,
+                      },
+                    ],
+                  }}
+                  options={funnelBarOptions}
+                />
+              </div>
+            )}
+          </div>
+        </DashboardPanel>
+
+        <DashboardPanel title="Applications over time" className="dashboard-panel-span-6">
+          <div className="dashboard-panel-content">
+            {applicationsLoading ? (
+              <DashboardPanelSkeleton lines={4} />
+            ) : monthlyTrend.every(item => item.value === 0) ? (
+              <div className="dashboard-empty">No recent application activity yet.</div>
+            ) : (
+              <div className="dashboard-chart-shell dashboard-chart-shell-short">
+                <Line
+                  data={{
+                    labels: monthlyTrend.map(item => item.label),
+                    datasets: [
+                      {
+                        data: monthlyTrend.map(item => item.value),
+                        borderColor: '#0ea5e9',
+                        backgroundColor: 'rgba(14,165,233,0.12)',
+                        borderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 5,
+                        pointBackgroundColor: '#ffffff',
+                        pointBorderColor: '#0ea5e9',
+                        pointBorderWidth: 2,
+                        fill: true,
+                        tension: 0.32,
+                      },
+                    ],
+                  }}
+                  options={lineOptions}
+                />
+              </div>
+            )}
+          </div>
+        </DashboardPanel>
+
+        <DashboardPanel title="Candidates by job" className="dashboard-panel-span-8">
+          <div className="dashboard-panel-content">
+            {applicationsLoading || jobsLoading ? (
+              <DashboardPanelSkeleton lines={5} />
+            ) : jobWiseSlices.length === 0 ? (
+              <div className="dashboard-empty">No applications to chart yet.</div>
+            ) : (
+              <div className="dashboard-chart-shell dashboard-chart-shell-tall">
+                <Bar
+                  data={{
+                    labels: jobWiseSlices.map(s => s.label),
+                    datasets: [
+                      {
+                        data: jobWiseSlices.map(s => s.value),
+                        backgroundColor: jobWiseSlices.map(s => s.color),
+                        borderRadius: 6,
+                        maxBarThickness: 22,
+                      },
+                    ],
+                  }}
+                  options={barHorizontalOptions}
+                />
+              </div>
+            )}
+          </div>
+        </DashboardPanel>
+
+        <DashboardPanel title="Source of candidates (workspace)" className="dashboard-panel-span-4">
+          <div className="dashboard-panel-content">
+            {applicationsLoading ? (
+              <DashboardPanelSkeleton lines={4} />
+            ) : workspaceSourceSlices.length === 0 ? (
+              <div className="dashboard-empty">No source data yet.</div>
+            ) : (
+              <div className="dashboard-chart-shell dashboard-chart-shell-pie">
+                <Pie
+                  data={{
+                    labels: workspaceSourceSlices.map(s => s.label),
+                    datasets: [
+                      {
+                        data: workspaceSourceSlices.map(s => s.value),
+                        backgroundColor: workspaceSourceSlices.map(s => s.color),
+                        borderColor: '#ffffff',
+                        borderWidth: 2,
+                      },
+                    ],
+                  }}
+                  options={pieOptions}
+                />
+              </div>
+            )}
+          </div>
+        </DashboardPanel>
+
+        <DashboardPanel title="Recent activity" className="dashboard-panel-span-5">
+          <div className="dashboard-panel-content">
+            {applicationsLoading && interviewsLoading ? (
+              <DashboardPanelSkeleton lines={6} />
+            ) : activityFeed.length === 0 ? (
+              <div className="dashboard-empty">Activity will appear as you add candidates and schedule interviews.</div>
+            ) : (
+              <ul className="dashboard-activity-feed">
+                {activityFeed.map(item => (
+                  <li key={item.id} className="dashboard-activity-feed-item">
+                    <span className="dashboard-activity-feed-dot" aria-hidden />
+                    <div className="dashboard-activity-feed-body">
+                      <strong>{item.title}</strong>
+                      <span className="dashboard-activity-feed-meta">{item.meta}</span>
+                    </div>
+                    <time className="dashboard-activity-feed-time" dateTime={new Date(item.at).toISOString()}>
+                      {new Date(item.at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    </time>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </DashboardPanel>
+
+        <DashboardPanel title="Jobs overview" className="dashboard-panel-span-7">
+          <div className="dashboard-panel-content dashboard-table-wrap">
+            {jobsLoading ? (
+              <DashboardPanelSkeleton lines={6} />
+            ) : jobsError ? (
+              <ErrorRow msg={jobsError} />
+            ) : jobs.length === 0 ? (
+              <div className="dashboard-empty">Create a job to start tracking applicants and stages.</div>
+            ) : (
+              <table className="dashboard-jobs-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Job title</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Applicants</th>
+                    <th scope="col">Stage</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {jobs.map(job => {
+                    const count = allApplications.filter(a => a.job_id === job.id).length
+                    return (
+                      <tr
+                        key={job.id}
+                        className={selectedJobId === String(job.id) ? 'dashboard-jobs-table-row-active' : undefined}
+                      >
+                        <td>
+                          <button type="button" className="dashboard-jobs-table-title" onClick={() => setSelectedJobId(String(job.id))}>
+                            {job.title}
+                          </button>
+                        </td>
+                        <td>
+                          <span className={`tag ${STAGE_COLORS[job.status] ?? 'tag-gray'}`}>{formatDashboardLabel(job.status)}</span>
+                        </td>
+                        <td>{count}</td>
+                        <td>{dominantStageLabel(job.id, allApplications)}</td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </DashboardPanel>
+        <DashboardPanel title="Jobs By Status" className="dashboard-panel-span-7">
           <div className="dashboard-panel-content">
             {jobsLoading ? (
               <LoadingRow />
@@ -598,7 +987,7 @@ export default function HomeDashboardPage() {
           </div>
         </DashboardPanel>
 
-        <DashboardPanel title="Selected Job Pipeline">
+        <DashboardPanel title="Selected Job Pipeline" className="dashboard-panel-span-5">
           <div className="dashboard-panel-content">
             {analyticsLoading ? (
               <LoadingRow />
@@ -688,7 +1077,7 @@ export default function HomeDashboardPage() {
           </div>
         </DashboardPanel>
 
-        <DashboardPanel title="Applicant Sources (Selected Job)">
+        <DashboardPanel title="Applicant Sources (Selected Job)" className="dashboard-panel-span-4">
           <div className="dashboard-panel-content">
             {analyticsLoading ? (
               <LoadingRow />
@@ -727,39 +1116,7 @@ export default function HomeDashboardPage() {
           </div>
         </DashboardPanel>
 
-        <DashboardPanel title="Application Trend (Last 6 Months)">
-          <div className="dashboard-panel-content">
-            {monthlyTrend.every(item => item.value === 0) ? (
-              <div className="dashboard-empty">No recent application activity yet.</div>
-            ) : (
-              <div className="dashboard-chart-shell dashboard-chart-shell-short">
-                <Line
-                  data={{
-                    labels: monthlyTrend.map(item => item.label),
-                    datasets: [
-                      {
-                        data: monthlyTrend.map(item => item.value),
-                        borderColor: '#3b82f6',
-                        backgroundColor: 'rgba(59,130,246,0.18)',
-                        borderWidth: 2,
-                        pointRadius: 4,
-                        pointHoverRadius: 5,
-                        pointBackgroundColor: '#ffffff',
-                        pointBorderColor: '#3b82f6',
-                        pointBorderWidth: 2,
-                        fill: true,
-                        tension: 0.32,
-                      },
-                    ],
-                  }}
-                  options={lineOptions}
-                />
-              </div>
-            )}
-          </div>
-        </DashboardPanel>
-
-        <DashboardPanel title="Upcoming Interviews (Selected Scope)">
+        <DashboardPanel title="Upcoming Interviews (Selected Scope)" className="dashboard-panel-span-8">
           <div className="dashboard-panel-content">
             {interviewsLoading ? (
               <LoadingRow />
