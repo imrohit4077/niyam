@@ -772,7 +772,9 @@ export default function HomeDashboardPage() {
           <div className="dashboard-viz-section-header">
             <h3 className="dashboard-viz-section-title">Analytics & visualization</h3>
             <p className="dashboard-viz-section-sub">
-              Funnel reflects {selectedJob ? 'the selected job' : 'all jobs'} until you pick a role in the sidebar.
+              {selectedJob
+                ? `Funnel counts are for ${selectedJob.title}. Choose another job in the table or sidebar to refocus.`
+                : 'Funnel counts aggregate every application in the workspace. Select a job below to zoom in.'}
             </p>
           </div>
           <div className="dashboard-viz-grid">
