@@ -376,6 +376,9 @@ export default function HomeDashboardPage() {
     row => row.status === 'scheduled' || row.status === 'pending' || !!row.scheduled_at,
   )
   const scheduledInterviewsCount = interviewPanelRows.length
+  const workspaceScheduledInterviews = interviews.filter(
+    row => row.status === 'scheduled' || row.status === 'pending' || !!row.scheduled_at,
+  ).length
   const offerRows = jobApplications.filter(application => application.status === 'offer')
   const hiredRows = jobApplications.filter(application => application.status === 'hired')
   const openJobs = jobs.filter(job => job.status === 'open').length
@@ -783,7 +786,7 @@ export default function HomeDashboardPage() {
           <SummaryCard
             icon={<IconCalendar />}
             label="Interviews scheduled"
-            value={scheduledInterviewsCount.toLocaleString()}
+            value={workspaceScheduledInterviews.toLocaleString()}
             trend={interviewsTrend}
           />
           <SummaryCard icon={<IconGift />} label="Offers released" value={offersReleasedWorkspace.toLocaleString()} trend={offersTrend} />
