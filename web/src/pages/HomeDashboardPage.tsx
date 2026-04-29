@@ -418,16 +418,11 @@ export default function HomeDashboardPage() {
       .map(a => ({ at: a.updated_at }))
     return countInMonthKeys(rows, monthKeyRecord)
   }, [allApplications, monthKeyRecord])
-  const newJobsListedByMonth = useMemo(() => {
-    const rows = jobs.map(j => ({ at: j.created_at }))
-    return countInMonthKeys(rows, monthKeyRecord)
-  }, [jobs, monthKeyRecord])
   const lastIdx = monthKeyList.length - 1
   const prevIdx = monthKeyList.length - 2
   const curKey = monthKeyList[lastIdx]?.key ?? ''
   const prevKey = monthKeyList[prevIdx]?.key ?? ''
   const candidatesTrend = trendFromCounts(applicationsByMonth[curKey] ?? 0, applicationsByMonth[prevKey] ?? 0)
-  const activeJobsTrend = trendFromCounts(newJobsListedByMonth[curKey] ?? 0, newJobsListedByMonth[prevKey] ?? 0)
   const interviewsTrend = trendFromCounts(
     interviewsScheduledByMonth[curKey] ?? 0,
     interviewsScheduledByMonth[prevKey] ?? 0,
@@ -715,7 +710,6 @@ export default function HomeDashboardPage() {
               title="Active jobs"
               value={openJobs}
               icon={<IconBriefcase />}
-              trend={activeJobsTrend}
               subtitle={`${jobs.length} total listings in workspace`}
             />
             <SummaryStatCard
