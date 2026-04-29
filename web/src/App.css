@@ -1523,6 +1523,417 @@ a.sidebar-item {
   color: rgba(239, 246, 255, 0.9);
 }
 
+.dashboard-kpi-grid-four {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.dashboard-kpi-card-rich {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 132px;
+  padding: 16px 16px 14px;
+}
+
+.dashboard-kpi-card-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.dashboard-kpi-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(37, 99, 235, 0.08);
+  color: #2563eb;
+  flex-shrink: 0;
+}
+
+.dashboard-kpi-icon-wrap-on-primary {
+  background: rgba(255, 255, 255, 0.2);
+  color: #eff6ff;
+}
+
+.dashboard-kpi-label {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.dashboard-kpi-primary .dashboard-kpi-label {
+  color: rgba(239, 246, 255, 0.88);
+}
+
+.dashboard-kpi-value {
+  font-size: 28px;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  font-weight: 700;
+  margin: 4px 0 6px;
+}
+
+.dashboard-kpi-trend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  font-size: 12px;
+  margin-top: auto;
+}
+
+.dashboard-kpi-trend-icon {
+  flex-shrink: 0;
+}
+
+.dashboard-kpi-trend-flat {
+  opacity: 0.55;
+}
+
+.dashboard-kpi-trend-pct {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.dashboard-kpi-trend-caption {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.dashboard-kpi-trend-up .dashboard-kpi-trend-pct {
+  color: #059669;
+}
+
+.dashboard-kpi-trend-down .dashboard-kpi-trend-pct {
+  color: #dc2626;
+}
+
+.dashboard-kpi-trend-up .dashboard-kpi-trend-icon {
+  color: #059669;
+}
+
+.dashboard-kpi-trend-down .dashboard-kpi-trend-icon {
+  color: #dc2626;
+}
+
+.dashboard-kpi-trend-flat .dashboard-kpi-trend-pct {
+  color: var(--text-muted);
+}
+
+.dashboard-kpi-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.dashboard-skeleton-line {
+  display: block;
+  height: 10px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, rgba(148, 163, 184, 0.22) 0%, rgba(148, 163, 184, 0.38) 50%, rgba(148, 163, 184, 0.22) 100%);
+  background-size: 200% 100%;
+  animation: dashboard-shimmer 1.2s ease-in-out infinite;
+}
+
+.dashboard-kpi-primary .dashboard-skeleton-line {
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.28) 50%, rgba(255, 255, 255, 0.12) 100%);
+  background-size: 200% 100%;
+}
+
+.dashboard-skeleton-line-short {
+  width: 42%;
+}
+
+.dashboard-skeleton-line-value {
+  width: 55%;
+  height: 28px;
+}
+
+.dashboard-skeleton-line-trend {
+  width: 72%;
+  height: 9px;
+}
+
+.dashboard-skeleton-line-activity-title {
+  width: 70%;
+  height: 11px;
+}
+
+.dashboard-skeleton-line-activity-meta {
+  width: 45%;
+  height: 9px;
+}
+
+.dashboard-skeleton-table-cell {
+  display: block;
+  width: 100%;
+  max-width: 180px;
+  height: 11px;
+}
+
+.dashboard-skeleton-table-cell.short {
+  max-width: 72px;
+}
+
+@keyframes dashboard-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+.dashboard-secondary-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.dashboard-secondary-card {
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: #ffffff;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.05);
+}
+
+.dashboard-secondary-label {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.dashboard-secondary-card strong {
+  font-size: 22px;
+  letter-spacing: -0.02em;
+}
+
+.dashboard-secondary-card p {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.dashboard-charts-main-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.dashboard-charts-main-grid > .dashboard-panel {
+  grid-column: span 6;
+}
+
+.dashboard-chart-shell-medium {
+  height: 280px;
+}
+
+.dashboard-chart-shell-tall {
+  height: 320px;
+}
+
+.dashboard-chart-caption {
+  margin: 12px 0 0;
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.dashboard-split-row {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.dashboard-split-row > .dashboard-panel {
+  grid-column: span 6;
+}
+
+.dashboard-panel-content-tight {
+  padding: 14px 16px;
+}
+
+.dashboard-activity-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  max-height: min(420px, 52vh);
+  overflow-y: auto;
+}
+
+.dashboard-activity-row {
+  display: flex;
+  gap: 12px;
+  padding: 12px 4px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.dashboard-activity-row:last-child {
+  border-bottom: none;
+}
+
+.dashboard-activity-row-skeleton {
+  border-bottom-color: transparent;
+}
+
+.dashboard-activity-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-top: 6px;
+  flex-shrink: 0;
+  background: #94a3b8;
+}
+
+.dashboard-activity-dot[data-kind='application'] {
+  background: #2563eb;
+}
+
+.dashboard-activity-dot[data-kind='interview'] {
+  background: #0ea5e9;
+}
+
+.dashboard-activity-dot[data-kind='job'] {
+  background: #64748b;
+}
+
+.dashboard-activity-body {
+  min-width: 0;
+  flex: 1;
+}
+
+.dashboard-activity-title-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.dashboard-activity-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.dashboard-activity-kind {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.dashboard-activity-detail {
+  margin: 0 0 4px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dashboard-activity-time {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.dashboard-table-wrap {
+  overflow-x: auto;
+  max-height: min(420px, 52vh);
+  overflow-y: auto;
+}
+
+.dashboard-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.dashboard-table th {
+  text-align: left;
+  padding: 10px 12px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(248, 250, 252, 0.95);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.dashboard-table td {
+  padding: 12px;
+  vertical-align: top;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.dashboard-table-row-selected {
+  background: rgba(37, 99, 235, 0.06);
+}
+
+.dashboard-table-job-title {
+  display: block;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+  max-width: 100%;
+}
+
+.dashboard-table-job-title:hover {
+  color: #1d4ed8;
+}
+
+.dashboard-table-sub {
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.dashboard-table-muted {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.dashboard-table-actions {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.dashboard-link-table {
+  padding: 6px 10px;
+  font-size: 11px;
+}
+
 .dashboard-grid {
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
@@ -12098,6 +12509,11 @@ textarea.esign-pro-input {
   .dashboard-panel {
     grid-column: span 12;
   }
+
+  .dashboard-charts-main-grid > .dashboard-panel,
+  .dashboard-split-row > .dashboard-panel {
+    grid-column: span 12;
+  }
 }
 
 @media (max-width: 760px) {
@@ -12107,6 +12523,14 @@ textarea.esign-pro-input {
 
   .dashboard-kpi-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dashboard-kpi-grid-four {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dashboard-secondary-strip {
+    grid-template-columns: 1fr;
   }
 
   .dashboard-microstats {
@@ -12130,5 +12554,9 @@ textarea.esign-pro-input {
 
   .dashboard-insight-row {
     grid-template-columns: 1fr;
+  }
+
+  .dashboard-activity-detail {
+    white-space: normal;
   }
 }
