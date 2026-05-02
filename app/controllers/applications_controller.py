@@ -13,8 +13,15 @@ from app.controllers.base_controller import BaseController, before_action
 from app.controllers.concerns.authenticatable import Authenticatable
 from app.helpers.logger import get_logger
 from app.models.account_user import AccountUser
+from app.models.application import Application
+from app.services.access_control import (
+    application_list_access_mode,
+    can_mutate_application_fields,
+    effective_keys,
+)
 from app.services.application_service import ApplicationService
 from app.services.label_service import LABELABLE_APPLICATION, LabelService
+from app.services.permission_resolution_service import permission_key
 
 logger = get_logger(__name__)
 
@@ -35,24 +42,30 @@ class ApplicationsController(BaseController, Authenticatable):
 
     def index(self):
         account_id = self._account_id()
+        uid = self._user_id()
         job_id_raw = self.request.query_params.get("job_id")
         status = self.request.query_params.get("status")
         q = self.request.query_params.get("q")
         source_type = self.request.query_params.get("source_type")
         job_id = int(job_id_raw) if job_id_raw else None
+        mode = application_list_access_mode(self.db, account_id, int(uid), job_id)
+        if mode is None:
+            return self.render_error("Not allowed", status=403)
         result = ApplicationService(self.db).list_applications(
             account_id,
             job_id=job_id,
             status=status,
             q=q,
             source_type=source_type,
+            viewer_user_id=int(uid),
+            access_mode=mode,
         )
         return self.render_json(result["data"])
 
     def show(self):
         account_id = self._account_id()
         app_id = int(self.request.path_params["id"])
-        result = ApplicationService(self.db).get_application(account_id, app_id)
+        result = ApplicationService(self.db).get_application(account_id, app_id, viewer_user_id=int(self._user_id()))
         if not result["ok"]:
             return self.render_error(result["error"], status=404)
         return self.render_json(result["data"])
@@ -61,7 +74,9 @@ class ApplicationsController(BaseController, Authenticatable):
         account_id = self._account_id()
         app_id = int(self.request.path_params["id"])
         data = await self._get_body_json()
-        result = ApplicationService(self.db).update_application(account_id, app_id, data)
+        result = ApplicationService(self.db).update_application(
+            account_id, app_id, data, viewer_user_id=int(self._user_id())
+        )
         if not result["ok"]:
             return self.render_error(result["error"], status=422)
         return self.render_json(result["data"])
@@ -69,6 +84,11 @@ class ApplicationsController(BaseController, Authenticatable):
     async def update_labels(self):
         account_id = self._account_id()
         app_id = int(self.request.path_params["id"])
+        app = Application.find_by(self.db, id=app_id, account_id=account_id)
+        if not app or app.deleted_at or not can_mutate_application_fields(
+            self.db, account_id, int(self._user_id()), app
+        ):
+            return self.render_error("Application not found", status=404)
         body = await self._get_body_json()
         raw = body.get("label_ids")
         if not isinstance(raw, list):
@@ -86,6 +106,12 @@ class ApplicationsController(BaseController, Authenticatable):
 
     async def create(self):
         account_id = self._account_id()
+        uid = int(self._user_id())
+        keys = effective_keys(self.db, account_id, uid, None)
+        if permission_key("applications", "view_all") not in keys and permission_key(
+            "sourcing", "add_candidate"
+        ) not in keys:
+            return self.render_error("Not allowed", status=403)
         data = await self._get_body_json()
         result = ApplicationService(self.db).create_application(account_id, data)
         if not result["ok"]:
@@ -96,7 +122,9 @@ class ApplicationsController(BaseController, Authenticatable):
     def destroy(self):
         account_id = self._account_id()
         app_id = int(self.request.path_params["id"])
-        result = ApplicationService(self.db).delete_application(account_id, app_id)
+        result = ApplicationService(self.db).delete_application(
+            account_id, app_id, viewer_user_id=int(self._user_id())
+        )
         if not result["ok"]:
             return self.render_error(result["error"], status=404)
         return self.render_json(result["data"])

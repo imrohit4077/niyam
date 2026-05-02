@@ -32,6 +32,15 @@ class InterviewsController(BaseController, Authenticatable):
 
     def my_assignments(self):
         account_id = self._account_id()
+        self.require_any_permission(
+            [
+                ("interviews", "perform"),
+                ("interviews", "claim_assignment"),
+                ("interviews", "schedule"),
+                ("applications", "view_all"),
+            ],
+            account_id=account_id,
+        )
         user_id = self._user_id()
         q = self.request.query_params
         status = q.get("status")
@@ -60,6 +69,7 @@ class InterviewsController(BaseController, Authenticatable):
 
     def claim(self):
         account_id = self._account_id()
+        self.require_permission("interviews", "claim_assignment", account_id=account_id)
         assignment_id = int(self.request.path_params["assignment_id"])
         result = InterviewWorkflowService(self.db).claim_assignment(
             account_id, assignment_id, self._user_id()
@@ -70,6 +80,10 @@ class InterviewsController(BaseController, Authenticatable):
 
     def kit(self):
         account_id = self._account_id()
+        self.require_any_permission(
+            [("interviews", "perform"), ("interviews", "claim_assignment"), ("interviews", "schedule")],
+            account_id=account_id,
+        )
         assignment_id = int(self.request.path_params["assignment_id"])
         result = InterviewWorkflowService(self.db).get_kit_for_assignment(
             account_id, assignment_id
@@ -80,6 +94,7 @@ class InterviewsController(BaseController, Authenticatable):
 
     async def submit_scorecard(self):
         account_id = self._account_id()
+        self.require_permission("scorecards", "submit", account_id=account_id)
         user_id = self._user_id()
         assignment_id = int(self.request.path_params["assignment_id"])
         data = await self._get_body_json()
@@ -96,6 +111,10 @@ class InterviewsController(BaseController, Authenticatable):
 
     async def update_assignment(self):
         account_id = self._account_id()
+        self.require_any_permission(
+            [("interviews", "schedule"), ("jobs", "edit")],
+            account_id=account_id,
+        )
         assignment_id = int(self.request.path_params["assignment_id"])
         data = await self._get_body_json()
         result = InterviewWorkflowService(self.db).update_assignment(

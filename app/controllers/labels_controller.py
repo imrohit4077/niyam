@@ -21,10 +21,13 @@ class LabelsController(BaseController, Authenticatable):
         return au.account_id
 
     def index(self):
-        r = LabelService(self.db).list_labels(self._account_id())
+        account_id = self._account_id()
+        self.require_permission("jobs", "view", account_id=account_id)
+        r = LabelService(self.db).list_labels(account_id)
         return self.render_json(r["data"])
 
     async def create(self):
+        self.require_permission("jobs", "edit", account_id=self._account_id())
         body = await self._get_body_json()
         r = LabelService(self.db).create_label(self._account_id(), body)
         if not r["ok"]:
@@ -32,6 +35,7 @@ class LabelsController(BaseController, Authenticatable):
         return self.render_json(r["data"], status=201)
 
     async def update(self):
+        self.require_permission("jobs", "edit", account_id=self._account_id())
         lid = int(self.request.path_params["id"])
         body = await self._get_body_json()
         r = LabelService(self.db).update_label(self._account_id(), lid, body)
@@ -40,6 +44,7 @@ class LabelsController(BaseController, Authenticatable):
         return self.render_json(r["data"])
 
     def destroy(self):
+        self.require_permission("jobs", "edit", account_id=self._account_id())
         lid = int(self.request.path_params["id"])
         r = LabelService(self.db).delete_label(self._account_id(), lid)
         if not r["ok"]:

@@ -18,6 +18,12 @@ export interface UserData {
   updated_at: string
   account: { id: number; name: string; slug: string; plan: string | null } | null
   role: { id: number; name: string; slug: string } | null
+  /** Effective workspace permission keys from profile (e.g. `jobs:view`). */
+  permissions?: string[]
+  /** All workspace role slugs for this user (multi-role). */
+  role_slugs?: string[]
+  /** True when role is admin / superadmin / site_admin (full product surface). */
+  full_access?: boolean
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {

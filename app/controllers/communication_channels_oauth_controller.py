@@ -16,8 +16,8 @@ class CommunicationChannelsOauthController(BaseController, Authenticatable):
 
     @before_action
     def ensure_admin(self):
-        if self._role() not in ("admin", "superadmin"):
-            raise HTTPException(status_code=403, detail="Admin required")
+        account_id = self._account_id()
+        self.require_permission("settings", "integrations", account_id=account_id)
 
     def _account_id(self) -> int:
         user_id = self._user_id()

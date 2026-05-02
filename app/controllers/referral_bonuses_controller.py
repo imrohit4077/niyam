@@ -23,15 +23,15 @@ class ReferralBonusesController(BaseController, Authenticatable):
         return au.account_id
 
     def index(self):
-        self.require_admin()
         account_id = self._account_id()
+        self.require_permission("referrals", "manage", account_id=account_id)
         status = self.request.query_params.get("status")
         r = ReferralBonusService(self.db).list_bonuses(account_id, status=status)
         return self.render_json(r["data"])
 
     async def update(self):
-        self.require_admin()
         account_id = self._account_id()
+        self.require_permission("referrals", "manage", account_id=account_id)
         bonus_id = int(self.request.path_params["id"])
         body = await self._get_body_json()
         r = ReferralBonusService(self.db).update_bonus(account_id, bonus_id, body)
@@ -40,8 +40,8 @@ class ReferralBonusesController(BaseController, Authenticatable):
         return self.render_json(r["data"])
 
     def export_csv(self):
-        self.require_admin()
         account_id = self._account_id()
+        self.require_permission("referrals", "manage", account_id=account_id)
         csv_text = ReferralBonusService(self.db).export_csv(account_id)
         return PlainTextResponse(
             csv_text,

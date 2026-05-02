@@ -22,8 +22,8 @@ class ReferralsAdminController(BaseController, Authenticatable):
         return au.account_id
 
     def overview(self):
-        self.require_admin()
         account_id = self._account_id()
+        self.require_permission("referrals", "manage", account_id=account_id)
         r = ReferralAdminService(self.db).overview(account_id)
         if not r["ok"]:
             return self.render_error(r.get("error") or "Failed", status=500)

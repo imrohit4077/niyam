@@ -15,6 +15,7 @@ import {
 } from 'chart.js'
 import { Bar, Doughnut, Line } from 'react-chartjs-2'
 import type { DashboardOutletContext } from '../layouts/DashboardOutletContext'
+import { can } from '../permissions'
 import { jobsApi, type Job } from '../api/jobs'
 import { applicationsApi, type Application } from '../api/applications'
 import { interviewsApi, type InterviewAssignmentRow } from '../api/interviews'
@@ -155,6 +156,7 @@ function DashboardPanel({ title, children }: { title: string; children: ReactNod
 
 export default function HomeDashboardPage() {
   const { user, token, accountId } = useOutletContext<DashboardOutletContext>()
+  const canEditJobs = can(user, 'jobs', 'edit')
   const [jobs, setJobs] = useState<Job[]>([])
   const [jobsLoading, setJobsLoading] = useState(true)
   const [jobsError, setJobsError] = useState('')
@@ -582,9 +584,15 @@ export default function HomeDashboardPage() {
                             </button>
                             <div className="dashboard-job-meta">
                               <span>{job.open_positions ?? 0} openings</span>
-                              <Link className="dashboard-link" to={`/account/${accountId}/jobs/${job.id}/edit`}>
-                                Open job
-                              </Link>
+                              {canEditJobs ? (
+                                <Link className="dashboard-link" to={`/account/${accountId}/jobs/${job.id}/edit`}>
+                                  Open job
+                                </Link>
+                              ) : (
+                                <Link className="dashboard-link" to={`/account/${accountId}/jobs`}>
+                                  View jobs
+                                </Link>
+                              )}
                             </div>
                           </div>
                         ))}
@@ -629,11 +637,16 @@ export default function HomeDashboardPage() {
                       {selectedJob ? `${selectedJob.department ?? 'General'} • ${selectedJob.location ?? 'Location not set'}` : 'Pick a job to view analytics'}
                     </span>
                   </div>
-                  {selectedJob && (
-                    <Link className="dashboard-link" to={`/account/${accountId}/jobs/${selectedJob.id}/edit`}>
-                      Open job
-                    </Link>
-                  )}
+                  {selectedJob &&
+                    (canEditJobs ? (
+                      <Link className="dashboard-link" to={`/account/${accountId}/jobs/${selectedJob.id}/edit`}>
+                        Open job
+                      </Link>
+                    ) : (
+                      <Link className="dashboard-link" to={`/account/${accountId}/jobs`}>
+                        View jobs
+                      </Link>
+                    ))}
                 </div>
                 <DashboardDoughnutChart
                   slices={analyticsSlices}

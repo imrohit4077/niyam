@@ -32,15 +32,18 @@ class CustomAttributeDefinitionsController(BaseController, Authenticatable):
         return au.account_id
 
     def index(self):
+        account_id = self._account_id()
+        self.require_permission("jobs", "view", account_id=account_id)
         et = (self.request.query_params.get("entity_type") or "").strip()
         if not et:
             return self.render_error("entity_type query parameter is required (job or application)", status=422)
-        r = CustomAttributeService(self.db).list_definitions(self._account_id(), et)
+        r = CustomAttributeService(self.db).list_definitions(account_id, et)
         if not r["ok"]:
             return self.render_error(r["error"], 422)
         return self.render_json(r["data"])
 
     async def create(self):
+        self.require_permission("jobs", "edit", account_id=self._account_id())
         body = await self._get_body_json()
         r = CustomAttributeService(self.db).create_definition(self._account_id(), body)
         if not r["ok"]:
@@ -48,6 +51,7 @@ class CustomAttributeDefinitionsController(BaseController, Authenticatable):
         return self.render_json(r["data"], status=201)
 
     async def update(self):
+        self.require_permission("jobs", "edit", account_id=self._account_id())
         def_id = int(self.request.path_params["id"])
         body = await self._get_body_json()
         r = CustomAttributeService(self.db).update_definition(self._account_id(), def_id, body)
@@ -56,6 +60,7 @@ class CustomAttributeDefinitionsController(BaseController, Authenticatable):
         return self.render_json(r["data"])
 
     def destroy(self):
+        self.require_permission("jobs", "edit", account_id=self._account_id())
         def_id = int(self.request.path_params["id"])
         r = CustomAttributeService(self.db).delete_definition(self._account_id(), def_id)
         if not r["ok"]:

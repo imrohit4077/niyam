@@ -14,6 +14,9 @@ from app.models.account import Account
 from app.models.account_user import AccountUser
 from app.models.role import Role
 from app.models.account_user_role import AccountUserRole
+from app.models.permission import Permission
+from app.models.role_permission import RolePermission
+from app.models.job_team_member import JobTeamMember
 from app.models.job import Job
 from app.models.job_attachment import JobAttachment
 from app.models.job_version import JobVersion
@@ -44,6 +47,7 @@ from app.models.job_setup_flow_field import JobSetupFlowField
 __all__ = [
     "BaseModel", "Timestampable", "SoftDeletable", "Sluggable",
     "User", "Account", "AccountUser", "Role", "AccountUserRole",
+    "Permission", "RolePermission", "JobTeamMember",
     "Job", "JobAttachment", "JobVersion", "JobBoard", "JobPosting", "Application",
     "HiringPlan", "PipelineStage",
     "InterviewPlan", "InterviewKit", "InterviewAssignment", "InterviewScorecard",

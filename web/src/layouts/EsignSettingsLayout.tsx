@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { NavLink, Outlet, useLocation, useParams } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { esignApi } from '../api/esign'
+import { can } from '../permissions'
 
 const NAV = [
   {
@@ -67,9 +68,18 @@ function EsignNavIcon({ name }: { name: (typeof NAV)[number]['icon'] }) {
 export default function EsignSettingsLayout() {
   const { accountId } = useParams<{ accountId: string }>()
   const location = useLocation()
-  const { getToken } = useAuth()
+  const { user, getToken } = useAuth()
   const token = getToken()
   const base = `/account/${accountId}/settings/esign`
+
+  const esignNav = useMemo(
+    () =>
+      NAV.filter(item => {
+        if (item.path === 'rules' || item.path === 'advanced') return can(user, 'esign', 'manage')
+        return true
+      }),
+    [user],
+  )
 
   const isTemplateEditor = useMemo(
     () => /\/esign\/templates\/(new|\d+\/edit)(\/|$)/.test(location.pathname),
@@ -117,7 +127,7 @@ export default function EsignSettingsLayout() {
             <p className="esign-sidenav-lead">Offers, NDAs, and agreements signed in-app.</p>
           </div>
           <nav className="esign-sidenav-nav">
-            {NAV.map(item => (
+            {esignNav.map(item => (
               <NavLink
                 key={item.path}
                 to={`${base}/${item.path}`}

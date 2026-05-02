@@ -2,29 +2,12 @@ import { useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
+import { navItemVisible, type NavId } from '../permissions'
 
-export type SidebarPage =
-  | 'profile'
-  | 'jobs'
-  | 'hiring-plans'
-  | 'pipeline'
-  | 'job-applications'
-  | 'job-boards'
-  | 'postings'
-  | 'candidates'
-  | 'interviews'
-  | 'esign-documents'
-  | 'referrals'
-  | 'team'
-  | 'settings-general'
-  | 'settings-custom-fields'
-  | 'settings-labels'
-  | 'settings-communication-channels'
-  | 'settings-audit-compliance'
-  | 'settings-esign'
+export type SidebarPage = NavId
 
 interface NavItem {
-  id: SidebarPage
+  id: NavId
   label: string
   badge?: number
   icon: string
@@ -52,7 +35,7 @@ const NAV: NavItem[] = [
   { id: 'team', label: 'Team', icon: 'team', group: 'Workspace' },
 ]
 
-const PATH_SEGMENTS: Record<SidebarPage, string> = {
+const PATH_SEGMENTS: Record<NavId, string> = {
   profile: 'profile',
   jobs: 'jobs',
   'hiring-plans': 'hiring-plans',
@@ -189,14 +172,7 @@ export default function Sidebar({ accountId }: Props) {
   const { pathname } = useLocation()
   const { user } = useAuth()
 
-  const navItems = useMemo(() => {
-    const slug = user?.role?.slug?.toLowerCase()
-    const isAdmin = slug === 'admin' || slug === 'superadmin'
-    return NAV.filter(
-      item =>
-        (item.id !== 'settings-audit-compliance' && item.id !== 'settings-communication-channels') || isAdmin,
-    )
-  }, [user?.role?.slug])
+  const navItems = useMemo(() => NAV.filter(item => navItemVisible(user, item.id)), [user])
 
   const groups = navItems.reduce<Record<string, NavItem[]>>((acc, item) => {
     const g = item.group ?? 'Other'

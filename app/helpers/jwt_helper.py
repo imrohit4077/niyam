@@ -17,10 +17,16 @@ class JWTHelper:
     """Create and decode JWT access/refresh tokens."""
 
     @staticmethod
-    def create_access_token(user_id: int, email: str, role: str) -> str:
+    def create_access_token(
+        user_id: int,
+        email: str,
+        role: str,
+        *,
+        perms: list[str] | None = None,
+    ) -> str:
         """Create short-lived access token (e.g. 15 min)."""
         expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-        payload = {
+        payload: dict = {
             "sub": str(user_id),
             "email": email,
             "role": role,
@@ -28,6 +34,8 @@ class JWTHelper:
             "exp": expire,
             "iat": datetime.now(timezone.utc),
         }
+        if perms:
+            payload["perms"] = sorted(set(perms))
         return jwt.encode(
             payload,
             settings.JWT_SECRET_KEY,

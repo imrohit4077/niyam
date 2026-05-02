@@ -99,6 +99,7 @@ def draw_routes(app: "FastAPI") -> None:
     from app.controllers.auth_controller import AuthController
     from app.controllers.profile_controller import ProfileController
     from app.controllers.jobs_controller import JobsController
+    from app.controllers.job_team_members_controller import JobTeamMembersController
     from app.controllers.job_boards_controller import JobBoardsController
     from app.controllers.job_postings_controller import JobPostingsController
     from app.controllers.applications_controller import ApplicationsController
@@ -420,6 +421,22 @@ def draw_routes(app: "FastAPI") -> None:
         "/jobs/{job_id:int}/hiring_plan",
         _wrap(HiringPlansController, "show_for_job", lambda c: c.show_for_job()),
         methods=["GET"],
+    )
+
+    router.add_api_route(
+        "/jobs/{job_id:int}/hiring_team",
+        _wrap(JobTeamMembersController, "index_by_job", lambda c: c.index_by_job()),
+        methods=["GET"],
+    )
+    router.add_api_route(
+        "/jobs/{job_id:int}/hiring_team/members",
+        _wrap(JobTeamMembersController, "create_by_job", lambda c: c.create_by_job()),
+        methods=["POST"],
+    )
+    router.add_api_route(
+        "/jobs/{job_id:int}/hiring_team/members/{member_id:int}",
+        _wrap(JobTeamMembersController, "destroy", lambda c: c.destroy()),
+        methods=["DELETE"],
     )
 
     router.add_api_route(

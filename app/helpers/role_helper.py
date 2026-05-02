@@ -3,7 +3,21 @@ Resolve primary JWT/profile role when a user has multiple account roles.
 """
 
 # Lower index = higher privilege (first match wins for min()).
-_ROLE_PRIORITY: tuple[str, ...] = ("superadmin", "admin", "member")
+# Greenhouse-style workspace slugs; unknown slugs sort last.
+_ROLE_PRIORITY: tuple[str, ...] = (
+    "superadmin",
+    "site_admin",
+    "admin",
+    "job_admin",
+    "recruiter",
+    "hiring_manager",
+    "coordinator",
+    "approver",
+    "sourcer",
+    "interviewer",
+    "member",
+    "basic",
+)
 
 
 def highest_role_slug(slugs: list[str]) -> str:

@@ -20,12 +20,15 @@ class EsignStageRulesController(BaseController, Authenticatable):
         return au.account_id
 
     def index(self):
+        account_id = self._account_id()
+        self.require_permission("esign", "view", account_id=account_id)
         raw = self.request.query_params.get("job_id")
         job_id = int(raw) if raw else None
-        r = EsignRuleService(self.db).list_rules(self._account_id(), job_id=job_id)
+        r = EsignRuleService(self.db).list_rules(account_id, job_id=job_id)
         return self.render_json(r["data"])
 
     def show(self):
+        self.require_permission("esign", "view", account_id=self._account_id())
         rid = int(self.request.path_params["id"])
         r = EsignRuleService(self.db).get_rule(self._account_id(), rid)
         if not r["ok"]:
@@ -33,6 +36,7 @@ class EsignStageRulesController(BaseController, Authenticatable):
         return self.render_json(r["data"])
 
     async def create(self):
+        self.require_permission("esign", "manage", account_id=self._account_id())
         data = await self._get_body_json()
         r = EsignRuleService(self.db).create_rule(self._account_id(), data)
         if not r["ok"]:
@@ -40,6 +44,7 @@ class EsignStageRulesController(BaseController, Authenticatable):
         return self.render_json(r["data"], status=201)
 
     async def update(self):
+        self.require_permission("esign", "manage", account_id=self._account_id())
         rid = int(self.request.path_params["id"])
         data = await self._get_body_json()
         r = EsignRuleService(self.db).update_rule(self._account_id(), rid, data)
@@ -48,6 +53,7 @@ class EsignStageRulesController(BaseController, Authenticatable):
         return self.render_json(r["data"])
 
     def destroy(self):
+        self.require_permission("esign", "manage", account_id=self._account_id())
         rid = int(self.request.path_params["id"])
         r = EsignRuleService(self.db).delete_rule(self._account_id(), rid)
         if not r["ok"]:

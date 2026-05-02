@@ -78,7 +78,13 @@ export default function DashboardLayout() {
     [token, user, accountId],
   )
 
-  if (!user || !accountId) return null
+  if (!user || !accountId) {
+    return (
+      <div className="splash">
+        <div className="spinner" aria-label="Loading" />
+      </div>
+    )
+  }
 
   const home = `/account/${accountId}/profile`
 
