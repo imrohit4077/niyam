@@ -75,6 +75,11 @@ export default function DashboardLayout() {
   const jobEditorWizard =
     /^\/account\/\d+\/jobs\/new\/?$/.test(pathname) || /^\/account\/\d+\/jobs\/\d+\/edit/.test(pathname)
 
+  /** Role kickoff create/edit: light full-width canvas (form supplies card + footer). */
+  const roleKickoffFormCanvas =
+    /^\/account\/\d+\/jobs\/role-kickoff\/new\/?$/.test(pathname) ||
+    /^\/account\/\d+\/jobs\/role-kickoff\/\d+\/edit\/?$/.test(pathname)
+
   const ctx: DashboardOutletContext = useMemo(
     () => ({
       token,
@@ -138,7 +143,7 @@ export default function DashboardLayout() {
           ) : null}
 
           <div
-            className={`main-body${hideMainHeader ? ' main-body--flush-top' : ''}${jobEditorWizard ? ' main-body--job-editor-wizard' : ''}`}
+            className={`main-body${hideMainHeader ? ' main-body--flush-top' : ''}${jobEditorWizard ? ' main-body--job-editor-wizard' : ''}${roleKickoffFormCanvas ? ' main-body--role-kickoff-form' : ''}`}
           >
             <Outlet context={ctx} />
           </div>

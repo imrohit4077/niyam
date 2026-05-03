@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
-import { useNavigate, useOutletContext, useParams, useLocation, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useOutletContext, useParams, useLocation, useSearchParams } from 'react-router-dom'
 import { jobsApi, type Job, type JobAnalytics, type JobAttachment, type JobConfig, type JobReferralSettings } from '../api/jobs'
 import { referralsApi } from '../api/referrals'
 import { accountMembersApi, type AccountMember } from '../api/accountMembers'
 import { boardsApi, type JobBoard } from '../api/boards'
 import { pipelineStagesApi, type PipelineStage } from '../api/pipelineStages'
-import { interviewPlansApi, type InterviewPlan } from '../api/interviewPlans'
+import { hiringStageTemplatesApi, type HiringStageTemplateRow } from '../api/hiringStructure'
 import { useToast } from '../contexts/ToastContext'
 import type { DashboardOutletContext } from '../layouts/DashboardOutletContext'
 import RichTextEditor from '../components/RichTextEditor'
@@ -19,6 +19,7 @@ import {
   DEFAULT_ENABLED_JOB_SETUP_SECTIONS,
   DEFAULT_JOB_SETUP_FIELDS_BY_SECTION,
 } from '../constants/jobSetupSections'
+import { COMMON_CURRENCIES, normalizeCurrencyCode } from '../lib/currency'
 
 function normalizeOrgSettings(row: OrganizationSettings): OrganizationSettings {
   const catalog = Array.isArray(row.job_setup_catalog) ? row.job_setup_catalog : []
@@ -94,7 +95,7 @@ const ALL_STEP_DEFS: {
     label: 'Hiring team',
     short: 'Manager, recruiter, panel',
     railTitle: 'Ownership',
-    railBody: 'Clear owners for the req. Interview rounds and panel automation are configured in Interview setup.',
+    railBody: 'Clear owners for the req. Hiring stages (interview rounds) are configured after the job exists.',
   },
   {
     id: 'pipeline',
@@ -105,10 +106,11 @@ const ALL_STEP_DEFS: {
   },
   {
     id: 'interview',
-    label: 'Interview configuration',
-    short: 'Rounds, kits, duration, format',
-    railTitle: 'Structured interviews',
-    railBody: 'Round names, kits, duration, and online/offline format. Tie rounds to pipeline stages.',
+    label: 'Hiring stages',
+    short: 'Pipeline columns for this job',
+    railTitle: 'Hiring stages on this job',
+    railBody:
+      'Kanban stages for this requisition. When the job came from a role kickoff, stages match what the hiring manager proposed—you can still add, rename, reorder, or remove them.',
   },
   {
     id: 'evaluation',
@@ -348,33 +350,6 @@ function expandSkillEntries(raw: string[] | undefined): string[] {
 function sanitizeSalaryDigits(raw: string): string {
   return raw.replace(/\D/g, '')
 }
-
-/** ISO 4217-style 3-letter code for job salary currency. */
-function normalizeCurrencyCode(raw: string | undefined | null): string {
-  const t = (raw ?? 'USD').trim().toUpperCase().replace(/[^A-Z]/g, '')
-  if (t.length >= 3) return t.slice(0, 3)
-  return 'USD'
-}
-
-/** Common ISO codes; workspace default is merged in the UI. */
-const COMMON_CURRENCIES: readonly string[] = [
-  'USD',
-  'EUR',
-  'GBP',
-  'INR',
-  'CAD',
-  'AUD',
-  'CHF',
-  'JPY',
-  'SGD',
-  'HKD',
-  'NZD',
-  'SEK',
-  'NOK',
-  'MXN',
-  'BRL',
-  'ZAR',
-]
 
 function SkillsMatchingImpact({ requiredCount, niceCount }: { requiredCount: number; niceCount: number }) {
   const max = 20
@@ -764,28 +739,6 @@ function JobScorecardCriteriaEditor({ token, jobId }: { token: string; jobId: nu
   )
 }
 
-function SignalModelStrip() {
-  const items = [
-    { k: 'Plan', d: 'Rounds per job, ordered and optionally tied to a pipeline stage.' },
-    { k: 'Kit', d: 'Focus area, interviewer notes, and structured questions for that round.' },
-    { k: 'Assignments', d: 'Created when candidates enter a linked stage—who interviews whom.' },
-    { k: 'Scorecards', d: 'Structured outcomes (criteria + recommendation) after the interview.' },
-  ]
-  return (
-    <div className="signal-model-strip" aria-label="Interview data model">
-      {items.map((it, i) => (
-        <div key={it.k} className="signal-model-strip-item">
-          {i > 0 && <span className="signal-model-strip-arrow" aria-hidden />}
-          <div className="signal-model-strip-card">
-            <span className="signal-model-strip-key">{it.k}</span>
-            <p className="signal-model-strip-desc">{it.d}</p>
-          </div>
-        </div>
-      ))}
-    </div>
-  )
-}
-
 function PipelineStageRulesSection({ token, jobId }: { token: string; jobId: number }) {
   const toast = useToast()
   const [stages, setStages] = useState<PipelineStage[]>([])
@@ -867,326 +820,317 @@ function PipelineStageRulesSection({ token, jobId }: { token: string; jobId: num
   )
 }
 
-function InterviewPanelSection({
+function stageTemplateIdFromRules(rules: Record<string, unknown>): number | null {
+  const sh = rules.structured_hiring
+  if (!sh || typeof sh !== 'object') return null
+  const tid = (sh as { stage_template_id?: unknown }).stage_template_id
+  if (typeof tid === 'number' && Number.isFinite(tid)) return tid
+  if (typeof tid === 'string' && tid.trim()) {
+    const n = Number(tid)
+    return Number.isFinite(n) ? n : null
+  }
+  return null
+}
+
+function HiringStagesSection({
   token,
   jobId,
-  interviewDefaults,
-  setInterviewDefaults,
+  accountId,
+  kickoffContext,
 }: {
   token: string
   jobId: number
-  interviewDefaults: NonNullable<JobConfig['interview_defaults']>
-  setInterviewDefaults: (p: NonNullable<JobConfig['interview_defaults']>) => void
+  accountId: string
+  kickoffContext: { kickoffId: number; stageNames: string[] } | null
 }) {
   const toast = useToast()
   const [stages, setStages] = useState<PipelineStage[]>([])
-  const [plans, setPlans] = useState<InterviewPlan[]>([])
+  const [templates, setTemplates] = useState<HiringStageTemplateRow[]>([])
   const [loading, setLoading] = useState(true)
-  const [selectedId, setSelectedId] = useState<number | null>(null)
-  const [newName, setNewName] = useState('')
-  const [newStageId, setNewStageId] = useState<string>('')
-  const [kitFocus, setKitFocus] = useState('')
-  const [kitInstructions, setKitInstructions] = useState('')
-  const [kitQuestions, setKitQuestions] = useState('')
-  const [planDuration, setPlanDuration] = useState('')
-  const [planFormat, setPlanFormat] = useState('online')
-  const [savingKit, setSavingKit] = useState(false)
-  const [savingPlanMeta, setSavingPlanMeta] = useState(false)
+  const [addName, setAddName] = useState('')
+  const [addTemplateId, setAddTemplateId] = useState('')
+  const [editingId, setEditingId] = useState<number | null>(null)
+  const [editName, setEditName] = useState('')
+  const [busy, setBusy] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const [st, pl] = await Promise.all([
+      const [st, tpls] = await Promise.all([
         pipelineStagesApi.listByJob(token, jobId),
-        interviewPlansApi.list(token, jobId),
+        hiringStageTemplatesApi.list(token).catch(() => [] as HiringStageTemplateRow[]),
       ])
-      setStages(st.sort((a, b) => a.position - b.position))
-      setPlans(pl)
+      setStages(st.sort((a, b) => a.position - b.position || a.id - b.id))
+      setTemplates(Array.isArray(tpls) ? tpls : [])
     } catch (e: unknown) {
-      toast.error('Failed to load interview setup', e instanceof Error ? e.message : 'Error')
+      toast.error('Failed to load hiring stages', e instanceof Error ? e.message : 'Error')
     } finally {
       setLoading(false)
     }
   }, [token, jobId, toast])
 
   useEffect(() => {
-    load()
+    void load()
   }, [load])
 
-  const selected = plans.find(p => p.id === selectedId) ?? null
-
-  useEffect(() => {
-    if (!selected) {
-      setKitFocus('')
-      setKitInstructions('')
-      setKitQuestions('')
-      setPlanDuration('')
-      setPlanFormat('online')
-      return
-    }
-    const k = selected.kit
-    setKitFocus(k?.focus_area ?? '')
-    setKitInstructions(k?.instructions ?? '')
-    const qs = k?.questions
-    setKitQuestions(
-      Array.isArray(qs) ? qs.map(q => (typeof q === 'string' ? q : JSON.stringify(q))).join('\n') : '',
-    )
-    setPlanDuration(selected.duration_minutes != null ? String(selected.duration_minutes) : '')
-    setPlanFormat(selected.interview_format || 'online')
-  }, [selected])
-
-  const stageName = (id: number | null) => {
-    if (id == null) return 'Not linked'
-    return stages.find(s => s.id === id)?.name ?? `Stage #${id}`
-  }
-
-  const addRound = async () => {
-    const name = newName.trim()
-    if (!name) {
-      toast.error('Add a round name', 'e.g. Technical deep-dive')
-      return
-    }
+  const applyReorder = async (ordered: PipelineStage[]) => {
+    if (ordered.length === 0) return
+    setBusy(true)
     try {
-      await interviewPlansApi.create(token, jobId, {
-        name,
-        pipeline_stage_id: newStageId ? Number(newStageId) : null,
-        duration_minutes: interviewDefaults.default_duration_minutes ?? null,
-        interview_format: interviewDefaults.default_format ?? null,
-      })
-      setNewName('')
-      setNewStageId('')
-      toast.success('Round added', name)
-      load()
+      await pipelineStagesApi.reorder(token, jobId, ordered.map(s => s.id))
+      await load()
     } catch (e: unknown) {
-      toast.error('Could not add round', e instanceof Error ? e.message : 'Error')
+      toast.error('Reorder failed', e instanceof Error ? e.message : 'Error')
+    } finally {
+      setBusy(false)
     }
   }
 
-  const removePlan = async (p: InterviewPlan) => {
-    if (!confirm(`Delete interview round "${p.name}"? Assignments for this round will be removed.`)) return
+  const move = async (index: number, dir: -1 | 1) => {
+    const j = index + dir
+    if (j < 0 || j >= stages.length) return
+    const next = [...stages]
+    const t = next[index]!
+    next[index] = next[j]!
+    next[j] = t
+    await applyReorder(next)
+  }
+
+  const addStage = async () => {
+    const tplId = addTemplateId ? Number(addTemplateId) : NaN
+    const tpl = Number.isFinite(tplId) ? templates.find(t => t.id === tplId) : undefined
+    const name = (tpl?.name ?? addName).trim()
+    if (!name) {
+      toast.error('Stage name required', 'Enter a name or pick a structured hiring template.')
+      return
+    }
+    let automation_rules: Record<string, unknown> = {}
+    if (tpl) {
+      automation_rules = {
+        structured_hiring: {
+          stage_template_id: tpl.id,
+          focus_attribute_ids: [...(tpl.default_attribute_ids ?? [])],
+          default_interviewer_user_ids: [...(tpl.default_interviewer_user_ids ?? [])],
+        },
+      }
+    }
+    setBusy(true)
     try {
-      await interviewPlansApi.delete(token, jobId, p.id)
-      if (selectedId === p.id) setSelectedId(null)
-      toast.success('Round removed', p.name)
-      load()
+      await pipelineStagesApi.create(token, jobId, { name, automation_rules })
+      setAddName('')
+      setAddTemplateId('')
+      toast.success('Stage added', name)
+      await load()
+    } catch (e: unknown) {
+      toast.error('Could not add stage', e instanceof Error ? e.message : 'Error')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const startEdit = (s: PipelineStage) => {
+    setEditingId(s.id)
+    setEditName(s.name)
+  }
+
+  const saveEdit = async () => {
+    if (editingId == null) return
+    const n = editName.trim()
+    if (!n) {
+      toast.error('Name required', '')
+      return
+    }
+    setBusy(true)
+    try {
+      await pipelineStagesApi.update(token, editingId, { name: n })
+      setEditingId(null)
+      toast.success('Stage updated', n)
+      await load()
+    } catch (e: unknown) {
+      toast.error('Update failed', e instanceof Error ? e.message : 'Error')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const removeStage = async (s: PipelineStage) => {
+    if (
+      !confirm(
+        `Delete pipeline stage “${s.name}”? Any interview plans or rules linked to this stage may need to be updated elsewhere.`,
+      )
+    )
+      return
+    setBusy(true)
+    try {
+      await pipelineStagesApi.delete(token, s.id)
+      if (editingId === s.id) setEditingId(null)
+      toast.success('Stage removed', s.name)
+      await load()
     } catch (e: unknown) {
       toast.error('Delete failed', e instanceof Error ? e.message : 'Error')
-    }
-  }
-
-  const savePlanMeta = async () => {
-    if (!selected) return
-    setSavingPlanMeta(true)
-    try {
-      const dm = planDuration.trim() === '' ? null : Number(planDuration)
-      await interviewPlansApi.update(token, jobId, selected.id, {
-        duration_minutes: dm != null && !Number.isNaN(dm) ? dm : null,
-        interview_format: planFormat || null,
-      })
-      toast.success('Round settings saved', selected.name)
-      load()
-    } catch (e: unknown) {
-      toast.error('Save failed', e instanceof Error ? e.message : 'Error')
     } finally {
-      setSavingPlanMeta(false)
-    }
-  }
-
-  const saveKit = async () => {
-    if (!selected) return
-    const questions = kitQuestions
-      .split('\n')
-      .map(s => s.trim())
-      .filter(Boolean)
-    setSavingKit(true)
-    try {
-      await interviewPlansApi.putKit(token, jobId, selected.id, {
-        focus_area: kitFocus || null,
-        instructions: kitInstructions || null,
-        questions,
-      })
-      toast.success('Interview kit saved', selected.name)
-      load()
-    } catch (e: unknown) {
-      toast.error('Kit save failed', e instanceof Error ? e.message : 'Error')
-    } finally {
-      setSavingKit(false)
+      setBusy(false)
     }
   }
 
   if (loading) {
     return (
       <div className="job-step-body">
-        <p className="job-editor-step-lead">Configure rounds, duration, format, and kits for this job.</p>
-        <div className="job-editor-loading">Loading interview setup…</div>
+        <p className="job-editor-step-lead">Loading pipeline hiring stages…</p>
+        <div className="job-editor-loading">Loading…</div>
       </div>
     )
   }
 
   return (
     <div className="job-step-body job-step-body--interview">
-      <div className="job-editor-card job-editor-card--accent" style={{ marginBottom: 16 }}>
-        <h3 className="job-editor-card-title">Defaults for new rounds</h3>
-        <p className="job-card-microcopy">Applied when you add a round below (you can override per round).</p>
+      <p className="job-editor-step-lead">
+        These are the Kanban columns for this job. Add stages from your structured hiring templates or with a custom
+        name, then reorder, rename, or remove as needed.
+      </p>
+
+      {kickoffContext ? (
+        <div className="job-editor-callout job-editor-callout--info" style={{ marginBottom: 16 }}>
+          <p className="job-editor-callout-title">From role kickoff</p>
+          <p className="job-editor-step-lead" style={{ marginBottom: 8 }}>
+            The hiring manager’s proposed flow was used to create the stages below. Recruiters and hiring managers with
+            job edit access can change this list anytime.
+          </p>
+          {kickoffContext.stageNames.length > 0 ? (
+            <ol className="job-kickoff-stage-list">
+              {kickoffContext.stageNames.map((n, i) => (
+                <li key={`${n}-${i}`}>{n}</li>
+              ))}
+            </ol>
+          ) : null}
+          <p style={{ margin: '10px 0 0', fontSize: 13 }}>
+            <Link to={`/account/${accountId}/jobs/role-kickoff/${kickoffContext.kickoffId}`}>Open role kickoff</Link>
+          </p>
+        </div>
+      ) : null}
+
+      <div className="job-editor-card" style={{ marginBottom: 16 }}>
+        <h3 className="job-editor-card-title">Stages</h3>
+        {stages.length === 0 ? (
+          <p className="job-editor-muted">No stages yet. Add a stage below.</p>
+        ) : (
+          <ul className="job-hiring-stages-list">
+            {stages.map((s, i) => {
+              const tid = stageTemplateIdFromRules((s.automation_rules || {}) as Record<string, unknown>)
+              const tplLabel = tid != null ? templates.find(t => t.id === tid)?.name ?? `Template #${tid}` : null
+              return (
+                <li key={s.id} className="job-hiring-stages-row">
+                  <span className="job-hiring-stages-idx">{i + 1}</span>
+                  <div className="job-hiring-stages-main">
+                    {editingId === s.id ? (
+                      <input
+                        className="job-editor-input"
+                        value={editName}
+                        onChange={e => setEditName(e.target.value)}
+                        aria-label="Stage name"
+                      />
+                    ) : (
+                      <strong>{s.name}</strong>
+                    )}
+                    {tplLabel ? <span className="job-hiring-stages-badge">{tplLabel}</span> : null}
+                  </div>
+                  <div className="job-hiring-stages-actions">
+                    {editingId === s.id ? (
+                      <>
+                        <button type="button" className="btn-primary" disabled={busy} onClick={() => void saveEdit()}>
+                          Save
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-row-action"
+                          disabled={busy}
+                          onClick={() => {
+                            setEditingId(null)
+                            setEditName('')
+                          }}
+                        >
+                          Cancel
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button type="button" className="btn-row-action" disabled={busy} onClick={() => startEdit(s)}>
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-row-action"
+                          disabled={busy || i === 0}
+                          onClick={() => void move(i, -1)}
+                          aria-label="Move up"
+                        >
+                          ↑
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-row-action"
+                          disabled={busy || i === stages.length - 1}
+                          onClick={() => void move(i, 1)}
+                          aria-label="Move down"
+                        >
+                          ↓
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-row-action btn-row-danger"
+                          disabled={busy}
+                          onClick={() => void removeStage(s)}
+                        >
+                          Delete
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </li>
+              )
+            })}
+          </ul>
+        )}
+      </div>
+
+      <div className="job-editor-card job-editor-card--accent">
+        <h3 className="job-editor-card-title">Add stage</h3>
+        <p className="job-card-microcopy">
+          Optionally start from a <strong>structured hiring</strong> template (same catalog as role kickoff), or enter
+          a custom name only.
+        </p>
         <div className="job-editor-grid-2">
-          <JobEditorField label="Default duration (minutes)">
-            <input
-              className="job-editor-input"
-              type="number"
-              min={5}
-              value={interviewDefaults.default_duration_minutes ?? ''}
-              onChange={e =>
-                setInterviewDefaults({
-                  ...interviewDefaults,
-                  default_duration_minutes: e.target.value === '' ? undefined : Number(e.target.value),
-                })
-              }
-              placeholder="45"
-            />
-          </JobEditorField>
-          <JobEditorField label="Default format">
+          <JobEditorField label="From template (optional)">
             <select
               className="job-editor-select"
-              value={interviewDefaults.default_format ?? 'online'}
-              onChange={e => setInterviewDefaults({ ...interviewDefaults, default_format: e.target.value })}
+              value={addTemplateId}
+              onChange={e => {
+                const v = e.target.value
+                setAddTemplateId(v)
+                const t = v ? templates.find(x => String(x.id) === v) : undefined
+                if (t?.name) setAddName(t.name)
+              }}
             >
-              <option value="online">Online</option>
-              <option value="onsite">On-site</option>
-              <option value="hybrid">Hybrid</option>
-            </select>
-          </JobEditorField>
-        </div>
-        <JobEditorField label="Calendar integration note" hint="e.g. Google Workspace cal, scheduling link policy.">
-          <textarea
-            className="job-editor-input"
-            style={{ minHeight: 72 }}
-            value={interviewDefaults.calendar_integration_note ?? ''}
-            onChange={e =>
-              setInterviewDefaults({ ...interviewDefaults, calendar_integration_note: e.target.value })
-            }
-            placeholder="Book via Calendly / require hiring coordinator…"
-          />
-        </JobEditorField>
-      </div>
-
-      <div className="job-interview-intro">
-        <h2 className="job-editor-block-title job-interview-intro-title">Signal map</h2>
-        <p className="job-editor-step-lead">
-          Each round tests one signal. Link a round to a Kanban stage so the right interview is triggered when someone
-          moves.
-        </p>
-        <SignalModelStrip />
-      </div>
-
-      <div className="signal-map" aria-label="Interview rounds">
-        {plans.length === 0 && (
-          <div className="signal-map-empty">
-            <strong>No rounds yet.</strong> Add a plan below—then attach duration, format, and kit.
-          </div>
-        )}
-        {plans
-          .slice()
-          .sort((a, b) => a.position - b.position || a.id - b.id)
-          .map((p, i) => (
-            <div key={p.id} className="signal-map-chain">
-              {i > 0 && (
-                <span className="signal-map-arrow" aria-hidden="true">
-                  →
-                </span>
-              )}
-              <button
-                type="button"
-                className={`signal-card ${selectedId === p.id ? 'signal-card-active' : ''}`}
-                onClick={() => setSelectedId(p.id === selectedId ? null : p.id)}
-              >
-                <div className="signal-card-name">{p.name}</div>
-                <div className="signal-card-meta">{stageName(p.pipeline_stage_id)}</div>
-                {p.duration_minutes != null && (
-                  <div className="signal-card-focus">{p.duration_minutes} min · {p.interview_format || '—'}</div>
-                )}
-                {p.kit?.focus_area && <div className="signal-card-focus">{p.kit.focus_area}</div>}
-              </button>
-            </div>
-          ))}
-      </div>
-
-      <div className="job-editor-grid-2 job-editor-grid-2--interview">
-        <div className="job-editor-card job-editor-card--accent">
-          <h3 className="job-editor-card-title">Add a round</h3>
-          <FormField label="Round name *">
-            <input
-              value={newName}
-              onChange={e => setNewName(e.target.value)}
-              placeholder="e.g. Technical, HR, Manager"
-            />
-          </FormField>
-          <FormField label="When candidate reaches stage">
-            <select value={newStageId} onChange={e => setNewStageId(e.target.value)}>
-              <option value="">Not linked</option>
-              {stages.map(s => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
+              <option value="">— Custom name only —</option>
+              {templates.map(t => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
                 </option>
               ))}
             </select>
-          </FormField>
-          <button type="button" className="btn-primary" onClick={addRound}>
-            Add round
-          </button>
+          </JobEditorField>
+          <JobEditorField label="Stage name">
+            <input
+              className="job-editor-input"
+              value={addName}
+              onChange={e => setAddName(e.target.value)}
+              placeholder="e.g. Technical interview"
+            />
+          </JobEditorField>
         </div>
-
-        <div className={`job-editor-card ${selected ? 'job-editor-card--accent' : ''}`}>
-          <h3 className="job-editor-card-title">Round settings & kit</h3>
-          {!selected && (
-            <p className="job-editor-muted job-editor-muted--boxed">Select a round in the map to edit duration, format, and kit.</p>
-          )}
-          {selected && (
-            <>
-              <div className="job-editor-card-actions">
-                <button type="button" className="btn-row-action btn-row-danger" onClick={() => removePlan(selected)}>
-                  Delete this round
-                </button>
-              </div>
-              <div className="job-editor-grid-2">
-                <FormField label="Duration (minutes)">
-                  <input
-                    type="number"
-                    min={5}
-                    value={planDuration}
-                    onChange={e => setPlanDuration(e.target.value)}
-                    placeholder="60"
-                  />
-                </FormField>
-                <FormField label="Interview type">
-                  <select value={planFormat} onChange={e => setPlanFormat(e.target.value)}>
-                    <option value="online">Online</option>
-                    <option value="onsite">On-site</option>
-                    <option value="hybrid">Hybrid</option>
-                  </select>
-                </FormField>
-              </div>
-              <button type="button" className="btn-primary" onClick={savePlanMeta} disabled={savingPlanMeta} style={{ marginBottom: 12 }}>
-                {savingPlanMeta ? 'Saving…' : 'Save round settings'}
-              </button>
-              <FormField label="Focus area">
-                <input
-                  value={kitFocus}
-                  onChange={e => setKitFocus(e.target.value)}
-                  placeholder="e.g. Problem solving & architecture"
-                />
-              </FormField>
-              <FormField label="Interviewer instructions">
-                <textarea value={kitInstructions} onChange={e => setKitInstructions(e.target.value)} rows={3} />
-              </FormField>
-              <FormField label="Questions (one per line)">
-                <textarea value={kitQuestions} onChange={e => setKitQuestions(e.target.value)} rows={6} />
-              </FormField>
-              <button type="button" className="btn-primary" onClick={saveKit} disabled={savingKit}>
-                {savingKit ? 'Saving…' : 'Save kit'}
-              </button>
-            </>
-          )}
-        </div>
+        <button type="button" className="btn-primary" disabled={busy} onClick={() => void addStage()}>
+          Add stage
+        </button>
       </div>
     </div>
   )
@@ -1492,6 +1436,15 @@ export default function JobEditorPage() {
   const jobsBase = `/account/${accountId}/jobs`
   const numericId = isNew ? null : editJobId
   const hasPostCreateSteps = numericId != null && !Number.isNaN(numericId) && numericId > 0
+  const hiringStagesKickoffContext = useMemo(() => {
+    const kid = job?.role_kickoff_request_id
+    if (kid == null || kid === undefined) return null
+    const stages = job?.job_config?.structured_hiring?.stages
+    const names = Array.isArray(stages)
+      ? stages.map((s, i) => String((s as { name?: string })?.name ?? `Stage ${i + 1}`))
+      : []
+    return { kickoffId: kid, stageNames: names }
+  }, [job?.role_kickoff_request_id, job?.job_config?.structured_hiring])
   const enabledStepIds = orgSettings?.enabled_job_setup_sections ?? DEFAULT_ENABLED_JOB_SETUP_SECTIONS
   const enabledFieldMap: Record<string, string[]> =
     orgSettings?.enabled_job_setup_fields ?? DEFAULT_JOB_SETUP_FIELDS_BY_SECTION
@@ -1806,10 +1759,6 @@ export default function JobEditorPage() {
     } finally {
       setSavingJobLabels(false)
     }
-  }
-
-  const setInterviewDefaults = (p: NonNullable<JobConfig['interview_defaults']>) => {
-    setJobConfig(c => ({ ...c, interview_defaults: p }))
   }
 
   const fetchMyReferralLink = async () => {
@@ -2663,8 +2612,8 @@ export default function JobEditorPage() {
                     </JobEditorField>
                   </div>
                   <p className="job-editor-step-lead">
-                    Interview panel and rounds are configured in <strong>Interview configuration</strong> after the job
-                    exists—plans, kits, and assignments tie to this <code>job_id</code>.
+                    After the job exists, configure <strong>Hiring stages</strong> (interview rounds, kits, and links to
+                    pipeline stages). Assignments use this <code>job_id</code>.
                   </p>
                   {renderSectionCustomFields('hiring_team')}
                 </section>
@@ -2679,11 +2628,11 @@ export default function JobEditorPage() {
 
               {stepId === 'interview' && hasPostCreateSteps && isSectionFieldEnabled('interview', 'main') && (
                 <section className="job-step-pane">
-                  <InterviewPanelSection
+                  <HiringStagesSection
                     token={token}
                     jobId={numericId!}
-                    interviewDefaults={jobConfig.interview_defaults || {}}
-                    setInterviewDefaults={setInterviewDefaults}
+                    accountId={accountId}
+                    kickoffContext={hiringStagesKickoffContext}
                   />
                   {renderSectionCustomFields('interview')}
                 </section>

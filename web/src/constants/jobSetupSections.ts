@@ -21,7 +21,7 @@ export const JOB_SETUP_SECTIONS: { id: JobSetupSectionId; label: string }[] = [
   { id: 'referral', label: 'Employee referrals' },
   { id: 'hiring_team', label: 'Hiring team' },
   { id: 'pipeline', label: 'Hiring pipeline' },
-  { id: 'interview', label: 'Interview configuration' },
+  { id: 'interview', label: 'Hiring stages' },
   { id: 'evaluation', label: 'Evaluation & scorecards' },
   { id: 'posting', label: 'Posting & visibility' },
   { id: 'automation', label: 'Automation & AI' },
