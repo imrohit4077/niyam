@@ -1,6 +1,10 @@
 # Niyam ATS
 
 <p align="center">
+  <img src="docs/readme/niyam-wordmark-dark.png" alt="Niyam ATS" width="360" />
+</p>
+
+<p align="center">
   <strong>Open-source applicant tracking system for modern hiring teams.</strong>
 </p>
 
