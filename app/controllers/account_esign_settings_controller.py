@@ -20,14 +20,18 @@ class AccountEsignSettingsController(BaseController, Authenticatable):
         return au.account_id
 
     def show(self):
-        r = EsignSettingsService(self.db).get_settings(self._account_id())
+        account_id = self._account_id()
+        self.require_permission("esign", "view", account_id=account_id)
+        r = EsignSettingsService(self.db).get_settings(account_id)
         if not r["ok"]:
             return self.render_error(r["error"], 404)
         return self.render_json(r["data"])
 
     async def update(self):
+        account_id = self._account_id()
+        self.require_permission("esign", "manage", account_id=account_id)
         data = await self._get_body_json()
-        r = EsignSettingsService(self.db).update_settings(self._account_id(), data)
+        r = EsignSettingsService(self.db).update_settings(account_id, data)
         if not r["ok"]:
             return self.render_error(r["error"], 422)
         return self.render_json(r["data"])

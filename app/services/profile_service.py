@@ -14,6 +14,7 @@ from app.models.account import Account
 from app.helpers.logger import get_logger
 from app.helpers.role_helper import highest_role_slug
 from app.services.base_service import BaseService
+from app.services.permission_resolution_service import PermissionResolutionService
 
 logger = get_logger(__name__)
 
@@ -55,12 +56,21 @@ class ProfileService(BaseService):
                 "name": role.name,
                 "slug": role.slug,
             } if role else None
+            profile["role_slugs"] = [r.slug for r in roles]
+            perm_keys = sorted(
+                PermissionResolutionService(self.db).workspace_keys_for_account_user(au.id)
+            )
+            profile["permissions"] = perm_keys
+            profile["full_access"] = best_slug in ("admin", "superadmin", "site_admin")
             logger.debug(
                 f"ProfileService.get_profile — account={account.slug if account else None} role={role.slug if role else None}"
             )
         else:
             profile["account"] = None
             profile["role"] = None
+            profile["role_slugs"] = []
+            profile["permissions"] = []
+            profile["full_access"] = False
             logger.debug(f"ProfileService.get_profile — no account membership for user_id={user_id}")
 
         return self.success(profile)

@@ -1,4 +1,7 @@
+import { useMemo } from 'react'
 import { NavLink, Outlet, useParams } from 'react-router-dom'
+import { useAuth } from '../auth/AuthContext'
+import { canAny } from '../permissions'
 
 const NAV = [
   { path: 'organization', label: 'Organization', desc: 'Company, locale & timezone' },
@@ -12,7 +15,17 @@ const NAV = [
 
 export default function GeneralSettingsLayout() {
   const { accountId } = useParams<{ accountId: string }>()
+  const { user } = useAuth()
   const base = `/account/${accountId}/settings/general`
+
+  const generalNav = useMemo(
+    () =>
+      NAV.filter(item => {
+        if (item.path === 'referrals') return canAny(user, [['referrals', 'view'], ['referrals', 'manage']])
+        return true
+      }),
+    [user],
+  )
 
   return (
     <div className="esign-shell general-settings-shell">
@@ -24,7 +37,7 @@ export default function GeneralSettingsLayout() {
             <p className="esign-sidenav-lead">Workspace profile, branding, and regional defaults.</p>
           </div>
           <nav className="esign-sidenav-nav">
-            {NAV.map(item => (
+            {generalNav.map(item => (
               <NavLink
                 key={item.path}
                 to={`${base}/${item.path}`}

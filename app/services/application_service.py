@@ -1,8 +1,9 @@
 """ApplicationService — candidate applications CRUD + stage management."""
 from datetime import datetime, timezone
-from sqlalchemy import select
+from sqlalchemy import exists, or_, select
 
 from app.helpers.pg_search import application_search_predicate, normalize_q
+from app.models.interview_assignment import InterviewAssignment
 from app.models.application import Application
 from app.models.job import Job
 from app.models.pipeline_stage import PipelineStage
@@ -138,6 +139,9 @@ class ApplicationService(BaseService):
         status: str | None = None,
         q: str | None = None,
         source_type: str | None = None,
+        *,
+        viewer_user_id: int | None = None,
+        access_mode: str = "all",
     ) -> dict:
         stmt = select(Application).where(
             Application.account_id == account_id,
@@ -145,6 +149,17 @@ class ApplicationService(BaseService):
         )
         if job_id:
             stmt = stmt.where(Application.job_id == job_id)
+        if access_mode == "assigned" and viewer_user_id is not None:
+            stmt = stmt.where(
+                or_(
+                    Application.assigned_to == viewer_user_id,
+                    exists().where(
+                        InterviewAssignment.application_id == Application.id,
+                        InterviewAssignment.account_id == account_id,
+                        InterviewAssignment.interviewer_id == viewer_user_id,
+                    ),
+                )
+            )
         if status:
             stmt = stmt.where(Application.status == status)
         if source_type:
@@ -166,10 +181,15 @@ class ApplicationService(BaseService):
         out = [{**a.to_dict(), "labels": lbl_map.get(a.id, [])} for a in apps]
         return self.success(out)
 
-    def get_application(self, account_id: int, app_id: int) -> dict:
+    def get_application(self, account_id: int, app_id: int, viewer_user_id: int | None = None) -> dict:
         app = Application.find_by(self.db, id=app_id, account_id=account_id)
         if not app or app.deleted_at:
             return self.failure("Application not found")
+        if viewer_user_id is not None:
+            from app.services.access_control import can_read_application
+
+            if not can_read_application(self.db, account_id, viewer_user_id, app):
+                return self.failure("Application not found")
         return self.success(_application_dict_with_labels(self.db, account_id, app))
 
     def create_application(self, account_id: int, data: dict) -> dict:
@@ -249,6 +269,12 @@ class ApplicationService(BaseService):
         app = Application.find_by(self.db, id=app_id, account_id=account_id)
         if not app or app.deleted_at:
             return self.failure("Application not found")
+        from app.services.access_control import can_move_application_stage, can_read_application
+
+        if not can_read_application(self.db, account_id, user_id, app):
+            return self.failure("Application not found")
+        if not can_move_application_stage(self.db, account_id, user_id, app):
+            return self.failure("Not allowed to change pipeline stage")
         old_pipeline_stage_id = app.pipeline_stage_id
         if not status_touch and not pipeline_touch:
             return self.failure("Provide status and/or pipeline_stage_id")
@@ -344,10 +370,15 @@ class ApplicationService(BaseService):
         )
         return self.success(_application_dict_with_labels(self.db, account_id, app))
 
-    def update_application(self, account_id: int, app_id: int, data: dict) -> dict:
+    def update_application(self, account_id: int, app_id: int, data: dict, viewer_user_id: int | None = None) -> dict:
         app = Application.find_by(self.db, id=app_id, account_id=account_id)
         if not app or app.deleted_at:
             return self.failure("Application not found")
+        if viewer_user_id is not None:
+            from app.services.access_control import can_mutate_application_fields
+
+            if not can_mutate_application_fields(self.db, account_id, viewer_user_id, app):
+                return self.failure("Application not found")
         allowed = {
             "candidate_name",
             "candidate_email",
@@ -398,10 +429,17 @@ class ApplicationService(BaseService):
         logger.info(f"ApplicationService.update_application — id={app_id}")
         return self.success(_application_dict_with_labels(self.db, account_id, app))
 
-    def delete_application(self, account_id: int, app_id: int) -> dict:
+    def delete_application(self, account_id: int, app_id: int, viewer_user_id: int | None = None) -> dict:
         app = Application.find_by(self.db, id=app_id, account_id=account_id)
         if not app or app.deleted_at:
             return self.failure("Application not found")
+        if viewer_user_id is not None:
+            from app.services.access_control import effective_keys
+            from app.services.permission_resolution_service import permission_key
+
+            keys = effective_keys(self.db, account_id, viewer_user_id, app.job_id)
+            if permission_key("applications", "view_all") not in keys:
+                return self.failure("Application not found")
         was_hired = app.status == "hired"
         app.deleted_at = datetime.now(timezone.utc)
         app.save(self.db)

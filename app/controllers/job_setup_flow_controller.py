@@ -32,12 +32,14 @@ class JobSetupFlowController(BaseController, Authenticatable):
 
     def index(self):
         aid = self._account_id()
+        self.require_permission("jobs", "view", account_id=aid)
         svc = JobSetupFlowService(self.db)
         svc.ensure_seeded(aid)
         return self.render_json({"sections": svc.build_catalog(aid)})
 
     async def create_section(self):
         aid = self._account_id()
+        self.require_permission("jobs", "edit", account_id=aid)
         body = await self._get_body_json()
         if not isinstance(body, dict):
             return self.render_error("Invalid body", status=422)
@@ -48,6 +50,7 @@ class JobSetupFlowController(BaseController, Authenticatable):
 
     async def update_section(self):
         aid = self._account_id()
+        self.require_permission("jobs", "edit", account_id=aid)
         sid = int(self.request.path_params["section_id"])
         body = await self._get_body_json()
         if not isinstance(body, dict):
@@ -59,6 +62,7 @@ class JobSetupFlowController(BaseController, Authenticatable):
 
     def destroy_section(self):
         aid = self._account_id()
+        self.require_permission("jobs", "edit", account_id=aid)
         sid = int(self.request.path_params["section_id"])
         r = JobSetupFlowService(self.db).destroy_section(aid, sid)
         if not r["ok"]:
@@ -67,6 +71,7 @@ class JobSetupFlowController(BaseController, Authenticatable):
 
     async def create_field(self):
         aid = self._account_id()
+        self.require_permission("jobs", "edit", account_id=aid)
         sid = int(self.request.path_params["section_id"])
         body = await self._get_body_json()
         if not isinstance(body, dict):
@@ -78,6 +83,7 @@ class JobSetupFlowController(BaseController, Authenticatable):
 
     async def update_field(self):
         aid = self._account_id()
+        self.require_permission("jobs", "edit", account_id=aid)
         fid = int(self.request.path_params["field_id"])
         body = await self._get_body_json()
         if not isinstance(body, dict):
@@ -89,6 +95,7 @@ class JobSetupFlowController(BaseController, Authenticatable):
 
     def destroy_field(self):
         aid = self._account_id()
+        self.require_permission("jobs", "edit", account_id=aid)
         fid = int(self.request.path_params["field_id"])
         r = JobSetupFlowService(self.db).destroy_field(aid, fid)
         if not r["ok"]:

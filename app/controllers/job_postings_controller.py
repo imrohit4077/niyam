@@ -12,6 +12,7 @@ from app.controllers.base_controller import BaseController, before_action
 from app.controllers.concerns.authenticatable import Authenticatable
 from app.helpers.logger import get_logger
 from app.models.account_user import AccountUser
+from app.models.job_posting import JobPosting
 from app.services.job_posting_service import JobPostingService
 
 logger = get_logger(__name__)
@@ -35,6 +36,10 @@ class JobPostingsController(BaseController, Authenticatable):
         account_id = self._account_id()
         job_id_raw = self.request.query_params.get("job_id")
         job_id = int(job_id_raw) if job_id_raw else None
+        if job_id is not None:
+            self.require_permission("jobs", "view", account_id=account_id, job_id=job_id)
+        else:
+            self.require_permission("jobs", "view", account_id=account_id)
         q = self.request.query_params.get("q")
         status = self.request.query_params.get("status")
         result = JobPostingService(self.db).list_postings(
@@ -45,6 +50,10 @@ class JobPostingsController(BaseController, Authenticatable):
     def show(self):
         account_id = self._account_id()
         posting_id = int(self.request.path_params["id"])
+        row = JobPosting.find_by(self.db, id=posting_id, account_id=account_id)
+        if not row:
+            return self.render_error("Posting not found", status=404)
+        self.require_permission("jobs", "view", account_id=account_id, job_id=row.job_id)
         result = JobPostingService(self.db).get_posting(account_id, posting_id)
         if not result["ok"]:
             return self.render_error(result["error"], status=404)
@@ -54,6 +63,14 @@ class JobPostingsController(BaseController, Authenticatable):
         account_id = self._account_id()
         user_id = self._user_id()
         data = await self._get_body_json()
+        jid = data.get("job_id")
+        if jid is None:
+            return self.render_error("job_id is required", status=422)
+        try:
+            job_id = int(jid)
+        except (TypeError, ValueError):
+            return self.render_error("job_id must be a number", status=422)
+        self.require_permission("jobs", "edit", account_id=account_id, job_id=job_id)
         result = JobPostingService(self.db).create_posting(account_id, user_id, data)
         if not result["ok"]:
             return self.render_error(result["error"], status=422)
@@ -63,6 +80,10 @@ class JobPostingsController(BaseController, Authenticatable):
     async def update(self):
         account_id = self._account_id()
         posting_id = int(self.request.path_params["id"])
+        row = JobPosting.find_by(self.db, id=posting_id, account_id=account_id)
+        if not row:
+            return self.render_error("Posting not found", status=404)
+        self.require_permission("jobs", "edit", account_id=account_id, job_id=row.job_id)
         data = await self._get_body_json()
         result = JobPostingService(self.db).update_posting(account_id, posting_id, data)
         if not result["ok"]:
@@ -72,6 +93,10 @@ class JobPostingsController(BaseController, Authenticatable):
     def destroy(self):
         account_id = self._account_id()
         posting_id = int(self.request.path_params["id"])
+        row = JobPosting.find_by(self.db, id=posting_id, account_id=account_id)
+        if not row:
+            return self.render_error("Posting not found", status=404)
+        self.require_permission("jobs", "edit", account_id=account_id, job_id=row.job_id)
         result = JobPostingService(self.db).delete_posting(account_id, posting_id)
         if not result["ok"]:
             return self.render_error(result["error"], status=404)

@@ -22,6 +22,8 @@ class AccountMembersController(BaseController, Authenticatable):
 
     def index(self):
         account_id = self._account_id()
+        self.require_permission("jobs", "view", account_id=account_id)
         q = self.request.query_params.get("q")
-        result = AccountMemberService(self.db).list_members(account_id, q=q)
+        role_slug = self.request.query_params.get("workspace_role") or self.request.query_params.get("role")
+        result = AccountMemberService(self.db).list_members(account_id, q=q, workspace_role_slug=role_slug)
         return self.render_json(result["data"])

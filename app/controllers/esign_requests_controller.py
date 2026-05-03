@@ -21,6 +21,8 @@ class EsignRequestsController(BaseController, Authenticatable):
         return au.account_id
 
     def index(self):
+        account_id = self._account_id()
+        self.require_permission("esign", "view", account_id=account_id)
         q = self.request.query_params.get("q")
         status = self.request.query_params.get("status")
         lim_raw = self.request.query_params.get("limit")
@@ -29,19 +31,22 @@ class EsignRequestsController(BaseController, Authenticatable):
         except ValueError:
             limit = 300
         r = EsignRequestService(self.db).list_for_account(
-            self._account_id(), limit=limit, q=q, status=status
+            account_id, limit=limit, q=q, status=status
         )
         return self.render_json(r["data"])
 
     def index_for_application(self):
+        account_id = self._account_id()
+        self.require_permission("esign", "view", account_id=account_id)
         app_id = int(self.request.path_params["application_id"])
-        r = EsignRequestService(self.db).list_for_application(self._account_id(), app_id)
+        r = EsignRequestService(self.db).list_for_application(account_id, app_id)
         if not r["ok"]:
             return self.render_error(r["error"], 404)
         return self.render_json(r["data"])
 
     async def generate_for_application(self):
         account_id = self._account_id()
+        self.require_permission("esign", "manage", account_id=account_id)
         app_id = int(self.request.path_params["application_id"])
         body = await self._get_body_json()
         raw_tid = body.get("template_id")

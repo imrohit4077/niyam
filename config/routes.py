@@ -99,6 +99,7 @@ def draw_routes(app: "FastAPI") -> None:
     from app.controllers.auth_controller import AuthController
     from app.controllers.profile_controller import ProfileController
     from app.controllers.jobs_controller import JobsController
+    from app.controllers.job_team_members_controller import JobTeamMembersController
     from app.controllers.job_boards_controller import JobBoardsController
     from app.controllers.job_postings_controller import JobPostingsController
     from app.controllers.applications_controller import ApplicationsController
@@ -128,6 +129,9 @@ def draw_routes(app: "FastAPI") -> None:
     from app.controllers.communication_channels_controller import CommunicationChannelsController
     from app.controllers.communication_channels_oauth_controller import CommunicationChannelsOauthController
     from app.controllers.reference_controller import ReferenceController
+    from app.controllers.role_kickoff_requests_controller import RoleKickoffRequestsController
+    from app.controllers.hiring_attributes_controller import HiringAttributesController
+    from app.controllers.hiring_stage_templates_controller import HiringStageTemplatesController
 
     router = APIRouter(prefix="/api/v1")
 
@@ -362,6 +366,51 @@ def draw_routes(app: "FastAPI") -> None:
 
     # Jobs CRUD
     resources(router, "/jobs", JobsController)
+
+    router.add_api_route(
+        "/role_kickoff_requests",
+        _wrap(RoleKickoffRequestsController, "index", lambda c: c.index()),
+        methods=["GET"],
+    )
+    router.add_api_route(
+        "/role_kickoff_requests",
+        _wrap(RoleKickoffRequestsController, "create", lambda c: c.create()),
+        methods=["POST"],
+    )
+    router.add_api_route(
+        "/role_kickoff_requests/{id:int}",
+        _wrap(RoleKickoffRequestsController, "show", lambda c: c.show()),
+        methods=["GET"],
+    )
+    router.add_api_route(
+        "/role_kickoff_requests/{id:int}",
+        _wrap(RoleKickoffRequestsController, "update_after_changes", lambda c: c.update_after_changes()),
+        methods=["PATCH"],
+    )
+    router.add_api_route(
+        "/role_kickoff_requests/{id:int}/approve",
+        _wrap(RoleKickoffRequestsController, "approve", lambda c: c.approve()),
+        methods=["POST"],
+    )
+    router.add_api_route(
+        "/role_kickoff_requests/{id:int}/reject",
+        _wrap(RoleKickoffRequestsController, "reject", lambda c: c.reject()),
+        methods=["POST"],
+    )
+    router.add_api_route(
+        "/role_kickoff_requests/{id:int}/request_changes",
+        _wrap(RoleKickoffRequestsController, "request_changes", lambda c: c.request_changes()),
+        methods=["POST"],
+    )
+    router.add_api_route(
+        "/role_kickoff_requests/{id:int}/create_job",
+        _wrap(RoleKickoffRequestsController, "create_job", lambda c: c.create_job()),
+        methods=["POST"],
+    )
+
+    resources(router, "/hiring_attributes", HiringAttributesController)
+    resources(router, "/hiring_stage_templates", HiringStageTemplatesController)
+
     router.add_api_route(
         "/jobs/{job_id:int}/referral_link",
         _wrap(JobsController, "referral_link", lambda c: c.referral_link()),
@@ -420,6 +469,22 @@ def draw_routes(app: "FastAPI") -> None:
         "/jobs/{job_id:int}/hiring_plan",
         _wrap(HiringPlansController, "show_for_job", lambda c: c.show_for_job()),
         methods=["GET"],
+    )
+
+    router.add_api_route(
+        "/jobs/{job_id:int}/hiring_team",
+        _wrap(JobTeamMembersController, "index_by_job", lambda c: c.index_by_job()),
+        methods=["GET"],
+    )
+    router.add_api_route(
+        "/jobs/{job_id:int}/hiring_team/members",
+        _wrap(JobTeamMembersController, "create_by_job", lambda c: c.create_by_job()),
+        methods=["POST"],
+    )
+    router.add_api_route(
+        "/jobs/{job_id:int}/hiring_team/members/{member_id:int}",
+        _wrap(JobTeamMembersController, "destroy", lambda c: c.destroy()),
+        methods=["DELETE"],
     )
 
     router.add_api_route(

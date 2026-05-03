@@ -13,6 +13,7 @@ from app.controllers.base_controller import BaseController, before_action
 from app.controllers.concerns.authenticatable import Authenticatable
 from app.helpers.logger import get_logger
 from app.models.account_user import AccountUser
+from app.models.hiring_plan import HiringPlan
 from app.services.hiring_plan_service import HiringPlanService
 
 logger = get_logger(__name__)
@@ -36,6 +37,10 @@ class HiringPlansController(BaseController, Authenticatable):
         account_id = self._account_id()
         job_raw = self.request.query_params.get("job_id")
         job_id = int(job_raw) if job_raw else None
+        if job_id is not None:
+            self.require_permission("jobs", "view", account_id=account_id, job_id=job_id)
+        else:
+            self.require_permission("jobs", "view", account_id=account_id)
         q = self.request.query_params.get("q")
         plan_status = self.request.query_params.get("plan_status")
         result = HiringPlanService(self.db).list_plans(
@@ -46,6 +51,10 @@ class HiringPlansController(BaseController, Authenticatable):
     def show(self):
         account_id = self._account_id()
         plan_id = int(self.request.path_params["id"])
+        plan = HiringPlan.find_by(self.db, id=plan_id, account_id=account_id)
+        if not plan:
+            return self.render_error("Hiring plan not found", status=404)
+        self.require_permission("jobs", "view", account_id=account_id, job_id=plan.job_id)
         result = HiringPlanService(self.db).get_plan(account_id, plan_id)
         if not result["ok"]:
             return self.render_error(result["error"], status=404)
@@ -54,6 +63,7 @@ class HiringPlansController(BaseController, Authenticatable):
     def show_for_job(self):
         account_id = self._account_id()
         job_id = int(self.request.path_params["job_id"])
+        self.require_permission("jobs", "view", account_id=account_id, job_id=job_id)
         result = HiringPlanService(self.db).get_plan_for_job(account_id, job_id)
         if not result["ok"]:
             return self.render_error(result["error"], status=404)
@@ -62,6 +72,14 @@ class HiringPlansController(BaseController, Authenticatable):
     async def create(self):
         account_id = self._account_id()
         data = await self._get_body_json()
+        job_id = data.get("job_id")
+        if not job_id:
+            return self.render_error("job_id is required", status=422)
+        try:
+            jid = int(job_id)
+        except (TypeError, ValueError):
+            return self.render_error("job_id must be a number", status=422)
+        self.require_permission("jobs", "edit", account_id=account_id, job_id=jid)
         result = HiringPlanService(self.db).create_plan(account_id, data)
         if not result["ok"]:
             return self.render_error(result["error"], status=422)
@@ -71,6 +89,10 @@ class HiringPlansController(BaseController, Authenticatable):
     async def update(self):
         account_id = self._account_id()
         plan_id = int(self.request.path_params["id"])
+        plan = HiringPlan.find_by(self.db, id=plan_id, account_id=account_id)
+        if not plan:
+            return self.render_error("Hiring plan not found", status=404)
+        self.require_permission("jobs", "edit", account_id=account_id, job_id=plan.job_id)
         data = await self._get_body_json()
         result = HiringPlanService(self.db).update_plan(account_id, plan_id, data)
         if not result["ok"]:
@@ -80,6 +102,10 @@ class HiringPlansController(BaseController, Authenticatable):
     def destroy(self):
         account_id = self._account_id()
         plan_id = int(self.request.path_params["id"])
+        plan = HiringPlan.find_by(self.db, id=plan_id, account_id=account_id)
+        if not plan:
+            return self.render_error("Hiring plan not found", status=404)
+        self.require_permission("jobs", "edit", account_id=account_id, job_id=plan.job_id)
         result = HiringPlanService(self.db).delete_plan(account_id, plan_id)
         if not result["ok"]:
             return self.render_error(result["error"], status=404)

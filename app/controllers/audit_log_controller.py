@@ -28,8 +28,8 @@ class AuditLogController(BaseController, Authenticatable):
 
     def compliance(self):
         """Policy copy for settings; enqueues a low-severity view event asynchronously."""
-        self.require_admin()
         account_id = self._account_id()
+        self.require_permission("settings", "admin_roles", account_id=account_id)
         path = str(self.request.url.path)
         rid = getattr(self.request.state, "request_id", None)
         AuditLogService.enqueue(
@@ -61,8 +61,8 @@ class AuditLogController(BaseController, Authenticatable):
 
     async def update_audit_trail(self):
         """PATCH account-level audit preferences (admin)."""
-        self.require_admin()
         account_id = self._account_id()
+        self.require_permission("settings", "admin_roles", account_id=account_id)
         data = await self._get_body_json()
         r = AuditTrailSettingsService(self.db).update(account_id, data if isinstance(data, dict) else {})
         if not r["ok"]:
@@ -70,8 +70,8 @@ class AuditLogController(BaseController, Authenticatable):
         return self.render_json(r["data"])
 
     def index(self):
-        self.require_admin()
         account_id = self._account_id()
+        self.require_permission("settings", "admin_roles", account_id=account_id)
         q = self.request.query_params
         try:
             page = int(q.get("page") or 1)
@@ -97,8 +97,8 @@ class AuditLogController(BaseController, Authenticatable):
 
     def failures(self):
         """GET: rows where async audit delivery failed after retries (same admin gate as audit log)."""
-        self.require_admin()
         account_id = self._account_id()
+        self.require_permission("settings", "admin_roles", account_id=account_id)
         q = self.request.query_params
         try:
             page = int(q.get("page") or 1)

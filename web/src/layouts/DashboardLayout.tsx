@@ -9,7 +9,11 @@ import type { DashboardOutletContext } from './DashboardOutletContext'
 function deriveTitle(pathname: string): string {
   if (pathname.includes('/jobs/new')) return 'New job'
   if (/\/jobs\/\d+\/edit/.test(pathname)) return 'Edit job'
-  if (pathname.match(/\/account\/\d+\/jobs\/?$/)) return 'Jobs'
+  if (pathname.includes('/jobs/all')) return 'Jobs'
+  if (pathname.includes('/jobs/mine')) return 'My jobs'
+  if (pathname.includes('/jobs/role-kickoff')) return 'Role kickoff'
+  if (pathname.includes('/structured-hiring/attributes')) return 'Attributes'
+  if (pathname.includes('/structured-hiring/stages')) return 'Stages'
   if (pathname.includes('/hiring-plans')) return 'Hiring plans'
   if (pathname.includes('/pipeline')) return 'Pipeline'
   if (pathname.includes('/job-boards')) return 'Job Boards'
@@ -59,15 +63,22 @@ export default function DashboardLayout() {
 
   const title = useMemo(() => deriveTitle(pathname), [pathname])
 
-  /** Jobs list / job editor wizard render their own titles — skip duplicate main header. */
+  /** Jobs hub / job editor wizard render their own titles — skip duplicate main header. */
   const hideMainHeader =
-    /^\/account\/\d+\/jobs\/?$/.test(pathname) ||
+    /^\/account\/\d+\/jobs\/(all|mine)\/?$/.test(pathname) ||
+    /^\/account\/\d+\/jobs\/role-kickoff/.test(pathname) ||
     /^\/account\/\d+\/jobs\/new\/?$/.test(pathname) ||
-    /^\/account\/\d+\/jobs\/\d+\/edit/.test(pathname)
+    /^\/account\/\d+\/jobs\/\d+\/edit/.test(pathname) ||
+    /^\/account\/\d+\/structured-hiring/.test(pathname)
 
   /** Full-width light gray canvas for job editor (reliable without :has() support). */
   const jobEditorWizard =
     /^\/account\/\d+\/jobs\/new\/?$/.test(pathname) || /^\/account\/\d+\/jobs\/\d+\/edit/.test(pathname)
+
+  /** Role kickoff create/edit: light full-width canvas (form supplies card + footer). */
+  const roleKickoffFormCanvas =
+    /^\/account\/\d+\/jobs\/role-kickoff\/new\/?$/.test(pathname) ||
+    /^\/account\/\d+\/jobs\/role-kickoff\/\d+\/edit\/?$/.test(pathname)
 
   const ctx: DashboardOutletContext = useMemo(
     () => ({
@@ -78,7 +89,13 @@ export default function DashboardLayout() {
     [token, user, accountId],
   )
 
-  if (!user || !accountId) return null
+  if (!user || !accountId) {
+    return (
+      <div className="splash">
+        <div className="spinner" aria-label="Loading" />
+      </div>
+    )
+  }
 
   const home = `/account/${accountId}/profile`
 
@@ -126,7 +143,7 @@ export default function DashboardLayout() {
           ) : null}
 
           <div
-            className={`main-body${hideMainHeader ? ' main-body--flush-top' : ''}${jobEditorWizard ? ' main-body--job-editor-wizard' : ''}`}
+            className={`main-body${hideMainHeader ? ' main-body--flush-top' : ''}${jobEditorWizard ? ' main-body--job-editor-wizard' : ''}${roleKickoffFormCanvas ? ' main-body--role-kickoff-form' : ''}`}
           >
             <Outlet context={ctx} />
           </div>

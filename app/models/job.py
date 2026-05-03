@@ -36,6 +36,9 @@ class Job(BaseModel):
     recruiter_user_id: Mapped[Optional[int]] = mapped_column(
         BigInteger, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
+    role_kickoff_request_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger, ForeignKey("role_kickoff_requests.id", ondelete="SET NULL"), nullable=True
+    )
     requisition_id: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
     job_config: Mapped[dict] = mapped_column(
         JSONB, nullable=False, server_default=text("'{}'::jsonb")

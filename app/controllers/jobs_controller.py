@@ -37,6 +37,7 @@ class JobsController(BaseController, Authenticatable):
 
     def index(self):
         account_id = self._account_id()
+        self.require_permission("jobs", "view", account_id=account_id)
         status = self.request.query_params.get("status")
         q = self.request.query_params.get("q")
         department = self.request.query_params.get("department")
@@ -53,6 +54,7 @@ class JobsController(BaseController, Authenticatable):
     def show(self):
         account_id = self._account_id()
         job_id = int(self.request.path_params["id"])
+        self.require_permission("jobs", "view", account_id=account_id, job_id=job_id)
         result = JobService(self.db).get_job(account_id, job_id)
         if not result["ok"]:
             return self.render_error(result["error"], status=404)
@@ -62,6 +64,11 @@ class JobsController(BaseController, Authenticatable):
         account_id = self._account_id()
         user_id = self._user_id()
         job_id = int(self.request.path_params["job_id"])
+        self.require_any_permission(
+            [("referrals", "view"), ("jobs", "view")],
+            account_id=account_id,
+            job_id=job_id,
+        )
         from app.services.referral_service import ReferralLinkService
 
         result = ReferralLinkService(self.db).get_or_create_for_job(account_id, user_id, job_id)
@@ -72,6 +79,7 @@ class JobsController(BaseController, Authenticatable):
     async def create(self):
         account_id = self._account_id()
         user_id = self._user_id()
+        self.require_permission("jobs", "create", account_id=account_id)
         data = await self._get_body_json()
         result = JobService(self.db).create_job(account_id, user_id, data)
         if not result["ok"]:
@@ -82,6 +90,7 @@ class JobsController(BaseController, Authenticatable):
     async def update(self):
         account_id = self._account_id()
         job_id = int(self.request.path_params["id"])
+        self.require_permission("jobs", "edit", account_id=account_id, job_id=job_id)
         data = await self._get_body_json()
         result = JobService(self.db).update_job(account_id, job_id, data)
         if not result["ok"]:
@@ -91,6 +100,7 @@ class JobsController(BaseController, Authenticatable):
     async def update_labels(self):
         account_id = self._account_id()
         job_id = int(self.request.path_params["id"])
+        self.require_permission("jobs", "edit", account_id=account_id, job_id=job_id)
         body = await self._get_body_json()
         raw = body.get("label_ids")
         if not isinstance(raw, list):
@@ -107,6 +117,7 @@ class JobsController(BaseController, Authenticatable):
     def analytics(self):
         account_id = self._account_id()
         job_id = int(self.request.path_params["job_id"])
+        self.require_permission("jobs", "view", account_id=account_id, job_id=job_id)
         result = JobService(self.db).job_analytics(account_id, job_id)
         if not result["ok"]:
             return self.render_error(result["error"], status=404)
@@ -115,6 +126,7 @@ class JobsController(BaseController, Authenticatable):
     def list_attachments(self):
         account_id = self._account_id()
         job_id = int(self.request.path_params["job_id"])
+        self.require_permission("jobs", "view", account_id=account_id, job_id=job_id)
         result = JobService(self.db).list_attachments(account_id, job_id)
         if not result["ok"]:
             return self.render_error(result["error"], status=404)
@@ -123,6 +135,7 @@ class JobsController(BaseController, Authenticatable):
     async def create_attachment(self):
         account_id = self._account_id()
         job_id = int(self.request.path_params["job_id"])
+        self.require_permission("jobs", "edit", account_id=account_id, job_id=job_id)
         data = await self._get_body_json()
         result = JobService(self.db).create_attachment(account_id, job_id, data)
         if not result["ok"]:
@@ -132,6 +145,7 @@ class JobsController(BaseController, Authenticatable):
     async def upload_attachment(self):
         account_id = self._account_id()
         job_id = int(self.request.path_params["job_id"])
+        self.require_permission("jobs", "edit", account_id=account_id, job_id=job_id)
         form = await self.request.form()
         upload = form.get("file")
         if not upload or not hasattr(upload, "read"):
@@ -152,6 +166,7 @@ class JobsController(BaseController, Authenticatable):
     def destroy_attachment(self):
         account_id = self._account_id()
         job_id = int(self.request.path_params["job_id"])
+        self.require_permission("jobs", "edit", account_id=account_id, job_id=job_id)
         attachment_id = int(self.request.path_params["attachment_id"])
         result = JobService(self.db).delete_attachment(account_id, job_id, attachment_id)
         if not result["ok"]:
@@ -161,6 +176,7 @@ class JobsController(BaseController, Authenticatable):
     def destroy(self):
         account_id = self._account_id()
         job_id = int(self.request.path_params["id"])
+        self.require_permission("jobs", "edit", account_id=account_id, job_id=job_id)
         result = JobService(self.db).delete_job(account_id, job_id)
         if not result["ok"]:
             return self.render_error(result["error"], status=404)
@@ -171,6 +187,7 @@ class JobsController(BaseController, Authenticatable):
     def list_versions(self):
         account_id = self._account_id()
         job_id = int(self.request.path_params["job_id"])
+        self.require_permission("jobs", "view", account_id=account_id, job_id=job_id)
         result = JobService(self.db).list_versions(account_id, job_id)
         if not result["ok"]:
             return self.render_error(result["error"], status=404)
@@ -179,6 +196,7 @@ class JobsController(BaseController, Authenticatable):
     async def create_version(self):
         account_id = self._account_id()
         job_id = int(self.request.path_params["job_id"])
+        self.require_permission("jobs", "edit", account_id=account_id, job_id=job_id)
         user_id = self._user_id()
         data = await self._get_body_json()
         result = JobService(self.db).create_version(account_id, job_id, user_id, data)
@@ -189,6 +207,7 @@ class JobsController(BaseController, Authenticatable):
     async def update_version(self):
         account_id = self._account_id()
         job_id = int(self.request.path_params["job_id"])
+        self.require_permission("jobs", "edit", account_id=account_id, job_id=job_id)
         version_id = int(self.request.path_params["version_id"])
         data = await self._get_body_json()
         result = JobService(self.db).update_version(

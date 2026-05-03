@@ -39,6 +39,7 @@ class InterviewPlansController(BaseController, Authenticatable):
     def index_by_job(self):
         account_id = self._account_id()
         job_id = int(self.request.path_params["job_id"])
+        self.require_permission("jobs", "view", account_id=account_id, job_id=job_id)
         result = InterviewPlanService(self.db).list_for_job(account_id, job_id)
         if not result["ok"]:
             return self.render_error(result["error"], status=404)
@@ -47,6 +48,7 @@ class InterviewPlansController(BaseController, Authenticatable):
     async def create_by_job(self):
         account_id = self._account_id()
         job_id = int(self.request.path_params["job_id"])
+        self.require_permission("jobs", "edit", account_id=account_id, job_id=job_id)
         data = await self._get_body_json()
         result = InterviewPlanService(self.db).create(account_id, job_id, data)
         if not result["ok"]:
@@ -60,6 +62,7 @@ class InterviewPlansController(BaseController, Authenticatable):
     def show_for_job(self):
         account_id = self._account_id()
         job_id = int(self.request.path_params["job_id"])
+        self.require_permission("jobs", "view", account_id=account_id, job_id=job_id)
         plan_id = int(self.request.path_params["plan_id"])
         result = InterviewPlanService(self.db).get(account_id, plan_id)
         if not result["ok"]:
@@ -71,6 +74,7 @@ class InterviewPlansController(BaseController, Authenticatable):
     async def update_for_job(self):
         account_id = self._account_id()
         job_id = int(self.request.path_params["job_id"])
+        self.require_permission("jobs", "edit", account_id=account_id, job_id=job_id)
         plan_id = int(self.request.path_params["plan_id"])
         data = await self._get_body_json()
         result = InterviewPlanService(self.db).get(account_id, plan_id)
@@ -86,6 +90,7 @@ class InterviewPlansController(BaseController, Authenticatable):
     def destroy_for_job(self):
         account_id = self._account_id()
         job_id = int(self.request.path_params["job_id"])
+        self.require_permission("jobs", "edit", account_id=account_id, job_id=job_id)
         plan_id = int(self.request.path_params["plan_id"])
         result = InterviewPlanService(self.db).get(account_id, plan_id)
         if not result["ok"]:
@@ -100,6 +105,7 @@ class InterviewPlansController(BaseController, Authenticatable):
     def get_kit_for_job(self):
         account_id = self._account_id()
         job_id = int(self.request.path_params["job_id"])
+        self.require_permission("jobs", "view", account_id=account_id, job_id=job_id)
         plan_id = int(self.request.path_params["plan_id"])
         result = InterviewPlanService(self.db).get(account_id, plan_id)
         if not result["ok"]:
@@ -114,6 +120,7 @@ class InterviewPlansController(BaseController, Authenticatable):
     async def upsert_kit_for_job(self):
         account_id = self._account_id()
         job_id = int(self.request.path_params["job_id"])
+        self.require_permission("jobs", "edit", account_id=account_id, job_id=job_id)
         plan_id = int(self.request.path_params["plan_id"])
         result = InterviewPlanService(self.db).get(account_id, plan_id)
         if not result["ok"]:

@@ -14,6 +14,9 @@ from app.models.account import Account
 from app.models.account_user import AccountUser
 from app.models.role import Role
 from app.models.account_user_role import AccountUserRole
+from app.models.permission import Permission
+from app.models.role_permission import RolePermission
+from app.models.job_team_member import JobTeamMember
 from app.models.job import Job
 from app.models.job_attachment import JobAttachment
 from app.models.job_version import JobVersion
@@ -40,10 +43,15 @@ from app.models.communication_channel import CommunicationChannel
 from app.models.department import Department
 from app.models.job_setup_flow_section import JobSetupFlowSection
 from app.models.job_setup_flow_field import JobSetupFlowField
+from app.models.role_kickoff_request import RoleKickoffRequest
+from app.models.hiring_attribute import HiringAttribute
+from app.models.hiring_stage_template import HiringStageTemplate
+from app.models.hiring_stage_template_attribute import HiringStageTemplateAttribute
 
 __all__ = [
     "BaseModel", "Timestampable", "SoftDeletable", "Sluggable",
     "User", "Account", "AccountUser", "Role", "AccountUserRole",
+    "Permission", "RolePermission", "JobTeamMember",
     "Job", "JobAttachment", "JobVersion", "JobBoard", "JobPosting", "Application",
     "HiringPlan", "PipelineStage",
     "InterviewPlan", "InterviewKit", "InterviewAssignment", "InterviewScorecard",
@@ -52,6 +60,10 @@ __all__ = [
     "CommunicationChannel",
     "Department",
     "JobSetupFlowSection", "JobSetupFlowField",
+    "RoleKickoffRequest",
+    "HiringAttribute",
+    "HiringStageTemplate",
+    "HiringStageTemplateAttribute",
     "ReferralLink", "ReferralBonus",
     "AuditLogEntry", "AuditLogDeliveryFailure",
 ]

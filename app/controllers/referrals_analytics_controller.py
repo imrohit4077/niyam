@@ -23,6 +23,7 @@ class ReferralsAnalyticsController(BaseController, Authenticatable):
 
     def leaderboard(self):
         account_id = self._account_id()
+        self.require_permission("referrals", "view", account_id=account_id)
         raw = self.request.query_params.get("limit") or "50"
         try:
             limit = int(raw)
@@ -33,6 +34,7 @@ class ReferralsAnalyticsController(BaseController, Authenticatable):
 
     def my_referrals(self):
         account_id = self._account_id()
+        self.require_permission("referrals", "view", account_id=account_id)
         uid = self._user_id()
         r = ReferralAnalyticsService(self.db).my_referrals(account_id, uid)
         return self.render_json(r["data"])

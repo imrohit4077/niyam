@@ -9,10 +9,22 @@ export interface ScorecardCriterion {
   required?: boolean
 }
 
+/** Snapshot from role kickoff conversion (structured hiring stage templates + order). */
+export type JobStructuredHiringStage = {
+  order?: number
+  stage_template_id?: number
+  name?: string
+  focus_attribute_ids?: number[]
+  default_interviewer_user_ids?: number[]
+}
+
 /** Flexible JSON for wizard sections not stored as top-level columns. */
 export type JobConfig = Record<string, unknown> & {
   skills_required?: string[]
   skills_nice?: string[]
+  structured_hiring?: {
+    stages?: JobStructuredHiringStage[]
+  }
   interview_defaults?: {
     default_duration_minutes?: number
     default_format?: string
@@ -117,6 +129,8 @@ export interface Job {
   attachments?: JobAttachment[]
   /** Workspace labels (Settings → Labels); persisted via PATCH /jobs/:id/labels. */
   labels?: AccountLabelRow[]
+  /** Set when this job was created by converting an approved role kickoff. */
+  role_kickoff_request_id?: number | null
 }
 
 export interface JobVersion {

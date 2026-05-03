@@ -46,7 +46,7 @@
     },
     {
       "section_key": "interview",
-      "label": "Interview configuration",
+      "label": "Hiring stages",
       "built_in": true,
       "fields": [{ "field_key": "main", "label": "Interview setup", "built_in": true }]
     },

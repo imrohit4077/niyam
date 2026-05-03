@@ -23,14 +23,15 @@ class AccountReferralSettingsController(BaseController, Authenticatable):
 
     def show(self):
         account_id = self._account_id()
+        self.require_permission("referrals", "view", account_id=account_id)
         r = ReferralAccountSettingsService(self.db).get_settings(account_id)
         if not r["ok"]:
             return self.render_error(r["error"], status=404)
         return self.render_json(r["data"])
 
     async def update(self):
-        self.require_admin()
         account_id = self._account_id()
+        self.require_permission("referrals", "manage", account_id=account_id)
         body = await self._get_body_json()
         r = ReferralAccountSettingsService(self.db).update_settings(account_id, body)
         if not r["ok"]:

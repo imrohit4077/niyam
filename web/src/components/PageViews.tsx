@@ -574,8 +574,9 @@ function JobsJobProfileDetails({ job }: { job: Job }) {
   )
 }
 
-export function JobsView() {
-  const { token, accountId } = useOutletContext<DashboardOutletContext>()
+export function JobsView(props: { jobsScope?: 'all' | 'mine' }) {
+  const { jobsScope = 'all' } = props
+  const { token, accountId, user } = useOutletContext<DashboardOutletContext>()
   const navigate = useNavigate()
   const toast = useToast()
   const [jobs, setJobs] = useState<Job[]>([])
@@ -661,6 +662,11 @@ export function JobsView() {
     void load()
   }, [load])
 
+  const visibleJobs = useMemo(() => {
+    if (jobsScope !== 'mine' || user?.id == null) return jobs
+    return jobs.filter(j => (j.hiring_manager_user_id ?? null) === user.id)
+  }, [jobs, jobsScope, user?.id])
+
   const del = async (job: Job) => {
     try {
       await jobsApi.delete(token, job.id)
@@ -688,9 +694,9 @@ export function JobsView() {
         <header className="jobs-page-header">
           <div className="jobs-page-header-row">
             <h1 className="jobs-page-title">
-              Jobs{' '}
+              {jobsScope === 'mine' ? 'My jobs' : 'Jobs'}{' '}
               <span className="jobs-page-count-pill" aria-live="polite">
-                ({jobs.length})
+                ({visibleJobs.length})
               </span>
             </h1>
             <button
@@ -836,19 +842,21 @@ export function JobsView() {
             <ErrorRow msg={err} />
           </div>
         ) : null}
-        {!loading && !err && jobs.length === 0 ? (
+        {!loading && !err && visibleJobs.length === 0 ? (
           <div className="jobs-panel-shell jobs-panel-shell--empty">
             <EmptyRow
               text={
                 debouncedQ || statusFilter || departmentFilter || locationFilter
                   ? 'No jobs match your filters. Try clearing filters or create a new job.'
-                  : 'No jobs yet. Create your first job to get started.'
+                  : jobsScope === 'mine'
+                    ? 'No jobs list you as hiring manager yet.'
+                    : 'No jobs yet. Create your first job to get started.'
               }
             />
           </div>
         ) : null}
 
-        {!loading && !err && jobs.length > 0 && viewMode === 'table' ? (
+        {!loading && !err && visibleJobs.length > 0 && viewMode === 'table' ? (
           <div className="list-table jobs-table jobs-table--mgmt">
             <div className="list-table-head jobs-table-head jobs-table-head--mgmt jobs-table-grid">
               <div className="list-col list-col-main">Job title</div>
@@ -861,7 +869,7 @@ export function JobsView() {
               <div className="list-col jobs-col-status">Status</div>
               <div className="list-col list-col-actions">Actions</div>
             </div>
-            {jobs.map(j => (
+            {visibleJobs.map(j => (
               <div key={j.id} className="list-row jobs-table-row jobs-table-grid">
                 <div className="list-col list-col-main">
                   <div className="jobs-cell-title">
@@ -919,9 +927,9 @@ export function JobsView() {
           </div>
         ) : null}
 
-        {!loading && !err && jobs.length > 0 && viewMode === 'grid' ? (
+        {!loading && !err && visibleJobs.length > 0 && viewMode === 'grid' ? (
           <div className="jobs-grid">
-            {jobs.map(j => (
+            {visibleJobs.map(j => (
               <article key={j.id} className="jobs-grid-card">
                 <div className="jobs-grid-card-top">
                   <div className="jobs-grid-card-title-block">
@@ -958,9 +966,9 @@ export function JobsView() {
           </div>
         ) : null}
 
-        {!loading && !err && jobs.length > 0 && viewMode === 'list' ? (
+        {!loading && !err && visibleJobs.length > 0 && viewMode === 'list' ? (
           <div className="jobs-list-view">
-            {jobs.map(j => (
+            {visibleJobs.map(j => (
               <div key={j.id} className="jobs-list-view-row">
                 <div className="jobs-list-view-main">
                   <div className="jobs-list-view-title">{j.title}</div>

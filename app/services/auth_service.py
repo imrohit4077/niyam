@@ -13,6 +13,7 @@ from app.models.account_user_role import AccountUserRole
 from app.models.role import Role
 from app.helpers.jwt_helper import JWTHelper
 from app.helpers.role_helper import highest_role_slug
+from app.services.permission_resolution_service import PermissionResolutionService
 from app.helpers.logger import get_logger
 from app.services.base_service import BaseService
 
@@ -44,8 +45,18 @@ class AuthService(BaseService):
         self.db.commit()
         self.db.refresh(user)
 
+        perm_list: list[str] = []
+        au = AccountUser.find_by(self.db, user_id=user.id)
+        if au:
+            perm_list = sorted(
+                PermissionResolutionService(self.db).workspace_keys_for_account_user(au.id)
+            )
+
         access_token = JWTHelper.create_access_token(
-            user_id=user.id, email=user.email, role=role_slug,
+            user_id=user.id,
+            email=user.email,
+            role=role_slug,
+            perms=perm_list or None,
         )
         refresh_token = JWTHelper.create_refresh_token(user_id=user.id)
 
@@ -77,8 +88,17 @@ class AuthService(BaseService):
             return self.failure("User not found or inactive")
 
         role_slug = self._get_primary_role(user.id)
+        perm_list: list[str] = []
+        au = AccountUser.find_by(self.db, user_id=user.id)
+        if au:
+            perm_list = sorted(
+                PermissionResolutionService(self.db).workspace_keys_for_account_user(au.id)
+            )
         access_token = JWTHelper.create_access_token(
-            user_id=user.id, email=user.email, role=role_slug,
+            user_id=user.id,
+            email=user.email,
+            role=role_slug,
+            perms=perm_list or None,
         )
         logger.info(f"AuthService.refresh — issued new access token for user id={user_id}")
         return self.success({"access_token": access_token, "token_type": "bearer"})

@@ -3,12 +3,14 @@ from sqlalchemy import select
 
 from app.helpers.pg_search import normalize_q, trigram_or
 from app.models.account_user import AccountUser
+from app.models.account_user_role import AccountUserRole
+from app.models.role import Role
 from app.models.user import User
 from app.services.base_service import BaseService
 
 
 class AccountMemberService(BaseService):
-    def list_members(self, account_id: int, q: str | None = None) -> dict:
+    def list_members(self, account_id: int, q: str | None = None, workspace_role_slug: str | None = None) -> dict:
         stmt = (
             select(User.id, User.name, User.email)
             .join(AccountUser, AccountUser.user_id == User.id)
@@ -18,6 +20,13 @@ class AccountMemberService(BaseService):
                 User.status == "active",
             )
         )
+        wr = (workspace_role_slug or "").strip().lower()
+        if wr:
+            stmt = (
+                stmt.join(AccountUserRole, AccountUserRole.account_user_id == AccountUser.id)
+                .join(Role, Role.id == AccountUserRole.role_id)
+                .where(Role.account_id == account_id, Role.slug == wr)
+            )
         nq = normalize_q(q)
         if nq:
             stmt = stmt.where(trigram_or(User.name, User.email, q=nq, param_name="member_trgm"))

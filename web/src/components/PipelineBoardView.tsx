@@ -199,7 +199,7 @@ function KanbanCard({ app, accountId }: { app: Application; accountId: string })
     zIndex: isDragging ? 0 : 1,
   }
   const go = () => navigate(`/account/${accountId}/job-applications/${app.id}`)
-  const chips = [...(app.labels ?? []).map(l => l.name), ...(app.tags ?? [])].filter(Boolean).slice(0, 5)
+  const chips = [...(app.labels ?? []).map(l => l.title), ...(app.tags ?? [])].filter(Boolean).slice(0, 5)
   const rawSummary =
     (app.candidate_location && app.candidate_location.trim()) ||
     (app.cover_letter && app.cover_letter.replace(/\s+/g, ' ').trim()) ||
@@ -805,6 +805,11 @@ export default function PipelineBoardView() {
     }
     return [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5)
   }, [apps])
+  const unassignedCount = byColumn.get('unassigned')?.length ?? 0
+  const scoredCount = apps.filter(a => a.score != null && !Number.isNaN(Number(a.score))).length
+  const interviewStageIds = new Set(stages.filter(s => s.stage_type === 'interview').map(s => s.id))
+  const interviewStageCount = apps.filter(a => a.pipeline_stage_id != null && interviewStageIds.has(a.pipeline_stage_id)).length
+  const completionRate = apps.length > 0 ? Math.round(((apps.length - unassignedCount) / apps.length) * 100) : 0
 
   const stageLoadBars = useMemo(() => {
     const max = Math.max(1, ...stages.map(s => (byColumn.get(s.id) ?? []).length))
@@ -1282,6 +1287,30 @@ export default function PipelineBoardView() {
                   Showing {filteredApps.length} of {apps.length}
                 </span>
               )}
+            </div>
+          )}
+          {typeof jobId === 'number' && (
+            <div className="pipeline-stat-strip" aria-label="Pipeline quality metrics">
+              <div className="pipeline-stat-tile">
+                <span>Assigned</span>
+                <strong>{apps.length - unassignedCount}</strong>
+              </div>
+              <div className="pipeline-stat-tile">
+                <span>Unassigned</span>
+                <strong>{unassignedCount}</strong>
+              </div>
+              <div className="pipeline-stat-tile">
+                <span>Interview Stage</span>
+                <strong>{interviewStageCount}</strong>
+              </div>
+              <div className="pipeline-stat-tile">
+                <span>Scored</span>
+                <strong>{scoredCount}</strong>
+              </div>
+              <div className="pipeline-stat-tile">
+                <span>Completion</span>
+                <strong>{completionRate}%</strong>
+              </div>
             </div>
           )}
             </div>

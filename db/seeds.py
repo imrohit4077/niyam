@@ -10,6 +10,8 @@ from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from db.seeds_greenhouse import run_greenhouse_seed
+
 
 def _esign_block_templates():
     """Rich ATS block JSON + matching HTML for new accounts (see app.helpers.esign_blocks)."""
@@ -391,7 +393,8 @@ def run_seeds() -> None:
                 sb = _ensure_superadmin_role_for_admin(db, acct.id, now)
                 added = _ensure_esign_seed(db, acct.id, now)
                 more = _ensure_loe_template_and_offer_rule(db, acct.id, now)
-                if added or more or sb:
+                gh = run_greenhouse_seed(db, acct.id, now)
+                if added or more or sb or gh:
                     db.commit()
                 if added:
                     print(
@@ -401,6 +404,11 @@ def run_seeds() -> None:
                 elif more:
                     print(
                         'Seeds: added “Letter of employment (LOE)” template and/or its offer-stage rule (idempotent).'
+                    )
+                elif gh:
+                    print(
+                        "Seeds: Greenhouse-style permissions matrix, demo users, demo job hiring team, "
+                        "and/or structured hiring (attributes + stage templates) updated."
                     )
                 else:
                     print("Seeds: already seeded, skipping.")
@@ -468,6 +476,7 @@ def run_seeds() -> None:
         db.add(AccountUserRole(account_user_id=au.id, role_id=super_role.id))
 
         _ensure_esign_seed(db, account.id, now)
+        run_greenhouse_seed(db, account.id, now)
 
         db.commit()
 
@@ -476,6 +485,10 @@ def run_seeds() -> None:
         print(
             'E-sign: seeded offer letter, NDA, letter of employment (LOE), and two rules for stage type “offer”. '
             'Run `python manage.py worker` in another terminal so documents queue when candidates move columns.'
+        )
+        print(
+            "Hiring team demo: recruiter@, hm@, coordinator@, interviewer@, sourcer@, approver@, jobadmin@, basic@ "
+            "— all @example.com, password password123. Demo job: “Seeded Demo — Backend Engineer”."
         )
     finally:
         db.close()
