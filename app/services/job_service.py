@@ -140,6 +140,14 @@ class JobService(BaseService):
         if existing:
             slug = f"{slug}-{int(datetime.now().timestamp())}"
         now = datetime.now(timezone.utc)
+        role_kickoff_request_id = None
+        rk_id = data.get("role_kickoff_request_id")
+        if rk_id not in (None, ""):
+            try:
+                role_kickoff_request_id = int(rk_id)
+            except (TypeError, ValueError):
+                return self.failure("role_kickoff_request_id must be a number")
+
         job = Job(
             account_id=account_id, created_by=user_id,
             title=title, slug=slug,
@@ -156,6 +164,7 @@ class JobService(BaseService):
             hiring_budget_id=data.get("hiring_budget_id"),
             hiring_manager_user_id=data.get("hiring_manager_user_id"),
             recruiter_user_id=data.get("recruiter_user_id"),
+            role_kickoff_request_id=role_kickoff_request_id,
             requisition_id=data.get("requisition_id"),
             job_config=_coerce_job_config(data.get("job_config")),
             referral_settings=merged_job_referral_settings(data.get("referral_settings")),

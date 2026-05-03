@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
@@ -14,9 +14,14 @@ interface NavItem {
   group?: string
 }
 
+/** Nested under the Jobs branch in Recruiting (order matters). */
+const JOBS_BRANCH_IDS: NavId[] = ['jobs-all', 'jobs-mine', 'jobs-role-kickoff']
+
 const NAV: NavItem[] = [
   { id: 'profile', label: 'My Profile', icon: 'user', group: 'Overview' },
-  { id: 'jobs', label: 'Jobs', icon: 'briefcase', group: 'Recruiting' },
+  { id: 'jobs-all', label: 'All jobs', icon: 'briefcase', group: 'Recruiting' },
+  { id: 'jobs-mine', label: 'My jobs', icon: 'briefcase', group: 'Recruiting' },
+  { id: 'jobs-role-kickoff', label: 'Job role kickoff', icon: 'briefcase', group: 'Recruiting' },
   { id: 'hiring-plans', label: 'Hiring plans', icon: 'target', group: 'Recruiting' },
   { id: 'pipeline', label: 'Pipeline', icon: 'columns', group: 'Recruiting' },
   { id: 'job-boards', label: 'Job Boards', icon: 'globe', group: 'Recruiting' },
@@ -37,7 +42,9 @@ const NAV: NavItem[] = [
 
 const PATH_SEGMENTS: Record<NavId, string> = {
   profile: 'profile',
-  jobs: 'jobs',
+  'jobs-all': 'jobs/all',
+  'jobs-mine': 'jobs/mine',
+  'jobs-role-kickoff': 'jobs/role-kickoff',
   'hiring-plans': 'hiring-plans',
   pipeline: 'pipeline',
   'job-boards': 'job-boards',
@@ -154,6 +161,7 @@ const ICONS: Record<string, ReactNode> = {
 }
 
 const SIDEBAR_COLLAPSED_KEY = 'niyam.sidebarCollapsed'
+const SIDEBAR_JOBS_BRANCH_OPEN_KEY = 'niyam.sidebarJobsBranchOpen'
 
 function readSidebarCollapsed(): boolean {
   try {
@@ -163,12 +171,24 @@ function readSidebarCollapsed(): boolean {
   }
 }
 
+function readJobsBranchOpen(): boolean {
+  try {
+    const v = sessionStorage.getItem(SIDEBAR_JOBS_BRANCH_OPEN_KEY)
+    if (v === '0') return false
+    if (v === '1') return true
+  } catch {
+    /* ignore */
+  }
+  return true
+}
+
 interface Props {
   accountId: string
 }
 
 export default function Sidebar({ accountId }: Props) {
   const [collapsed, setCollapsed] = useState(readSidebarCollapsed)
+  const [jobsBranchOpen, setJobsBranchOpen] = useState(readJobsBranchOpen)
   const { pathname } = useLocation()
   const { user } = useAuth()
 
@@ -182,6 +202,64 @@ export default function Sidebar({ accountId }: Props) {
   }, {})
 
   const base = `/account/${accountId}`
+
+  const underJobsPath = /\/account\/\d+\/jobs(\/|$)/.test(pathname)
+
+  useEffect(() => {
+    if (underJobsPath) setJobsBranchOpen(true)
+  }, [underJobsPath])
+
+  const setJobsBranchOpenPersist = (open: boolean) => {
+    setJobsBranchOpen(open)
+    try {
+      sessionStorage.setItem(SIDEBAR_JOBS_BRANCH_OPEN_KEY, open ? '1' : '0')
+    } catch {
+      /* ignore */
+    }
+  }
+
+  const renderNavLink = (item: NavItem, branchChild: boolean) => {
+    const seg = PATH_SEGMENTS[item.id]
+    const to = `${base}/${seg}`
+    const esignActive = item.id === 'settings-esign' && pathname.includes('/settings/esign')
+    const generalActive = item.id === 'settings-general' && pathname.includes('/settings/general')
+    const customFieldsActive =
+      item.id === 'settings-custom-fields' && pathname.includes('/settings/custom-fields')
+    const labelsActive = item.id === 'settings-labels' && pathname.includes('/settings/labels')
+    const auditActive =
+      item.id === 'settings-audit-compliance' && pathname.includes('/settings/audit-compliance')
+    const commActive =
+      item.id === 'settings-communication-channels' && pathname.includes('/settings/communication-channels')
+    const jobsKickoffActive =
+      item.id === 'jobs-role-kickoff' &&
+      (pathname.includes('/jobs/role-kickoff') || pathname.includes('/jobs/role-kickoff/'))
+    return (
+      <NavLink
+        to={to}
+        end={
+          item.id === 'profile' ||
+          item.id === 'jobs-all' ||
+          item.id === 'jobs-mine' ||
+          item.id === 'settings-custom-fields' ||
+          item.id === 'settings-labels' ||
+          item.id === 'settings-audit-compliance'
+        }
+        title={collapsed ? item.label : undefined}
+        className={({ isActive }) =>
+          `sidebar-item${branchChild ? ' sidebar-item--branch-child' : ''} ${isActive || esignActive || generalActive || customFieldsActive || labelsActive || commActive || auditActive || jobsKickoffActive ? 'sidebar-item-active' : ''}`
+        }
+      >
+        {!branchChild ? <span className="sidebar-item-icon">{ICONS[item.icon]}</span> : null}
+        {!collapsed && (
+          <>
+            <span className="sidebar-item-label">{item.label}</span>
+            {item.badge != null && <span className="sidebar-badge">{item.badge}</span>}
+          </>
+        )}
+        {collapsed && item.badge != null && <span className="sidebar-badge-dot" />}
+      </NavLink>
+    )
+  }
 
   return (
     <aside className={`sidebar ${collapsed ? 'sidebar-collapsed' : ''}`} aria-label="Main navigation">
@@ -211,45 +289,64 @@ export default function Sidebar({ accountId }: Props) {
         {Object.entries(groups).map(([group, items]) => (
           <div key={group} className="sidebar-group">
             {!collapsed && <div className="sidebar-group-label">{group}</div>}
-            {items.map(item => {
-              const seg = PATH_SEGMENTS[item.id]
-              const to = `${base}/${seg}`
-              const esignActive = item.id === 'settings-esign' && pathname.includes('/settings/esign')
-              const generalActive = item.id === 'settings-general' && pathname.includes('/settings/general')
-              const customFieldsActive =
-                item.id === 'settings-custom-fields' && pathname.includes('/settings/custom-fields')
-              const labelsActive = item.id === 'settings-labels' && pathname.includes('/settings/labels')
-              const auditActive =
-                item.id === 'settings-audit-compliance' && pathname.includes('/settings/audit-compliance')
-              const commActive =
-                item.id === 'settings-communication-channels' &&
-                pathname.includes('/settings/communication-channels')
-              return (
-                <NavLink
-                  key={item.id}
-                  to={to}
-                  end={
-                    item.id === 'profile' ||
-                    item.id === 'settings-custom-fields' ||
-                    item.id === 'settings-labels' ||
-                    item.id === 'settings-audit-compliance'
-                  }
-                  title={collapsed ? item.label : undefined}
-                  className={({ isActive }) =>
-                    `sidebar-item ${isActive || esignActive || generalActive || customFieldsActive || labelsActive || commActive || auditActive ? 'sidebar-item-active' : ''}`
-                  }
-                >
-                  <span className="sidebar-item-icon">{ICONS[item.icon]}</span>
-                  {!collapsed && (
+            {group === 'Recruiting'
+              ? (() => {
+                  const jobsChildren = JOBS_BRANCH_IDS.map(id => items.find(i => i.id === id)).filter(
+                    (x): x is NavItem => x != null,
+                  )
+                  const rest = items.filter(i => !JOBS_BRANCH_IDS.includes(i.id))
+                  return (
                     <>
-                      <span className="sidebar-item-label">{item.label}</span>
-                      {item.badge != null && <span className="sidebar-badge">{item.badge}</span>}
+                      {jobsChildren.length > 0 ? (
+                        collapsed ? (
+                          <div key="jobs-branch-collapsed">
+                            <NavLink
+                              to={`${base}/jobs`}
+                              className={({ isActive }) =>
+                                `sidebar-item ${isActive || underJobsPath ? 'sidebar-item-active' : ''}`
+                              }
+                              title="Jobs"
+                            >
+                              <span className="sidebar-item-icon">{ICONS.briefcase}</span>
+                            </NavLink>
+                          </div>
+                        ) : (
+                          <div key="jobs-branch" className="sidebar-branch">
+                            <button
+                              type="button"
+                              className={`sidebar-branch-trigger${underJobsPath ? ' sidebar-branch-trigger--active-route' : ''}`}
+                              onClick={() => setJobsBranchOpenPersist(!jobsBranchOpen)}
+                              aria-expanded={jobsBranchOpen}
+                              aria-controls="sidebar-jobs-branch-children"
+                            >
+                              <span className="sidebar-item-icon">{ICONS.briefcase}</span>
+                              <span className="sidebar-item-label">Jobs</span>
+                              <span
+                                className={`sidebar-branch-chevron${jobsBranchOpen ? ' sidebar-branch-chevron--open' : ''}`}
+                                aria-hidden
+                              >
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 18l6-6-6-6" />
+                                </svg>
+                              </span>
+                            </button>
+                            {jobsBranchOpen ? (
+                              <div id="sidebar-jobs-branch-children" className="sidebar-branch-children">
+                                {jobsChildren.map(item => (
+                                  <div key={item.id}>{renderNavLink(item, true)}</div>
+                                ))}
+                              </div>
+                            ) : null}
+                          </div>
+                        )
+                      ) : null}
+                      {rest.map(item => (
+                        <div key={item.id}>{renderNavLink(item, false)}</div>
+                      ))}
                     </>
-                  )}
-                  {collapsed && item.badge != null && <span className="sidebar-badge-dot" />}
-                </NavLink>
-              )
-            })}
+                  )
+                })()
+              : items.map(item => <div key={item.id}>{renderNavLink(item, false)}</div>)}
           </div>
         ))}
       </nav>

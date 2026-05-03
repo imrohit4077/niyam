@@ -44,7 +44,9 @@ export function canAny(user: UserData | null | undefined, keys: Array<[string, s
 /** Sidebar / route ids (aligned with Sidebar.tsx `SidebarPage`). */
 export type NavId =
   | 'profile'
-  | 'jobs'
+  | 'jobs-all'
+  | 'jobs-mine'
+  | 'jobs-role-kickoff'
   | 'hiring-plans'
   | 'pipeline'
   | 'job-boards'
@@ -66,7 +68,9 @@ type NavRule = { anyOf: Array<[string, string]> } | { allOf: Array<[string, stri
 
 export const NAV_RULES: Record<NavId, NavRule> = {
   profile: { always: true },
-  jobs: { anyOf: [['jobs', 'view']] },
+  'jobs-all': { anyOf: [['jobs', 'view']] },
+  'jobs-mine': { anyOf: [['jobs', 'view']] },
+  'jobs-role-kickoff': { anyOf: [['kickoff', 'submit'], ['kickoff', 'process']] },
   'hiring-plans': { anyOf: [['jobs', 'view']] },
   pipeline: { anyOf: [['applications', 'view_all'], ['applications', 'view_assigned'], ['applications', 'move_stage']] },
   'job-boards': { anyOf: [['jobs', 'view']] },

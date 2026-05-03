@@ -9,6 +9,10 @@ import PublicEsignSignPage from './pages/PublicEsignSignPage'
 import ApplicationDetailPage from './pages/ApplicationDetailPage'
 import EsignDocumentsPage from './pages/EsignDocumentsPage'
 import DashboardLayout from './layouts/DashboardLayout'
+import JobsHubLayout from './layouts/JobsHubLayout'
+import RoleKickoffHubPage from './pages/RoleKickoffHubPage'
+import RoleKickoffFormPage from './pages/RoleKickoffFormPage'
+import RoleKickoffDetailPage from './pages/RoleKickoffDetailPage'
 import HiringPlansView from './components/HiringPlansView'
 import PipelineBoardView from './components/PipelineBoardView'
 import {
@@ -113,6 +117,17 @@ function RootRedirect() {
   return <Navigate to="/login" replace />
 }
 
+function JobsIndexRedirect() {
+  const { user } = useAuth()
+  const { accountId } = useParams<{ accountId: string }>()
+  if (!accountId) return <Navigate to="/" replace />
+  const base = `/account/${accountId}/jobs`
+  if (navItemVisible(user, 'jobs-all')) return <Navigate to={`${base}/all`} replace />
+  if (navItemVisible(user, 'jobs-mine')) return <Navigate to={`${base}/mine`} replace />
+  if (navItemVisible(user, 'jobs-role-kickoff')) return <Navigate to={`${base}/role-kickoff`} replace />
+  return <Navigate to={`/account/${accountId}/profile`} replace />
+}
+
 function AppRoutes() {
   return (
     <Routes>
@@ -124,8 +139,34 @@ function AppRoutes() {
           <Route element={<DashboardLayout />}>
             <Route index element={<Navigate to="profile" replace />} />
             <Route path="profile" element={<HomeDashboardPage />} />
-            <Route element={<GateOutlet test={u => navItemVisible(u, 'jobs')} />}>
-              <Route path="jobs" element={<JobsView />} />
+            <Route
+              element={
+                <GateOutlet
+                  test={u =>
+                    navItemVisible(u, 'jobs-all') ||
+                    navItemVisible(u, 'jobs-mine') ||
+                    navItemVisible(u, 'jobs-role-kickoff')
+                  }
+                />
+              }
+            >
+              <Route path="jobs">
+                <Route index element={<JobsIndexRedirect />} />
+                <Route element={<JobsHubLayout />}>
+                  <Route element={<GateOutlet test={u => navItemVisible(u, 'jobs-all')} />}>
+                    <Route path="all" element={<JobsView jobsScope="all" />} />
+                  </Route>
+                  <Route element={<GateOutlet test={u => navItemVisible(u, 'jobs-mine')} />}>
+                    <Route path="mine" element={<JobsView jobsScope="mine" />} />
+                  </Route>
+                  <Route element={<GateOutlet test={u => navItemVisible(u, 'jobs-role-kickoff')} />}>
+                    <Route path="role-kickoff" element={<RoleKickoffHubPage />} />
+                    <Route path="role-kickoff/new" element={<RoleKickoffFormPage />} />
+                    <Route path="role-kickoff/:kickoffId/edit" element={<RoleKickoffFormPage />} />
+                    <Route path="role-kickoff/:kickoffId" element={<RoleKickoffDetailPage />} />
+                  </Route>
+                </Route>
+              </Route>
               <Route path="hiring-plans" element={<HiringPlansView />} />
               <Route path="job-boards" element={<JobBoardsView />} />
               <Route path="postings" element={<PostingsView />} />

@@ -1046,6 +1046,71 @@ a.sidebar-item {
   text-overflow: ellipsis;
 }
 
+/* Jobs (and future) nested branch under a group */
+.sidebar-branch {
+  margin-bottom: 2px;
+}
+
+.sidebar-branch-trigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 40px;
+  padding: 0 12px;
+  margin: 2px 8px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-nav);
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.sidebar-branch-trigger:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-nav-hover);
+}
+
+.sidebar-branch-trigger--active-route {
+  color: var(--white);
+}
+
+.sidebar-branch-chevron {
+  margin-left: auto;
+  display: flex;
+  color: rgba(148, 163, 184, 0.85);
+  transition: transform 0.18s ease;
+}
+
+.sidebar-branch-chevron--open {
+  transform: rotate(90deg);
+}
+
+.sidebar-branch-children {
+  margin: 2px 8px 6px 18px;
+  padding: 4px 0 4px 10px;
+  border-left: 1px solid rgba(148, 163, 184, 0.22);
+}
+
+.sidebar-item--branch-child {
+  margin: 1px 0;
+  min-height: 36px;
+  padding: 0 10px;
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+.sidebar-item--branch-child .sidebar-item-label {
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0.01em;
+}
+
 .sidebar-collapsed .sidebar-item {
   justify-content: center;
   padding: 0 8px;
@@ -1924,6 +1989,12 @@ a.sidebar-item {
 .list-row:last-child { border-bottom: none; }
 .list-row:hover { background: var(--gray-50); }
 
+a.list-row,
+a.list-row:visited {
+  text-decoration: none;
+  color: inherit;
+}
+
 .list-col {
   flex: 1;
   font-size: 12px;
@@ -2033,6 +2104,471 @@ a.sidebar-item {
   border: 1px solid var(--border);
   border-radius: 999px;
   vertical-align: middle;
+}
+
+/* Jobs hub: All / My / Role kickoff */
+.jobs-hub-layout {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.jobs-hub-subnav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.jobs-hub-subnav-link {
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font);
+  color: var(--text-secondary);
+  text-decoration: none;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.jobs-hub-subnav-link:hover {
+  background: var(--gray-100);
+  color: var(--text-primary);
+}
+
+.jobs-hub-subnav-link--active {
+  background: var(--surface);
+  color: var(--text-primary);
+  border-color: var(--border);
+  box-shadow: var(--shadow-xs);
+}
+
+.jobs-hub-outlet {
+  min-height: 120px;
+}
+
+.role-kickoff-page {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Create / edit kickoff — readable sans, cards, sticky actions */
+.role-kickoff-page--form {
+  --rk-font: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 0 8px 96px;
+  font-family: var(--rk-font);
+}
+
+.rk-form-shell {
+  padding-top: 4px;
+}
+
+.rk-form-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  min-height: 240px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.rk-form-hero {
+  margin-bottom: 28px;
+}
+
+.rk-back-link {
+  display: inline-flex;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-decoration: none;
+  margin-bottom: 14px;
+  transition: color 0.15s ease;
+}
+
+.rk-back-link:hover {
+  color: var(--teal);
+}
+
+.rk-form-hero-main {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.rk-form-title {
+  margin: 0 0 10px;
+  font-size: clamp(1.5rem, 2.5vw, 1.85rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.rk-form-lead {
+  margin: 0;
+  max-width: 52ch;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+
+.rk-form-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.rk-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.rk-card--alert {
+  padding: 24px;
+  border-color: var(--error-border);
+  background: var(--error-bg);
+}
+
+.rk-card-alert-text {
+  margin: 0 0 16px;
+  font-size: 14px;
+  color: var(--error);
+  line-height: 1.5;
+}
+
+.rk-card-head {
+  padding: 18px 22px 14px;
+  border-bottom: 1px solid var(--border-light);
+  background: linear-gradient(180deg, var(--gray-50) 0%, var(--surface) 100%);
+}
+
+.rk-card-title {
+  margin: 0 0 6px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+}
+
+.rk-card-desc {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.rk-card-body {
+  padding: 20px 22px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.rk-field-grid {
+  display: grid;
+  gap: 16px 20px;
+}
+
+.rk-field-grid--2 {
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .rk-field-grid--2 {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.rk-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.rk-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.rk-hint {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+.rk-input,
+.rk-textarea,
+.rk-select {
+  width: 100%;
+  font-family: var(--rk-font);
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--text-primary);
+  padding: 11px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.rk-input::placeholder,
+.rk-textarea::placeholder {
+  color: var(--gray-400);
+}
+
+.rk-input:hover,
+.rk-textarea:hover,
+.rk-select:hover {
+  border-color: var(--gray-300);
+}
+
+.rk-input:focus,
+.rk-textarea:focus,
+.rk-select:focus {
+  outline: none;
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px var(--teal-light);
+}
+
+.rk-textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.rk-textarea--compact {
+  min-height: 72px;
+}
+
+.rk-select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 40px;
+}
+
+.rk-salary-row {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 560px) {
+  .rk-salary-row {
+    grid-template-columns: 1fr 1fr 120px;
+  }
+}
+
+.rk-inline-note {
+  margin: 0;
+  padding: 12px 14px;
+  font-size: 13px;
+  line-height: 1.45;
+  border-radius: var(--radius);
+  background: var(--gray-50);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+
+.rk-inline-note--warn {
+  background: var(--warning-bg);
+  border-color: var(--warning-border);
+  color: var(--text-secondary);
+}
+
+.rk-form-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  margin: 28px -8px 0;
+  padding: 14px 8px calc(14px + env(safe-area-inset-bottom, 0));
+  background: linear-gradient(180deg, rgba(248, 249, 251, 0) 0%, rgba(248, 249, 251, 0.92) 24%, var(--off-white) 100%);
+  border-top: 1px solid var(--border-light);
+  backdrop-filter: blur(8px);
+}
+
+.rk-form-footer-inner {
+  max-width: 920px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.rk-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 22px;
+  font-family: var(--rk-font);
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  text-decoration: none;
+  border: none;
+  transition:
+    background 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.1s ease;
+}
+
+.rk-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.rk-btn-primary {
+  background: linear-gradient(180deg, #0f172a 0%, #0c1220 100%);
+  color: var(--white);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
+}
+
+.rk-btn-primary:hover:not(:disabled) {
+  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.18);
+}
+
+.rk-btn-primary:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.rk-btn-secondary {
+  background: var(--surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+}
+
+.rk-btn-secondary:hover {
+  background: var(--gray-50);
+}
+
+.role-kickoff-page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.role-kickoff-page-title {
+  margin: 0;
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.role-kickoff-section-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 24px 0 10px;
+}
+
+.role-kickoff-section-title:first-child {
+  margin-top: 0;
+}
+
+.role-kickoff-detail-grid {
+  display: grid;
+  gap: 10px 24px;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  margin-bottom: 20px;
+}
+
+.role-kickoff-detail-block {
+  padding: 14px 16px;
+  background: var(--gray-50);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius);
+}
+
+.role-kickoff-detail-block dt {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.role-kickoff-detail-block dd {
+  font-size: 14px;
+  color: var(--text-primary);
+  line-height: 1.5;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.role-kickoff-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.btn-kickoff-secondary {
+  height: 40px;
+  padding: 0 18px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--font);
+  color: var(--text-primary);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.btn-kickoff-secondary:hover {
+  background: var(--gray-50);
+}
+
+.btn-kickoff-danger {
+  height: 40px;
+  padding: 0 18px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--font);
+  color: var(--tag-red);
+  background: var(--tag-red-bg);
+  border: 1px solid var(--error-border);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.btn-kickoff-danger:hover {
+  filter: brightness(0.97);
 }
 
 .btn-jobs-primary {

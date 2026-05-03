@@ -49,14 +49,18 @@ class Authenticatable:
         account_id: int | None = None,
         job_id: int | None = None,
     ) -> bool:
-        """Check resource:action. Admins bypass. With job_id + account_id + db, merges job hiring team grants."""
+        """Check resource:action. Admins bypass.
+
+        Uses DB-backed permission resolution when account_id is available to avoid stale JWT `perms`
+        (e.g. after new permissions are introduced but user token is old).
+        """
         if not getattr(self, "current_user", None):
             return False
         if self._role() in ("admin", "superadmin", "site_admin"):
             return True
         key = f"{resource}:{action}"
         db = getattr(self, "db", None)
-        if job_id is not None and account_id is not None and db is not None:
+        if account_id is not None and db is not None:
             uid = self._user_id()
             if uid is None:
                 return False
@@ -66,7 +70,12 @@ class Authenticatable:
             au = AccountUser.find_by(db, user_id=uid, account_id=account_id)
             if not au:
                 return False
-            eff = PermissionResolutionService(db).effective_keys(account_id, int(uid), au.id, job_id)
+            eff = PermissionResolutionService(db).effective_keys(
+                account_id,
+                int(uid),
+                au.id,
+                job_id,
+            )
             return key in eff
         return key in self._perms()
 

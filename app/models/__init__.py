@@ -43,6 +43,7 @@ from app.models.communication_channel import CommunicationChannel
 from app.models.department import Department
 from app.models.job_setup_flow_section import JobSetupFlowSection
 from app.models.job_setup_flow_field import JobSetupFlowField
+from app.models.role_kickoff_request import RoleKickoffRequest
 
 __all__ = [
     "BaseModel", "Timestampable", "SoftDeletable", "Sluggable",
@@ -56,6 +57,7 @@ __all__ = [
     "CommunicationChannel",
     "Department",
     "JobSetupFlowSection", "JobSetupFlowField",
+    "RoleKickoffRequest",
     "ReferralLink", "ReferralBonus",
     "AuditLogEntry", "AuditLogDeliveryFailure",
 ]

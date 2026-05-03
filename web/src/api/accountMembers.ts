@@ -11,13 +11,21 @@ function authHeaders(token: string) {
 }
 
 async function req<T>(path: string, token: string, search?: string): Promise<T> {
-  const qs = search?.trim() ? `?q=${encodeURIComponent(search.trim())}` : ''
-  const res = await fetch(`${BASE}${path}${qs}`, { headers: authHeaders(token) })
+  const res = await fetch(`${BASE}${path}${search ?? ''}`, { headers: authHeaders(token) })
   const json = await res.json()
   if (!json.success) throw new Error(json.error || 'Request failed')
   return json.data as T
 }
 
+function membersQuery(opts?: { q?: string; workspace_role?: string }): string {
+  const p = new URLSearchParams()
+  if (opts?.q?.trim()) p.set('q', opts.q.trim())
+  if (opts?.workspace_role?.trim()) p.set('workspace_role', opts.workspace_role.trim())
+  const s = p.toString()
+  return s ? `?${s}` : ''
+}
+
 export const accountMembersApi = {
-  list: (token: string, q?: string) => req<AccountMember[]>('/account/members', token, q),
+  list: (token: string, opts?: { q?: string; workspace_role?: string }) =>
+    req<AccountMember[]>('/account/members', token, membersQuery(opts)),
 }

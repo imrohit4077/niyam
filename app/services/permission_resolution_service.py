@@ -52,6 +52,8 @@ PERMISSION_CATALOG: tuple[tuple[str, str, str], ...] = (
     ("esign", "manage", "Manage e-sign templates, rules, and automation"),
     ("referrals", "view", "Referrals hub and personal referral links"),
     ("referrals", "manage", "Referral program settings, bonuses, and admin analytics"),
+    ("kickoff", "submit", "Create and submit role kickoff requests (hiring manager)"),
+    ("kickoff", "process", "Review, approve, reject, convert role kickoffs to jobs (recruiter)"),
 )
 
 ALL_PERMISSION_KEYS: frozenset[str] = frozenset(permission_key(r, a) for r, a, _ in PERMISSION_CATALOG)
@@ -82,11 +84,13 @@ WORKSPACE_ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
             permission_key("esign", "manage"),
             permission_key("referrals", "view"),
             permission_key("referrals", "manage"),
+            permission_key("kickoff", "process"),
         }
     ),
     "hiring_manager": frozenset(
         {
             permission_key("jobs", "view"),
+            permission_key("kickoff", "submit"),
             permission_key("applications", "view_all"),
             permission_key("applications", "move_stage"),
             permission_key("applications", "reject"),
@@ -200,17 +204,20 @@ class PermissionResolutionService:
         )
         rows = self.db.execute(stmt).all()
         from_db = frozenset(permission_key(r, a) for r, a in rows)
-        if from_db:
-            return from_db
-        # Fallback if role_permissions not populated yet: derive from role slugs.
-        keys: set[str] = set()
+
+        slug_defaults: set[str] = set()
         for aur in aurs:
             from app.models.role import Role
 
             role = Role.find_by(self.db, id=aur.role_id)
             if role and role.slug in WORKSPACE_ROLE_PERMISSIONS:
-                keys |= WORKSPACE_ROLE_PERMISSIONS[role.slug]
-        return frozenset(keys)
+                slug_defaults |= WORKSPACE_ROLE_PERMISSIONS[role.slug]
+
+        # Union DB grants with slug defaults so new catalog keys (e.g. kickoff:submit) apply
+        # even when role_permissions rows exist but predate a feature migration.
+        if from_db:
+            return frozenset(from_db | slug_defaults)
+        return frozenset(slug_defaults)
 
     def job_context_keys(self, account_id: int, user_id: int, job_id: int) -> frozenset[str]:
         """Keys granted only in the context of this job (FKs + job_team_members)."""

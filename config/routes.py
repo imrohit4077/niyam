@@ -129,6 +129,7 @@ def draw_routes(app: "FastAPI") -> None:
     from app.controllers.communication_channels_controller import CommunicationChannelsController
     from app.controllers.communication_channels_oauth_controller import CommunicationChannelsOauthController
     from app.controllers.reference_controller import ReferenceController
+    from app.controllers.role_kickoff_requests_controller import RoleKickoffRequestsController
 
     router = APIRouter(prefix="/api/v1")
 
@@ -363,6 +364,47 @@ def draw_routes(app: "FastAPI") -> None:
 
     # Jobs CRUD
     resources(router, "/jobs", JobsController)
+
+    router.add_api_route(
+        "/role_kickoff_requests",
+        _wrap(RoleKickoffRequestsController, "index", lambda c: c.index()),
+        methods=["GET"],
+    )
+    router.add_api_route(
+        "/role_kickoff_requests",
+        _wrap(RoleKickoffRequestsController, "create", lambda c: c.create()),
+        methods=["POST"],
+    )
+    router.add_api_route(
+        "/role_kickoff_requests/{id:int}",
+        _wrap(RoleKickoffRequestsController, "show", lambda c: c.show()),
+        methods=["GET"],
+    )
+    router.add_api_route(
+        "/role_kickoff_requests/{id:int}",
+        _wrap(RoleKickoffRequestsController, "update_after_changes", lambda c: c.update_after_changes()),
+        methods=["PATCH"],
+    )
+    router.add_api_route(
+        "/role_kickoff_requests/{id:int}/approve",
+        _wrap(RoleKickoffRequestsController, "approve", lambda c: c.approve()),
+        methods=["POST"],
+    )
+    router.add_api_route(
+        "/role_kickoff_requests/{id:int}/reject",
+        _wrap(RoleKickoffRequestsController, "reject", lambda c: c.reject()),
+        methods=["POST"],
+    )
+    router.add_api_route(
+        "/role_kickoff_requests/{id:int}/request_changes",
+        _wrap(RoleKickoffRequestsController, "request_changes", lambda c: c.request_changes()),
+        methods=["POST"],
+    )
+    router.add_api_route(
+        "/role_kickoff_requests/{id:int}/create_job",
+        _wrap(RoleKickoffRequestsController, "create_job", lambda c: c.create_job()),
+        methods=["POST"],
+    )
     router.add_api_route(
         "/jobs/{job_id:int}/referral_link",
         _wrap(JobsController, "referral_link", lambda c: c.referral_link()),

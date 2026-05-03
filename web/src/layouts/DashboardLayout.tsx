@@ -9,7 +9,9 @@ import type { DashboardOutletContext } from './DashboardOutletContext'
 function deriveTitle(pathname: string): string {
   if (pathname.includes('/jobs/new')) return 'New job'
   if (/\/jobs\/\d+\/edit/.test(pathname)) return 'Edit job'
-  if (pathname.match(/\/account\/\d+\/jobs\/?$/)) return 'Jobs'
+  if (pathname.includes('/jobs/all')) return 'Jobs'
+  if (pathname.includes('/jobs/mine')) return 'My jobs'
+  if (pathname.includes('/jobs/role-kickoff')) return 'Job role kickoff'
   if (pathname.includes('/hiring-plans')) return 'Hiring plans'
   if (pathname.includes('/pipeline')) return 'Pipeline'
   if (pathname.includes('/job-boards')) return 'Job Boards'
@@ -59,9 +61,10 @@ export default function DashboardLayout() {
 
   const title = useMemo(() => deriveTitle(pathname), [pathname])
 
-  /** Jobs list / job editor wizard render their own titles — skip duplicate main header. */
+  /** Jobs hub / job editor wizard render their own titles — skip duplicate main header. */
   const hideMainHeader =
-    /^\/account\/\d+\/jobs\/?$/.test(pathname) ||
+    /^\/account\/\d+\/jobs\/(all|mine)\/?$/.test(pathname) ||
+    /^\/account\/\d+\/jobs\/role-kickoff/.test(pathname) ||
     /^\/account\/\d+\/jobs\/new\/?$/.test(pathname) ||
     /^\/account\/\d+\/jobs\/\d+\/edit/.test(pathname)
 
