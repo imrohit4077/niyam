@@ -6,7 +6,13 @@ from datetime import datetime, timezone
 from typing import Any
 
 from sqlalchemy import select
+
 from app.models.account_user import AccountUser
+from app.models.hiring_attribute import HiringAttribute
+from app.models.hiring_stage_template import HiringStageTemplate
+from app.models.hiring_stage_template_attribute import HiringStageTemplateAttribute
+from app.models.job import Job
+from app.models.pipeline_stage import PipelineStage
 from app.models.role_kickoff_request import RoleKickoffRequest
 from app.models.user import User
 from app.services.base_service import BaseService
@@ -59,6 +65,53 @@ def _build_job_description(k: RoleKickoffRequest) -> str:
 
 
 class RoleKickoffRequestService(BaseService):
+    def _template_default_attr_ids(self, template_id: int) -> list[int]:
+        stmt = (
+            select(HiringStageTemplateAttribute.hiring_attribute_id)
+            .where(HiringStageTemplateAttribute.hiring_stage_template_id == template_id)
+            .order_by(HiringStageTemplateAttribute.position.asc(), HiringStageTemplateAttribute.id.asc())
+        )
+        return [int(x) for x in self.db.execute(stmt).scalars().all()]
+
+    def _normalize_selected_stages_for_storage(self, account_id: int, raw: Any) -> tuple[list[dict[str, Any]], str | None]:
+        if raw is None:
+            return [], None
+        if not isinstance(raw, list):
+            return [], "selected_stages must be an array"
+        out: list[dict[str, Any]] = []
+        for i, item in enumerate(raw):
+            if not isinstance(item, dict):
+                return [], f"selected_stages[{i}] must be an object"
+            tid = item.get("stage_template_id") if item.get("stage_template_id") is not None else item.get("id")
+            try:
+                tid_int = int(tid)
+            except (TypeError, ValueError):
+                return [], f"selected_stages[{i}].stage_template_id is invalid"
+            tpl = HiringStageTemplate.find_by(self.db, id=tid_int, account_id=account_id)
+            if not tpl:
+                return [], f"Unknown stage template id {tid_int}"
+            defaults = self._template_default_attr_ids(tid_int)
+            override = item.get("attribute_ids")
+            if override is None or (isinstance(override, list) and len(override) == 0):
+                attr_ids = list(defaults)
+            else:
+                if not isinstance(override, list):
+                    return [], f"selected_stages[{i}].attribute_ids must be an array"
+                attr_ids = []
+                for x in override:
+                    try:
+                        aid = int(x)
+                    except (TypeError, ValueError):
+                        continue
+                    ha = HiringAttribute.find_by(self.db, id=aid, account_id=account_id)
+                    if not ha:
+                        return [], f"Unknown attribute id {aid}"
+                    attr_ids.append(aid)
+                if not attr_ids:
+                    attr_ids = list(defaults)
+            out.append({"stage_template_id": tid_int, "attribute_ids": attr_ids})
+        return out, None
+
     def _hydrate(self, row: RoleKickoffRequest) -> dict[str, Any]:
         d = row.to_dict()
         hm = User.find_by(self.db, id=row.created_by_user_id)
@@ -92,6 +145,10 @@ class RoleKickoffRequestService(BaseService):
             except (TypeError, ValueError):
                 return self.failure("interview_rounds must be a number")
 
+        norm_stages, err = self._normalize_selected_stages_for_storage(account_id, body.get("selected_stages"))
+        if err:
+            return self.failure(err)
+
         now = datetime.now(timezone.utc)
         row = RoleKickoffRequest(
             account_id=account_id,
@@ -122,6 +179,7 @@ class RoleKickoffRequestService(BaseService):
             interviewers_note=(body.get("interviewers_note") or None)
             and str(body.get("interviewers_note")).strip()
             or None,
+            selected_stages=norm_stages,
             created_at=now,
             updated_at=now,
         )
@@ -273,6 +331,11 @@ class RoleKickoffRequestService(BaseService):
             if not self._member(account_id, nr):
                 return self.failure("Recruiter is not a member of this workspace")
             row.assigned_recruiter_user_id = nr
+        if "selected_stages" in body:
+            norm, err = self._normalize_selected_stages_for_storage(account_id, body.get("selected_stages"))
+            if err:
+                return self.failure(err)
+            row.selected_stages = norm
         row.status = "submitted"
         row.recruiter_feedback = None
         row.updated_at = datetime.now(timezone.utc)
@@ -314,9 +377,74 @@ class RoleKickoffRequestService(BaseService):
         jid = job_data.get("id")
         if not jid:
             return self.failure("Job created but missing id")
-        row.converted_job_id = int(jid)
+        jid_int = int(jid)
+        now = datetime.now(timezone.utc)
+
+        raw_stages = row.selected_stages if isinstance(row.selected_stages, list) else []
+        snapshot: list[dict[str, Any]] = []
+        for order, item in enumerate(raw_stages):
+            if not isinstance(item, dict):
+                continue
+            try:
+                tid = int(item.get("stage_template_id", 0))
+            except (TypeError, ValueError):
+                continue
+            tpl = HiringStageTemplate.find_by(self.db, id=tid, account_id=account_id)
+            if not tpl:
+                continue
+            attr_raw = item.get("attribute_ids") if isinstance(item.get("attribute_ids"), list) else []
+            focus_ids: list[int] = []
+            for x in attr_raw:
+                try:
+                    focus_ids.append(int(x))
+                except (TypeError, ValueError):
+                    continue
+            iv_raw = tpl.default_interviewer_user_ids if isinstance(tpl.default_interviewer_user_ids, list) else []
+            interviewer_ids: list[int] = []
+            for x in iv_raw:
+                try:
+                    interviewer_ids.append(int(x))
+                except (TypeError, ValueError):
+                    continue
+            snapshot.append(
+                {
+                    "order": order,
+                    "stage_template_id": tid,
+                    "name": tpl.name,
+                    "focus_attribute_ids": focus_ids,
+                    "default_interviewer_user_ids": interviewer_ids,
+                }
+            )
+
+        job = Job.find_by(self.db, id=jid_int, account_id=account_id)
+        if job and snapshot:
+            jc = dict(job.job_config) if isinstance(job.job_config, dict) else {}
+            jc["structured_hiring"] = {"stages": snapshot}
+            job.job_config = jc
+            job.updated_at = now
+            job.save(self.db)
+            for s in snapshot:
+                ps = PipelineStage(
+                    account_id=account_id,
+                    job_id=jid_int,
+                    name=str(s.get("name") or "Stage")[:100],
+                    position=int(s.get("order", 0)),
+                    stage_type=None,
+                    automation_rules={
+                        "structured_hiring": {
+                            "stage_template_id": s.get("stage_template_id"),
+                            "focus_attribute_ids": s.get("focus_attribute_ids", []),
+                            "default_interviewer_user_ids": s.get("default_interviewer_user_ids", []),
+                        }
+                    },
+                    created_at=now,
+                    updated_at=now,
+                )
+                ps.save(self.db)
+
+        row.converted_job_id = jid_int
         row.status = "converted"
-        row.updated_at = datetime.now(timezone.utc)
+        row.updated_at = now
         row.save(self.db)
         job_data["role_kickoff_request_id"] = row.id
         return self.success(job_data)

@@ -130,6 +130,8 @@ def draw_routes(app: "FastAPI") -> None:
     from app.controllers.communication_channels_oauth_controller import CommunicationChannelsOauthController
     from app.controllers.reference_controller import ReferenceController
     from app.controllers.role_kickoff_requests_controller import RoleKickoffRequestsController
+    from app.controllers.hiring_attributes_controller import HiringAttributesController
+    from app.controllers.hiring_stage_templates_controller import HiringStageTemplatesController
 
     router = APIRouter(prefix="/api/v1")
 
@@ -405,6 +407,10 @@ def draw_routes(app: "FastAPI") -> None:
         _wrap(RoleKickoffRequestsController, "create_job", lambda c: c.create_job()),
         methods=["POST"],
     )
+
+    resources(router, "/hiring_attributes", HiringAttributesController)
+    resources(router, "/hiring_stage_templates", HiringStageTemplatesController)
+
     router.add_api_route(
         "/jobs/{job_id:int}/referral_link",
         _wrap(JobsController, "referral_link", lambda c: c.referral_link()),

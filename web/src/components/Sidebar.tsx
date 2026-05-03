@@ -14,18 +14,23 @@ interface NavItem {
   group?: string
 }
 
+/** Nested under Structured hiring (order matters). */
+const STRUCTURED_BRANCH_IDS: NavId[] = ['hiring-structure-attributes', 'hiring-structure-stages']
+
 /** Nested under the Jobs branch in Recruiting (order matters). */
-const JOBS_BRANCH_IDS: NavId[] = ['jobs-all', 'jobs-mine', 'jobs-role-kickoff']
+const JOBS_BRANCH_IDS: NavId[] = ['jobs-role-kickoff', 'jobs-all', 'jobs-mine']
 
 const NAV: NavItem[] = [
   { id: 'profile', label: 'My Profile', icon: 'user', group: 'Overview' },
+  { id: 'jobs-role-kickoff', label: 'Role kickoff', icon: 'briefcase', group: 'Recruiting' },
   { id: 'jobs-all', label: 'All jobs', icon: 'briefcase', group: 'Recruiting' },
   { id: 'jobs-mine', label: 'My jobs', icon: 'briefcase', group: 'Recruiting' },
-  { id: 'jobs-role-kickoff', label: 'Job role kickoff', icon: 'briefcase', group: 'Recruiting' },
   { id: 'hiring-plans', label: 'Hiring plans', icon: 'target', group: 'Recruiting' },
   { id: 'pipeline', label: 'Pipeline', icon: 'columns', group: 'Recruiting' },
   { id: 'job-boards', label: 'Job Boards', icon: 'globe', group: 'Recruiting' },
   { id: 'postings', label: 'Postings', icon: 'send', group: 'Recruiting' },
+  { id: 'hiring-structure-attributes', label: 'Attributes', icon: 'layers', group: 'Structured hiring' },
+  { id: 'hiring-structure-stages', label: 'Stages', icon: 'layers', group: 'Structured hiring' },
   { id: 'job-applications', label: 'Applications', icon: 'document', group: 'Candidates' },
   { id: 'candidates', label: 'Candidates', icon: 'people', group: 'Candidates' },
   { id: 'interviews', label: 'Interviews', icon: 'calendar', group: 'Candidates' },
@@ -42,6 +47,8 @@ const NAV: NavItem[] = [
 
 const PATH_SEGMENTS: Record<NavId, string> = {
   profile: 'profile',
+  'hiring-structure-attributes': 'structured-hiring/attributes',
+  'hiring-structure-stages': 'structured-hiring/stages',
   'jobs-all': 'jobs/all',
   'jobs-mine': 'jobs/mine',
   'jobs-role-kickoff': 'jobs/role-kickoff',
@@ -121,6 +128,11 @@ const ICONS: Record<string, ReactNode> = {
       <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
     </svg>
   ),
+  layers: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4 7l8-4 8 4-8 4-8-4zm0 5l8 4 8-4M4 17l8 4 8-4" />
+    </svg>
+  ),
   target: (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden="true">
       <circle cx="12" cy="12" r="9" />
@@ -162,6 +174,7 @@ const ICONS: Record<string, ReactNode> = {
 
 const SIDEBAR_COLLAPSED_KEY = 'niyam.sidebarCollapsed'
 const SIDEBAR_JOBS_BRANCH_OPEN_KEY = 'niyam.sidebarJobsBranchOpen'
+const SIDEBAR_STRUCTURED_BRANCH_OPEN_KEY = 'niyam.sidebarStructuredBranchOpen'
 
 function readSidebarCollapsed(): boolean {
   try {
@@ -182,6 +195,17 @@ function readJobsBranchOpen(): boolean {
   return true
 }
 
+function readStructuredBranchOpen(): boolean {
+  try {
+    const v = sessionStorage.getItem(SIDEBAR_STRUCTURED_BRANCH_OPEN_KEY)
+    if (v === '0') return false
+    if (v === '1') return true
+  } catch {
+    /* ignore */
+  }
+  return true
+}
+
 interface Props {
   accountId: string
 }
@@ -189,6 +213,7 @@ interface Props {
 export default function Sidebar({ accountId }: Props) {
   const [collapsed, setCollapsed] = useState(readSidebarCollapsed)
   const [jobsBranchOpen, setJobsBranchOpen] = useState(readJobsBranchOpen)
+  const [structuredBranchOpen, setStructuredBranchOpen] = useState(readStructuredBranchOpen)
   const { pathname } = useLocation()
   const { user } = useAuth()
 
@@ -204,15 +229,29 @@ export default function Sidebar({ accountId }: Props) {
   const base = `/account/${accountId}`
 
   const underJobsPath = /\/account\/\d+\/jobs(\/|$)/.test(pathname)
+  const underStructuredPath = /\/account\/\d+\/structured-hiring(\/|$)/.test(pathname)
 
   useEffect(() => {
     if (underJobsPath) setJobsBranchOpen(true)
   }, [underJobsPath])
 
+  useEffect(() => {
+    if (underStructuredPath) setStructuredBranchOpen(true)
+  }, [underStructuredPath])
+
   const setJobsBranchOpenPersist = (open: boolean) => {
     setJobsBranchOpen(open)
     try {
       sessionStorage.setItem(SIDEBAR_JOBS_BRANCH_OPEN_KEY, open ? '1' : '0')
+    } catch {
+      /* ignore */
+    }
+  }
+
+  const setStructuredBranchOpenPersist = (open: boolean) => {
+    setStructuredBranchOpen(open)
+    try {
+      sessionStorage.setItem(SIDEBAR_STRUCTURED_BRANCH_OPEN_KEY, open ? '1' : '0')
     } catch {
       /* ignore */
     }
@@ -233,6 +272,9 @@ export default function Sidebar({ accountId }: Props) {
     const jobsKickoffActive =
       item.id === 'jobs-role-kickoff' &&
       (pathname.includes('/jobs/role-kickoff') || pathname.includes('/jobs/role-kickoff/'))
+    const structuredLeafActive =
+      (item.id === 'hiring-structure-attributes' && pathname.includes('/structured-hiring/attributes')) ||
+      (item.id === 'hiring-structure-stages' && /\/structured-hiring\/stages(\/|$)/.test(pathname))
     return (
       <NavLink
         to={to}
@@ -240,13 +282,15 @@ export default function Sidebar({ accountId }: Props) {
           item.id === 'profile' ||
           item.id === 'jobs-all' ||
           item.id === 'jobs-mine' ||
+          item.id === 'hiring-structure-attributes' ||
+          item.id === 'hiring-structure-stages' ||
           item.id === 'settings-custom-fields' ||
           item.id === 'settings-labels' ||
           item.id === 'settings-audit-compliance'
         }
         title={collapsed ? item.label : undefined}
         className={({ isActive }) =>
-          `sidebar-item${branchChild ? ' sidebar-item--branch-child' : ''} ${isActive || esignActive || generalActive || customFieldsActive || labelsActive || commActive || auditActive || jobsKickoffActive ? 'sidebar-item-active' : ''}`
+          `sidebar-item${branchChild ? ' sidebar-item--branch-child' : ''} ${isActive || esignActive || generalActive || customFieldsActive || labelsActive || commActive || auditActive || jobsKickoffActive || structuredLeafActive ? 'sidebar-item-active' : ''}`
         }
       >
         {!branchChild ? <span className="sidebar-item-icon">{ICONS[item.icon]}</span> : null}
@@ -289,7 +333,54 @@ export default function Sidebar({ accountId }: Props) {
         {Object.entries(groups).map(([group, items]) => (
           <div key={group} className="sidebar-group">
             {!collapsed && <div className="sidebar-group-label">{group}</div>}
-            {group === 'Recruiting'
+            {group === 'Structured hiring'
+              ? (() => {
+                  const structuredChildren = STRUCTURED_BRANCH_IDS.map(id => items.find(i => i.id === id)).filter(
+                    (x): x is NavItem => x != null,
+                  )
+                  return structuredChildren.length === 0 ? null : collapsed ? (
+                    <div key="structured-branch-collapsed">
+                      <NavLink
+                        to={`${base}/structured-hiring/attributes`}
+                        className={({ isActive }) =>
+                          `sidebar-item ${isActive || underStructuredPath ? 'sidebar-item-active' : ''}`
+                        }
+                        title="Structured hiring"
+                      >
+                        <span className="sidebar-item-icon">{ICONS.layers}</span>
+                      </NavLink>
+                    </div>
+                  ) : (
+                    <div key="structured-branch" className="sidebar-branch">
+                      <button
+                        type="button"
+                        className={`sidebar-branch-trigger${underStructuredPath ? ' sidebar-branch-trigger--active-route' : ''}`}
+                        onClick={() => setStructuredBranchOpenPersist(!structuredBranchOpen)}
+                        aria-expanded={structuredBranchOpen}
+                        aria-controls="sidebar-structured-branch-children"
+                      >
+                        <span className="sidebar-item-icon">{ICONS.layers}</span>
+                        <span className="sidebar-item-label">Structured hiring</span>
+                        <span
+                          className={`sidebar-branch-chevron${structuredBranchOpen ? ' sidebar-branch-chevron--open' : ''}`}
+                          aria-hidden
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 18l6-6-6-6" />
+                          </svg>
+                        </span>
+                      </button>
+                      {structuredBranchOpen ? (
+                        <div id="sidebar-structured-branch-children" className="sidebar-branch-children">
+                          {structuredChildren.map(item => (
+                            <div key={item.id}>{renderNavLink(item, true)}</div>
+                          ))}
+                        </div>
+                      ) : null}
+                    </div>
+                  )
+                })()
+              : group === 'Recruiting'
               ? (() => {
                   const jobsChildren = JOBS_BRANCH_IDS.map(id => items.find(i => i.id === id)).filter(
                     (x): x is NavItem => x != null,

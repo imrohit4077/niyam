@@ -54,6 +54,8 @@ PERMISSION_CATALOG: tuple[tuple[str, str, str], ...] = (
     ("referrals", "manage", "Referral program settings, bonuses, and admin analytics"),
     ("kickoff", "submit", "Create and submit role kickoff requests (hiring manager)"),
     ("kickoff", "process", "Review, approve, reject, convert role kickoffs to jobs (recruiter)"),
+    ("hiring_structure", "view", "View hiring attributes and stage templates (structured hiring)"),
+    ("hiring_structure", "manage", "Create and edit hiring attributes and stage templates"),
 )
 
 ALL_PERMISSION_KEYS: frozenset[str] = frozenset(permission_key(r, a) for r, a, _ in PERMISSION_CATALOG)
@@ -66,6 +68,7 @@ WORKSPACE_ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
     "job_admin": ALL_PERMISSION_KEYS - {permission_key("settings", "admin_roles")},
     "recruiter": frozenset(
         {
+            permission_key("hiring_structure", "view"),
             permission_key("jobs", "view"),
             permission_key("jobs", "create"),
             permission_key("jobs", "edit"),
@@ -89,6 +92,8 @@ WORKSPACE_ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
     ),
     "hiring_manager": frozenset(
         {
+            permission_key("hiring_structure", "view"),
+            permission_key("hiring_structure", "manage"),
             permission_key("jobs", "view"),
             permission_key("kickoff", "submit"),
             permission_key("applications", "view_all"),

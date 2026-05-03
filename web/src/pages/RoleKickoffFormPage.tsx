@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { Link, useNavigate, useOutletContext, useParams } from 'react-router-dom'
 import { accountMembersApi } from '../api/accountMembers'
-import { roleKickoffApi } from '../api/roleKickoff'
+import { hiringAttributesApi, hiringStageTemplatesApi, type HiringAttributeRow, type HiringStageTemplateRow } from '../api/hiringStructure'
+import { roleKickoffApi, type RoleKickoffSelectedStage } from '../api/roleKickoff'
 import type { DashboardOutletContext } from '../layouts/DashboardOutletContext'
 import { useToast } from '../contexts/ToastContext'
 
@@ -84,19 +85,26 @@ export default function RoleKickoffFormPage() {
   const [interviewRounds, setInterviewRounds] = useState('')
   const [interviewersNote, setInterviewersNote] = useState('')
   const [assignedRecruiterId, setAssignedRecruiterId] = useState('')
+  const [stageTemplates, setStageTemplates] = useState<HiringStageTemplateRow[]>([])
+  const [hiringAttrs, setHiringAttrs] = useState<HiringAttributeRow[]>([])
+  const [selectedStages, setSelectedStages] = useState<RoleKickoffSelectedStage[]>([])
 
   useEffect(() => {
     let cancelled = false
     setLoadingMeta(true)
     Promise.all([
       accountMembersApi.list(token, { workspace_role: 'recruiter' }).catch(() => []),
+      hiringStageTemplatesApi.list(token).catch(() => []),
+      hiringAttributesApi.list(token).catch(() => []),
       isEdit && kickoffId
         ? roleKickoffApi.get(token, Number(kickoffId)).catch(() => null)
         : Promise.resolve(null),
     ])
-      .then(([members, row]) => {
+      .then(([members, tpls, attrs, row]) => {
         if (cancelled) return
         setRecruiters(members)
+        setStageTemplates(Array.isArray(tpls) ? tpls : [])
+        setHiringAttrs(Array.isArray(attrs) ? attrs : [])
         if (row) {
           if (row.status !== 'changes_requested') {
             setLoadErr(
@@ -121,6 +129,7 @@ export default function RoleKickoffFormPage() {
           setInterviewRounds(row.interview_rounds != null ? String(row.interview_rounds) : '')
           setInterviewersNote(row.interviewers_note ?? '')
           setAssignedRecruiterId(String(row.assigned_recruiter_user_id ?? ''))
+          setSelectedStages(Array.isArray(row.selected_stages) ? row.selected_stages : [])
         }
       })
       .catch(() => {
@@ -156,6 +165,7 @@ export default function RoleKickoffFormPage() {
       interview_rounds: Number.isFinite(ir as number) ? ir : null,
       interviewers_note: interviewersNote.trim() || null,
       assigned_recruiter_user_id: Number(assignedRecruiterId),
+      selected_stages: selectedStages,
     }
   }, [
     title,
@@ -175,7 +185,48 @@ export default function RoleKickoffFormPage() {
     interviewRounds,
     interviewersNote,
     assignedRecruiterId,
+    selectedStages,
   ])
+
+  const templateById = useCallback(
+    (id: number) => stageTemplates.find(t => t.id === id),
+    [stageTemplates],
+  )
+
+  const toggleStageTemplate = (tplId: number) => {
+    setSelectedStages(cur => {
+      const idx = cur.findIndex(s => s.stage_template_id === tplId)
+      if (idx >= 0) return cur.filter((_, i) => i !== idx)
+      const tpl = templateById(tplId)
+      const defaults = [...(tpl?.default_attribute_ids ?? [])]
+      return [...cur, { stage_template_id: tplId, attribute_ids: defaults }]
+    })
+  }
+
+  const moveStage = (index: number, dir: -1 | 1) => {
+    setSelectedStages(cur => {
+      const j = index + dir
+      if (j < 0 || j >= cur.length) return cur
+      const next = [...cur]
+      const t = next[index]
+      next[index] = next[j]!
+      next[j] = t!
+      return next
+    })
+  }
+
+  const toggleStageAttribute = (stageTemplateId: number, attrId: number) => {
+    setSelectedStages(cur =>
+      cur.map(s => {
+        if (s.stage_template_id !== stageTemplateId) return s
+        const has = s.attribute_ids.includes(attrId)
+        return {
+          ...s,
+          attribute_ids: has ? s.attribute_ids.filter(a => a !== attrId) : [...s.attribute_ids, attrId],
+        }
+      }),
+    )
+  }
 
   const submit = async () => {
     if (!title.trim()) {
@@ -220,7 +271,7 @@ export default function RoleKickoffFormPage() {
         <div className="rk-card rk-card--alert">
           <p className="rk-card-alert-text">{loadErr}</p>
           <Link to={base} className="rk-btn rk-btn-secondary">
-            Back to job role kickoff
+            Back to role kickoff
           </Link>
         </div>
       </div>
@@ -232,7 +283,7 @@ export default function RoleKickoffFormPage() {
       <div className="rk-form-shell">
         <header className="rk-form-hero">
           <Link to={base} className="rk-back-link">
-            ← Job role kickoff
+            ← Role kickoff
           </Link>
           <div className="rk-form-hero-main">
             <div>
@@ -438,6 +489,86 @@ export default function RoleKickoffFormPage() {
                 placeholder="e.g. HM + Staff engineer panel + Bar raiser…"
               />
             </Field>
+          </FormCard>
+
+          <FormCard
+            title="Structured hiring pipeline"
+            description="Pick reusable stages in order. Focus attributes default from each stage; you can override before submit."
+          >
+            {stageTemplates.length === 0 ? (
+              <p className="rk-inline-note">
+                No stage templates yet.{' '}
+                <Link to={`/account/${accountId}/structured-hiring/stages`}>Create stages</Link> under Structured
+                hiring first.
+              </p>
+            ) : (
+              <>
+                <Field label="Select stages" hint="Checked stages are included in pipeline order (use arrows to reorder).">
+                  <div className="rk-checkbox-grid">
+                    {stageTemplates.map(tpl => (
+                      <label key={tpl.id} className="rk-checkbox-row">
+                        <input
+                          type="checkbox"
+                          checked={selectedStages.some(s => s.stage_template_id === tpl.id)}
+                          onChange={() => toggleStageTemplate(tpl.id)}
+                        />
+                        <span>{tpl.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                </Field>
+                {selectedStages.length > 0 ? (
+                  <div className="rk-field" style={{ gap: 14 }}>
+                    <span className="rk-label">Order & focus attributes</span>
+                    <ul className="rk-kickoff-stage-order">
+                      {selectedStages.map((s, i) => {
+                        const tpl = templateById(s.stage_template_id)
+                        return (
+                          <li key={s.stage_template_id} className="rk-kickoff-stage-order-item">
+                            <div className="rk-kickoff-stage-order-head">
+                              <span className="rk-kickoff-stage-order-title">{tpl?.name ?? `Stage #${s.stage_template_id}`}</span>
+                              <span className="rk-kickoff-stage-order-actions">
+                                <button
+                                  type="button"
+                                  className="rk-btn rk-btn-secondary rk-btn--compact"
+                                  disabled={i === 0}
+                                  onClick={() => moveStage(i, -1)}
+                                >
+                                  Up
+                                </button>
+                                <button
+                                  type="button"
+                                  className="rk-btn rk-btn-secondary rk-btn--compact"
+                                  disabled={i === selectedStages.length - 1}
+                                  onClick={() => moveStage(i, 1)}
+                                >
+                                  Down
+                                </button>
+                              </span>
+                            </div>
+                            <p className="rk-hint" style={{ margin: '0 0 8px' }}>
+                              Scorecard dimensions for this stage (edit to override template defaults).
+                            </p>
+                            <div className="rk-checkbox-grid rk-checkbox-grid--dense">
+                              {hiringAttrs.map(a => (
+                                <label key={a.id} className="rk-checkbox-row">
+                                  <input
+                                    type="checkbox"
+                                    checked={s.attribute_ids.includes(a.id)}
+                                    onChange={() => toggleStageAttribute(s.stage_template_id, a.id)}
+                                  />
+                                  <span>{a.name}</span>
+                                </label>
+                              ))}
+                            </div>
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  </div>
+                ) : null}
+              </>
+            )}
           </FormCard>
 
           <FormCard

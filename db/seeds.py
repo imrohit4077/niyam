@@ -407,7 +407,8 @@ def run_seeds() -> None:
                     )
                 elif gh:
                     print(
-                        "Seeds: Greenhouse-style permissions matrix, demo users, and demo job hiring team updated."
+                        "Seeds: Greenhouse-style permissions matrix, demo users, demo job hiring team, "
+                        "and/or structured hiring (attributes + stage templates) updated."
                     )
                 else:
                     print("Seeds: already seeded, skipping.")

@@ -16,6 +16,9 @@ from app.models.job import Job
 from app.models.job_team_member import JobTeamMember
 from app.models.permission import Permission
 from app.models.hiring_plan import HiringPlan
+from app.models.hiring_attribute import HiringAttribute
+from app.models.hiring_stage_template import HiringStageTemplate
+from app.models.hiring_stage_template_attribute import HiringStageTemplateAttribute
 from app.models.pipeline_stage import PipelineStage
 from app.models.role import Role
 from app.models.role_permission import RolePermission
@@ -279,6 +282,77 @@ def _ensure_demo_job_and_team(db: "Session", account_id: int, now: datetime) -> 
     return changed
 
 
+def _ensure_structured_hiring_demo(db: "Session", account_id: int, now: datetime) -> bool:
+    """Idempotent: sample scorecard attributes + reusable stage templates (focus mappings)."""
+    from sqlalchemy import select
+
+    stmt = select(HiringStageTemplate).where(
+        HiringStageTemplate.account_id == account_id,
+        HiringStageTemplate.name == "Resume screening",
+    )
+    if db.execute(stmt).scalars().first():
+        return False
+
+    attribute_specs: tuple[tuple[str, str, str], ...] = (
+        ("Technical skills", "Technical", "Languages, frameworks, and systems relevant to the role."),
+        ("Problem solving", "Technical", "Decomposition, tradeoffs, debugging, and clarity under ambiguity."),
+        ("Communication", "Leadership", "Written and verbal clarity; collaboration across functions."),
+        ("Ownership", "Leadership", "Initiative, accountability, and follow-through on outcomes."),
+        ("Culture add", "Values", "How the candidate strengthens team norms and psychological safety."),
+    )
+    name_to_id: dict[str, int] = {}
+    for pos, (name, category, description) in enumerate(attribute_specs):
+        row = HiringAttribute(
+            account_id=account_id,
+            name=name,
+            category=category,
+            description=description,
+            position=pos,
+            created_at=now,
+            updated_at=now,
+        )
+        db.add(row)
+        db.flush()
+        name_to_id[name] = row.id
+
+    # Stage name → ordered list of attribute names (focus for that round)
+    stage_specs: tuple[tuple[str, tuple[str, ...]], ...] = (
+        ("Resume screening", ("Technical skills", "Communication")),
+        ("Recruiter screen", ("Communication", "Culture add")),
+        ("Technical round 1", ("Technical skills", "Problem solving")),
+        ("System design", ("Technical skills", "Problem solving", "Communication")),
+        ("Hiring manager interview", ("Ownership", "Communication", "Culture add")),
+        ("Final / bar raiser", ("Technical skills", "Problem solving", "Ownership")),
+    )
+    for pos, (stage_name, attr_names) in enumerate(stage_specs):
+        tpl = HiringStageTemplate(
+            account_id=account_id,
+            name=stage_name,
+            default_interviewer_user_ids=[],
+            position=pos,
+            created_at=now,
+            updated_at=now,
+        )
+        db.add(tpl)
+        db.flush()
+        for link_pos, aname in enumerate(attr_names):
+            aid = name_to_id.get(aname)
+            if aid is None:
+                continue
+            db.add(
+                HiringStageTemplateAttribute(
+                    hiring_stage_template_id=tpl.id,
+                    hiring_attribute_id=aid,
+                    position=link_pos,
+                    created_at=now,
+                    updated_at=now,
+                )
+            )
+    db.flush()
+    print("Seeds: structured hiring — 5 attributes and 6 stage templates (resume → final).")
+    return True
+
+
 def run_greenhouse_seed(db: "Session", account_id: int, now: datetime | None = None) -> bool:
     """Return True if any row was created or updated."""
     now = now or datetime.now(timezone.utc)
@@ -291,5 +365,7 @@ def run_greenhouse_seed(db: "Session", account_id: int, now: datetime | None = N
         if _ensure_demo_user(db, account_id, email, name, slug, now):
             changed = True
     if _ensure_demo_job_and_team(db, account_id, now):
+        changed = True
+    if _ensure_structured_hiring_demo(db, account_id, now):
         changed = True
     return changed

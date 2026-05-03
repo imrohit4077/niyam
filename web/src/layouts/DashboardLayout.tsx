@@ -11,7 +11,9 @@ function deriveTitle(pathname: string): string {
   if (/\/jobs\/\d+\/edit/.test(pathname)) return 'Edit job'
   if (pathname.includes('/jobs/all')) return 'Jobs'
   if (pathname.includes('/jobs/mine')) return 'My jobs'
-  if (pathname.includes('/jobs/role-kickoff')) return 'Job role kickoff'
+  if (pathname.includes('/jobs/role-kickoff')) return 'Role kickoff'
+  if (pathname.includes('/structured-hiring/attributes')) return 'Attributes'
+  if (pathname.includes('/structured-hiring/stages')) return 'Stages'
   if (pathname.includes('/hiring-plans')) return 'Hiring plans'
   if (pathname.includes('/pipeline')) return 'Pipeline'
   if (pathname.includes('/job-boards')) return 'Job Boards'
@@ -66,7 +68,8 @@ export default function DashboardLayout() {
     /^\/account\/\d+\/jobs\/(all|mine)\/?$/.test(pathname) ||
     /^\/account\/\d+\/jobs\/role-kickoff/.test(pathname) ||
     /^\/account\/\d+\/jobs\/new\/?$/.test(pathname) ||
-    /^\/account\/\d+\/jobs\/\d+\/edit/.test(pathname)
+    /^\/account\/\d+\/jobs\/\d+\/edit/.test(pathname) ||
+    /^\/account\/\d+\/structured-hiring/.test(pathname)
 
   /** Full-width light gray canvas for job editor (reliable without :has() support). */
   const jobEditorWizard =

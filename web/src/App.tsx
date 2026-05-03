@@ -13,6 +13,9 @@ import JobsHubLayout from './layouts/JobsHubLayout'
 import RoleKickoffHubPage from './pages/RoleKickoffHubPage'
 import RoleKickoffFormPage from './pages/RoleKickoffFormPage'
 import RoleKickoffDetailPage from './pages/RoleKickoffDetailPage'
+import HiringAttributesPage from './pages/HiringAttributesPage'
+import HiringStagesPage from './pages/HiringStagesPage'
+import HiringStageEditorPage from './pages/HiringStageEditorPage'
 import HiringPlansView from './components/HiringPlansView'
 import PipelineBoardView from './components/PipelineBoardView'
 import {
@@ -139,6 +142,15 @@ function AppRoutes() {
           <Route element={<DashboardLayout />}>
             <Route index element={<Navigate to="profile" replace />} />
             <Route path="profile" element={<HomeDashboardPage />} />
+            <Route element={<GateOutlet test={u => can(u, 'hiring_structure', 'view')} />}>
+              <Route path="structured-hiring">
+                <Route index element={<Navigate to="attributes" replace />} />
+                <Route path="attributes" element={<HiringAttributesPage />} />
+                <Route path="stages" element={<HiringStagesPage />} />
+                <Route path="stages/new" element={<HiringStageEditorPage />} />
+                <Route path="stages/:templateId/edit" element={<HiringStageEditorPage />} />
+              </Route>
+            </Route>
             <Route
               element={
                 <GateOutlet

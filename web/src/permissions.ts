@@ -47,6 +47,8 @@ export type NavId =
   | 'jobs-all'
   | 'jobs-mine'
   | 'jobs-role-kickoff'
+  | 'hiring-structure-attributes'
+  | 'hiring-structure-stages'
   | 'hiring-plans'
   | 'pipeline'
   | 'job-boards'
@@ -71,6 +73,8 @@ export const NAV_RULES: Record<NavId, NavRule> = {
   'jobs-all': { anyOf: [['jobs', 'view']] },
   'jobs-mine': { anyOf: [['jobs', 'view']] },
   'jobs-role-kickoff': { anyOf: [['kickoff', 'submit'], ['kickoff', 'process']] },
+  'hiring-structure-attributes': { anyOf: [['hiring_structure', 'view']] },
+  'hiring-structure-stages': { anyOf: [['hiring_structure', 'view']] },
   'hiring-plans': { anyOf: [['jobs', 'view']] },
   pipeline: { anyOf: [['applications', 'view_all'], ['applications', 'view_assigned'], ['applications', 'move_stage']] },
   'job-boards': { anyOf: [['jobs', 'view']] },

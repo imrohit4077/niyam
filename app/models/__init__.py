@@ -44,6 +44,9 @@ from app.models.department import Department
 from app.models.job_setup_flow_section import JobSetupFlowSection
 from app.models.job_setup_flow_field import JobSetupFlowField
 from app.models.role_kickoff_request import RoleKickoffRequest
+from app.models.hiring_attribute import HiringAttribute
+from app.models.hiring_stage_template import HiringStageTemplate
+from app.models.hiring_stage_template_attribute import HiringStageTemplateAttribute
 
 __all__ = [
     "BaseModel", "Timestampable", "SoftDeletable", "Sluggable",
@@ -58,6 +61,9 @@ __all__ = [
     "Department",
     "JobSetupFlowSection", "JobSetupFlowField",
     "RoleKickoffRequest",
+    "HiringAttribute",
+    "HiringStageTemplate",
+    "HiringStageTemplateAttribute",
     "ReferralLink", "ReferralBonus",
     "AuditLogEntry", "AuditLogDeliveryFailure",
 ]

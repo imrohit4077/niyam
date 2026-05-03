@@ -7,6 +7,11 @@ export type RoleKickoffStatus =
   | 'changes_requested'
   | 'converted'
 
+export interface RoleKickoffSelectedStage {
+  stage_template_id: number
+  attribute_ids: number[]
+}
+
 export interface RoleKickoffRequestRow {
   id: number
   account_id: number
@@ -29,6 +34,7 @@ export interface RoleKickoffRequestRow {
   budget_notes: string | null
   interview_rounds: number | null
   interviewers_note: string | null
+  selected_stages?: RoleKickoffSelectedStage[]
   converted_job_id: number | null
   recruiter_feedback: string | null
   hiring_manager_name?: string | null

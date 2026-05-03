@@ -5,9 +5,9 @@ import { navItemVisible, type NavId } from '../permissions'
 import type { DashboardOutletContext } from './DashboardOutletContext'
 
 const TABS: { to: string; label: string; end?: boolean; navId: NavId }[] = [
+  { to: 'role-kickoff', label: 'Role kickoff', end: false, navId: 'jobs-role-kickoff' },
   { to: 'all', label: 'All jobs', end: true, navId: 'jobs-all' },
   { to: 'mine', label: 'My jobs', end: true, navId: 'jobs-mine' },
-  { to: 'role-kickoff', label: 'Job role kickoff', end: false, navId: 'jobs-role-kickoff' },
 ]
 
 export default function JobsHubLayout() {

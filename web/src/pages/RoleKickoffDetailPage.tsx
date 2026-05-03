@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate, useOutletContext, useParams } from 'react-router-dom'
+import { hiringAttributesApi, hiringStageTemplatesApi, type HiringAttributeRow, type HiringStageTemplateRow } from '../api/hiringStructure'
 import { roleKickoffApi, type RoleKickoffRequestRow } from '../api/roleKickoff'
 import type { DashboardOutletContext } from '../layouts/DashboardOutletContext'
 import { useAuth } from '../auth/AuthContext'
@@ -51,6 +52,8 @@ export default function RoleKickoffDetailPage() {
   const [feedbackOpen, setFeedbackOpen] = useState<'reject' | 'changes' | null>(null)
   const [feedbackText, setFeedbackText] = useState('')
   const [acting, setActing] = useState(false)
+  const [stageTplMap, setStageTplMap] = useState<Map<number, HiringStageTemplateRow>>(() => new Map())
+  const [attrMap, setAttrMap] = useState<Map<number, HiringAttributeRow>>(() => new Map())
 
   const load = useCallback(async () => {
     if (!Number.isFinite(id)) {
@@ -74,6 +77,26 @@ export default function RoleKickoffDetailPage() {
   useEffect(() => {
     void load()
   }, [load])
+
+  useEffect(() => {
+    if (!row?.id || !row.selected_stages?.length) return
+    let cancelled = false
+    Promise.all([hiringStageTemplatesApi.list(token), hiringAttributesApi.list(token)])
+      .then(([tpls, attrs]) => {
+        if (cancelled) return
+        setStageTplMap(new Map(tpls.map(t => [t.id, t])))
+        setAttrMap(new Map(attrs.map(a => [a.id, a])))
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setStageTplMap(new Map())
+          setAttrMap(new Map())
+        }
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [token, row?.id, row?.selected_stages?.length])
 
   const isAssignee = row != null && user?.id === row.assigned_recruiter_user_id
   const isCreator = row != null && user?.id === row.created_by_user_id
@@ -190,6 +213,33 @@ export default function RoleKickoffDetailPage() {
           <strong>Recruiter feedback</strong>
           <div style={{ marginTop: 8, whiteSpace: 'pre-wrap' }}>{row.recruiter_feedback}</div>
         </div>
+      ) : null}
+
+      {row.selected_stages && row.selected_stages.length > 0 ? (
+        <section className="rk-card" style={{ marginBottom: 24 }}>
+          <header className="rk-card-head">
+            <h2 className="rk-card-title">Structured pipeline</h2>
+            <p className="rk-card-desc">Stages and focus attributes carried into the job when converted.</p>
+          </header>
+          <div className="rk-card-body" style={{ paddingTop: 8 }}>
+            <ol style={{ margin: 0, paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {row.selected_stages.map(s => {
+                const tpl = stageTplMap.get(s.stage_template_id)
+                const names = (s.attribute_ids ?? []).map(aid => attrMap.get(aid)?.name ?? `#${aid}`)
+                return (
+                  <li key={s.stage_template_id} style={{ fontSize: 14, lineHeight: 1.45 }}>
+                    <strong>{tpl?.name ?? `Stage template #${s.stage_template_id}`}</strong>
+                    {names.length ? (
+                      <div style={{ color: 'var(--text-secondary)', marginTop: 4 }}>Focus: {names.join(', ')}</div>
+                    ) : (
+                      <div style={{ color: 'var(--text-muted)', marginTop: 4 }}>No focus attributes selected.</div>
+                    )}
+                  </li>
+                )
+              })}
+            </ol>
+          </div>
+        </section>
       ) : null}
 
       <div className="role-kickoff-detail-grid">

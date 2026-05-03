@@ -46,6 +46,8 @@ class RoleKickoffRequest(BaseModel):
     interview_rounds: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     interviewers_note: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
+    selected_stages: Mapped[list] = mapped_column(JSONB, nullable=False, server_default=text("'[]'::jsonb"))
+
     converted_job_id: Mapped[Optional[int]] = mapped_column(
         BigInteger, ForeignKey("jobs.id", ondelete="SET NULL"), nullable=True
     )
