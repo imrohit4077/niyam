@@ -1,240 +1,130 @@
-<div align="center">
+# Niyam ATS
 
-<img src="docs/readme/niyam-wordmark-dark.png" alt="Niyam" width="360" />
+<p align="center">
+  <strong>Open-source applicant tracking system for modern hiring teams.</strong>
+</p>
 
-<br />
+<p align="center">
+  Multi-workspace recruiting • configurable hiring pipelines • structured interviews • referrals • e-signatures • audit trail
+</p>
 
-**Applicant tracking for teams that outgrow spreadsheets.**
-
-Multi-account workspaces · configurable hiring pipeline · structured interviews · e-signatures · referrals · audit trail
-
-<br />
-
-[![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/downloads/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=0d1117)](https://react.dev/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
-[![Redis](https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white)](https://redis.io/)
-[![Celery](https://img.shields.io/badge/Celery-37814A?style=for-the-badge&logo=celery&logoColor=white)](https://docs.celeryq.dev/)
-
-<br />
-
-[Capabilities](#platform-capabilities) · [Screenshots](#product-screenshots) · [Quick start](#quick-start) · [Architecture](#architecture) · [Tech stack](#tech-stack) · [Repository layout](#repository-layout) · [Configuration](#configuration) · [Deployment](#deployment)
-
-</div>
+<p align="center">
+  <a href="https://www.python.org/downloads/"><img alt="Python 3.11+" src="https://img.shields.io/badge/Python-3.11%2B-3776AB?style=flat-square&logo=python&logoColor=white"></a>
+  <a href="https://fastapi.tiangolo.com/"><img alt="FastAPI" src="https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white"></a>
+  <a href="https://react.dev/"><img alt="React" src="https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=0d1117"></a>
+  <a href="https://www.typescriptlang.org/"><img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white"></a>
+  <a href="https://www.postgresql.org/"><img alt="PostgreSQL" src="https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white"></a>
+  <a href="https://redis.io/"><img alt="Redis" src="https://img.shields.io/badge/Redis-DC382D?style=flat-square&logo=redis&logoColor=white"></a>
+</p>
 
 ---
 
-## Overview
+## Table of Contents
 
-**Niyam** is a full-stack ATS: a **FastAPI** and **PostgreSQL** API with a **React** SPA. Features are wired through `config/routes.py` on the backend and `web/src/` on the frontend—what follows reflects what exists in this repository today.
-
----
-
-## Product screenshots
-
-Below are real UI captures from the Niyam web app (React SPA): recruiting workflows, candidate experience, referrals, workspace settings, e-signatures, and compliance.
-
-### Recruiting: pipeline, jobs, and requisitions
-
-<p align="center">
-  <img src="docs/readme/screenshots/pipeline-kanban.png" alt="Hiring pipeline Kanban board with stages, filters, and candidate cards" width="820" />
-</p>
-
-<p align="center"><sub>Hiring pipeline — per-job stages, filters, KPIs, and drag-and-drop style triage across Screening, Interview, and more.</sub></p>
-
-<p align="center">
-  <img src="docs/readme/screenshots/jobs-dashboard-grid.png" alt="Jobs dashboard with grid cards, filters, and new job action" width="820" />
-</p>
-
-<p align="center"><sub>Jobs — grid, list, and table views; status, location, vacancies, and quick actions (edit, duplicate, archive).</sub></p>
-
-<p align="center">
-  <img src="docs/readme/screenshots/job-editor-skills.png" alt="Job setup wizard step for required and nice-to-have skills" width="820" />
-</p>
-
-<p align="center"><sub>Job editor — guided requisition setup with required vs nice-to-have skills for matching and scorecards.</sub></p>
-
-### Candidates, interviews, and documents
-
-<p align="center">
-  <img src="docs/readme/screenshots/interviews-workbench.png" alt="Interviews list with rounds, claim slot, and open kit actions" width="820" />
-</p>
-
-<p align="center"><sub>Interviews — assigned rounds, open slots to claim, interview kits, and scorecard submission from one workbench.</sub></p>
-
-<p align="center">
-  <img src="docs/readme/screenshots/candidate-esign.png" alt="Candidate profile with E-sign tab and document status" width="820" />
-</p>
-
-<p align="center"><sub>Candidate record — pipeline context, e-sign requests, template generation, and signing status in one place.</sub></p>
-
-<p align="center">
-  <img src="docs/readme/screenshots/signed-documents-library.png" alt="Signed documents workspace table with status and actions" width="820" />
-</p>
-
-<p align="center"><sub>Signed documents — workspace-wide list of e-sign packages with status, signing links, and links back to applications.</sub></p>
-
-### Referrals
-
-<p align="center">
-  <img src="docs/readme/screenshots/referrals-open-roles.png" alt="Referrals hub with open roles table and copy referral link" width="820" />
-</p>
-
-<p align="center"><sub>Referrals — open roles, per-job referral links, leaderboard and team views for admins, bonus rules from the job editor.</sub></p>
-
-### Workspace settings
-
-<p align="center">
-  <img src="docs/readme/screenshots/settings-organization.png" alt="Organization settings with company profile and regional defaults" width="820" />
-</p>
-
-<p align="center"><sub>Organization — company profile, branding URL, careers page, language and currency defaults for the workspace.</sub></p>
-
-<p align="center">
-  <img src="docs/readme/screenshots/settings-custom-fields-jobs.png" alt="Custom job fields with validated attribute definitions" width="820" />
-</p>
-
-<p align="center"><sub>Custom fields — typed attributes for jobs and candidates, validated on save for reporting and apply forms.</sub></p>
-
-<p align="center">
-  <img src="docs/readme/screenshots/settings-communication-channels.png" alt="Communication channels for email Gmail OAuth and future providers" width="820" />
-</p>
-
-<p align="center"><sub>Communication channels — Gmail OAuth, SMTP, and room for additional providers (e.g. Slack) later.</sub></p>
-
-### Audit and compliance
-
-<p align="center">
-  <img src="docs/readme/screenshots/audit-compliance-logs.png" alt="Audit log table with streams, filters, and actor details" width="820" />
-</p>
-
-<p align="center"><sub>Audit & compliance — filterable audit and activity streams, outcomes, actors, and request correlation for governance.</sub></p>
-
-### E-signatures
-
-<p align="center">
-  <img src="docs/readme/screenshots/esign-templates.png" alt="E-sign templates list with edit and delete actions" width="820" />
-</p>
-
-<p align="center"><sub>E-sign templates — reusable offers and NDAs with merge tags, edited as blocks and rendered to HTML for candidates.</sub></p>
-
-<p align="center">
-  <img src="docs/readme/screenshots/esign-automation-rules.png" alt="E-sign automation rules tied to pipeline stages" width="820" />
-</p>
-
-<p align="center"><sub>E-sign automation — queue templates when candidates enter selected pipeline stages (worker-delivered packages).</sub></p>
-
-<p align="center">
-  <img src="docs/readme/screenshots/esign-secure-signing.png" alt="Candidate secure signing page with agreement and download PDF" width="820" />
-</p>
-
-<p align="center"><sub>Candidate signing — tokenized public flow: review agreement, capture signature, confirmation and signed PDF download.</sub></p>
+- [Why Niyam ATS](#why-niyam-ats)
+- [Core Features](#core-features)
+- [Hiring Flow](#hiring-flow)
+- [Architecture](#architecture)
+- [Tech Stack](#tech-stack)
+- [Project Structure](#project-structure)
+- [Quick Start](#quick-start)
+- [Configuration](#configuration)
+- [Common Commands](#common-commands)
+- [Deployment](#deployment)
+- [Contributing](#contributing)
+- [License](#license)
 
 ---
 
-## Platform capabilities
+## Why Niyam ATS
 
-### Authentication & workspace
+Niyam ATS is a full-stack hiring platform built for teams that need a reliable, extensible system beyond spreadsheets and fragmented tools.
 
-- **Sign-in & sessions** — Email/password login with access and refresh JWT flow.
-- **Profile** — Authenticated user profile for the signed-in recruiter.
-- **Multi-account** — Data scoped per workspace (`account_id`); members see only their account.
-- **Team directory** — Account members for collaboration and permissions context.
+- Multi-tenant workspace model with account-level data boundaries.
+- FastAPI backend with service-oriented architecture.
+- React + TypeScript frontend for a modern and responsive UI.
+- Production-ready building blocks: JWT auth, async jobs, migration tooling, audit logging.
 
-### Jobs & hiring plans
+---
 
-- **Jobs** — Create, list, show, update, and archive jobs (title, department, location, compensation, skills, employment type, experience, hiring team, and more).
-- **Job versions** — Version history per job: list, create, and update snapshots as the requisition evolves.
-- **Attachments** — Upload, list, and remove files on a job.
-- **Job analytics** — Per-job metrics for funnel and activity.
-- **Hiring plan per job** — Structured hiring plan linked to each requisition.
-- **Labels on jobs** — Tag requisitions for reporting and filtering.
-- **Referral link per job** — Shareable referral URLs tied to a specific opening.
+## Core Features
 
-### Career presence: boards & postings
+### Hiring workflow
 
-- **Job boards** — Internal or external boards that organize how roles are published.
-- **Postings** — Create and manage postings so approved jobs surface where candidates apply.
+- Job creation and lifecycle management (draft to archive).
+- Per-job pipeline stage management (create, reorder, update, delete).
+- Candidate application tracking across stages.
+- Labels, metadata, and custom attributes for richer triage.
 
-### Pipeline & applications
+### Interviews and evaluation
 
-- **Pipeline stages** — Define stages per job; reorder to match your process.
-- **Applications** — List, view, create, and remove applications; update candidate-facing fields.
-- **Move on pipeline** — Change an application’s stage as candidates progress.
-- **Labels on applications** — Tag candidates and applications for triage and reporting.
-- **Hiring plans (workspace)** — Workspace-level hiring plan resources alongside per-job plans.
-- **Candidates view** — Dedicated workspace view for the candidate pool.
+- Interview plans and interview kits.
+- Assignee workflows and scorecard submissions.
+- Debrief-friendly evaluation aggregation.
 
-### Interviews, kits & scorecards
+### Referral and collaboration
 
-- **Interview plans per job** — CRUD for plans bound to a job.
-- **Interview kits** — Structured kits (questions, focus areas) for a plan on a job.
-- **My interview assignments** — Interviewers see work assigned to them.
-- **Claim assignments** — Pick up open interview slots when your process allows it.
-- **Live interview kit** — Load the kit during an in-flight assignment.
-- **Submit scorecards** — Structured feedback after each interview.
-- **Update assignments** — Reschedule, reassign, or adjust interview state.
-- **Scorecards by application** — Consolidated scorecard history for one candidate record.
-- **Hiring debrief** — Job-level debrief across scorecards for panel alignment.
+- Per-job referral links and referral activity tracking.
+- Team-level views for collaboration and operations.
 
-### Referral program
+### E-signatures and compliance
 
-- **Referral program settings** — Configure bonuses, messaging, and policy.
-- **Referral bonuses** — List rows, update payouts/status, **export CSV** for finance.
-- **Leaderboard** — Rank referrers.
-- **My referrals** — Employees see referrals they originated.
-- **Admin overview** — Operations view for program health and volume.
-- **Referrals hub** — UI area for referral activity (`/referrals`).
+- E-sign template management and stage-triggered automation.
+- Tokenized candidate signing flow and signed-document lifecycle.
+- Audit streams and compliance-focused visibility.
 
-### E-signatures
+---
 
-- **Account e-sign settings** — Workspace defaults for branding and behavior.
-- **HTML templates** — Full CRUD for agreement bodies rendered to candidates.
-- **Stage rules** — Automate signing requests from pipeline stage changes.
-- **Signing requests** — List requests; generate packages for a given application.
-- **Public signing** — Tokenized signing page (no recruiter login) with legal name and signature pad.
-- **Signed PDF download** — Candidates download executed agreements when available.
-- **E-sign webhooks** — Inbound endpoint for provider-style integrations.
-- **Signed documents library** — Workspace UI for completed agreements (`/esign-documents`).
-- **Settings workspace** — Overview, template editor, rules, and advanced e-sign screens.
+## Hiring Flow
 
-### Organization, data model & communications
+This is the default end-to-end hiring journey teams can run on Niyam ATS.
 
-- **Organization** — Legal name, timezone, locale, and core company profile.
-- **Departments** — Structure hiring by department for jobs and reporting.
-- **Job locations** — Curated locations for consistent job ads and filters.
-- **Workspace metadata** — Additional workspace-level configuration.
-- **Appearance** — Typography and presentation settings.
-- **Custom attribute definitions** — Typed custom fields for **jobs** and **applications**.
-- **Labels** — Workspace-wide labels with create, update, and archive flows.
-- **Communication channels** — Multiple outbound email channels, **test send**, **set default**.
-- **Gmail OAuth** — Connect Google mail via OAuth.
-- **Countries reference** — API-backed country list for forms and pickers.
+### 1) Role kickoff and requisition setup
 
-### Audit & compliance
+- Create a new role and define business context (team, location, budget, level, priorities).
+- Configure the hiring manager and recruiter ownership.
+- Add hiring stages for the role (for example: `Applied`, `Screening`, `Hiring Manager`, `Onsite`, `Offer`, `Hired`).
+- Attach required skills, nice-to-have skills, and custom attributes for better qualification.
 
-- **Audit trail settings** — Toggle and tune how audit events are captured.
-- **Audit log** — Paginated, filterable history of sensitive actions.
-- **Delivery failures** — Visibility when audit or notification delivery fails.
-- **Compliance summary** — Account-level compliance endpoint for dashboards and exports.
-- **Admin UI** — Overview, audit log browser, and delivery-failure pages under settings.
+### 2) Job publishing and intake
 
-### Candidate-facing experience
+- Publish jobs to your internal or external boards.
+- Capture inbound candidates through direct apply, referrals, or manual sourcing.
+- Automatically map each candidate to the initial pipeline stage.
 
-- **Public job apply** — Branded apply page by token: load job, submit application, confirmation UX.
-- **Public e-sign** — Token-based signing for agreements triggered from your process.
+### 3) Pipeline management
 
-### Platform operations
+- Recruiters and hiring managers move candidates stage-by-stage.
+- Add, rename, reorder, or remove stages as the role process evolves.
+- Use labels, filters, and metadata to keep triage clean and collaborative.
 
-- **Health check** — `GET /health` for load balancers and monitors.
-- **OpenAPI** — Interactive docs when `DEBUG=true`.
-- **PostgreSQL + Alembic** — Migrations and relational integrity.
-- **Celery + Redis** — Background work: e-sign delivery, label search sync, audit flush, and other async jobs.
-- **PDF pipeline** — **WeasyPrint** when system libs exist, **fpdf2** fallback otherwise.
-- **Buffered audit** — Optional Redis-backed buffering with scheduled flush to PostgreSQL for high-volume writes.
+### 4) Interview orchestration
+
+- Create interview plans and interview kits per role.
+- Assign interviewers, claim open slots, and track interview ownership.
+- Collect structured scorecards to keep evaluations consistent.
+
+### 5) Debrief and decision
+
+- Consolidate scorecards and interviewer feedback in one place.
+- Run hiring debriefs with role-specific signals and evidence.
+- Move selected candidates to offer while preserving audit history.
+
+### 6) Offer, e-sign, and close
+
+- Trigger e-sign requests manually or from stage-based automation rules.
+- Candidate completes tokenized signing flow.
+- Signed documents are stored and linked back to candidate/application records.
+
+### 7) Compliance and reporting
+
+- Track critical actions through audit logs and delivery-failure visibility.
+- Review referral performance and bonus operations.
+- Use account-scoped data for secure multi-workspace operations.
+
+### Typical pipeline lifecycle
+
+`Kickoff -> Job Published -> Candidate Applied -> Screening -> Interview Loop -> Debrief -> Offer -> E-sign -> Hired`
 
 ---
 
@@ -242,240 +132,169 @@ Below are real UI captures from the Niyam web app (React SPA): recruiting workfl
 
 ```mermaid
 flowchart TB
-  subgraph Browser["Browser"]
-    SPA["React SPA · Vite + TypeScript"]
+  subgraph Client["Frontend"]
+    SPA["React SPA (Vite + TypeScript)"]
   end
 
-  subgraph API["Niyam API"]
-    MW["Middleware · logging, JWT, audit capture"]
-    R["config/routes.py"]
-    CTRL["Controllers"]
-    SVC["Services"]
-    ORM["SQLAlchemy models"]
+  subgraph API["Niyam ATS API"]
+    MW["Middleware (auth, logging, audit)"]
+    RT["config/routes.py"]
+    CT["Controllers"]
+    SV["Services"]
+    MD["SQLAlchemy models"]
   end
 
   subgraph Async["Background"]
-    W["Celery workers"]
-    B["Celery Beat · config/schedule.py"]
+    WK["Celery workers"]
+    BT["Celery Beat scheduler"]
   end
 
-  subgraph Stores["Data & queues"]
+  subgraph Data["Infrastructure"]
     PG[("PostgreSQL")]
     RD[("Redis")]
   end
 
-  SPA -->|"/api/v1 · Bearer JWT"| MW --> R --> CTRL --> SVC --> ORM --> PG
-  SVC --> W
-  B --> W
-  W --> RD
-  W --> PG
-  SPA -->|"npm run build → static/"| CDN["static/ · production assets"]
+  SPA -->|"/api/v1"| MW --> RT --> CT --> SV --> MD --> PG
+  SV --> WK
+  BT --> WK
+  WK --> RD
+  WK --> PG
 ```
-
-| Surface | Role |
-|--------|------|
-| `main.py` | FastAPI application, middleware, `/health`. |
-| `config/routes.py` | Central route table for every HTTP endpoint. |
-| `web/` | SPA; dev server proxies `/api` to the API; `vite.config.ts` emits `static/`. |
-| `app/jobs/` | Async tasks: e-sign, indexing, audit flush, and more. |
 
 ---
 
-## Tech stack
+## Tech Stack
 
-| Layer | Choices |
-|-------|---------|
-| **Runtime** | Python 3.11+ |
-| **HTTP** | FastAPI, Uvicorn |
-| **Data** | SQLAlchemy 2.0, Alembic, PostgreSQL (`psycopg2`) |
-| **Config** | Pydantic Settings (`.env`), YAML (`config/database.yml`) |
-| **Auth** | JWT (`python-jose`), Passlib + bcrypt |
-| **Queue** | Celery, Redis, gevent worker pool (tunable) |
-| **PDF** | WeasyPrint (optional system libs), **fpdf2** fallback |
-| **CLI** | Click (`manage.py`) |
-| **UI** | React 19, React Router 7, TipTap, `@dnd-kit` |
+- Backend: Python 3.11+, FastAPI, SQLAlchemy 2.0, Alembic.
+- Frontend: React 19, TypeScript, Vite.
+- Database: PostgreSQL.
+- Queue/async: Celery + Redis.
+- Auth/security: JWT, Passlib/bcrypt.
+- Tooling: `manage.py` CLI, pytest, ESLint, TypeScript build checks.
 
 ---
 
-## Repository layout
+## Project Structure
 
-```
+```text
 .
-├── main.py                 # FastAPI app, middleware, health
-├── manage.py               # CLI: runserver, db:*, worker, scheduler, shell, routes
-├── requirements.txt
-├── pyproject.toml          # Python project metadata
-├── alembic.ini
-├── .env.example
-│
-├── config/                 # settings, database, routes, celery, schedule, logging
-├── app/                    # controllers, models, services, jobs, middleware, schemas
-├── db/migrations/versions/
-├── web/                    # React SPA → build to ../static
-├── static/                 # Production frontend (from npm run build)
-├── docs/readme/            # README brand assets + screenshots/
-└── tests/
+├── app/                    # Controllers, services, models, jobs, middleware
+├── config/                 # Settings, routes, DB config, celery, schedule
+├── db/migrations/versions/ # Alembic migrations
+├── web/                    # React SPA (build output goes to ../static)
+├── static/                 # Built frontend assets
+├── tests/                  # Backend tests
+├── main.py                 # FastAPI app entry
+└── manage.py               # CLI for server, db, workers, generators
 ```
 
 ---
 
-## Quick start
+## Quick Start
+
+### 1) Backend setup
 
 ```bash
-# Python
 python3 -m venv .venv
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
+source .venv/bin/activate
 pip install -r requirements.txt
-
-# Environment
 cp .env.example .env
-# Set SECRET_KEY, JWT_SECRET_KEY, DATABASE_URL or database.yml
-
 cp config/database.yml.example config/database.yml
-
-# Database
 python manage.py db:migrate
-python manage.py db:seed    # optional
-
-# API
 python manage.py runserver
-# Health: http://localhost:8000/health
-# OpenAPI (DEBUG=true): http://localhost:8000/docs
 ```
 
-**Frontend (development)**
+Backend runs at `http://localhost:8000`.
+
+### 2) Frontend setup
 
 ```bash
-cd web && npm install && npm run dev
-# http://localhost:5173 — proxies /api → http://localhost:8000
+cd web
+npm install
+npm run dev
 ```
 
-Set **`FRONTEND_PUBLIC_URL`** in `.env` (for example `http://localhost:5173`) for OAuth return URLs and public flows that need the SPA origin.
-
-| Command | Purpose |
-|---------|---------|
-| `npm run dev` | Vite dev server, `/api` → backend |
-| `npm run build` | Typecheck + bundle → `../static/` |
-| `npm run lint` | ESLint |
+Frontend runs at `http://localhost:5173` and proxies `/api` to the backend.
 
 ---
 
 ## Configuration
 
-Copy **`.env.example`** → **`.env`**. Notable variables:
+Copy `.env.example` to `.env` and set at least:
 
-| Variable | Purpose |
-|----------|---------|
-| `APP_NAME` / `APP_ENV` / `DEBUG` | Identity, environment, OpenAPI when debug |
-| `SECRET_KEY` | App secret |
-| `DATABASE_URL` | Overrides `config/database.yml` if set |
-| `JWT_*` | Signing and token lifetimes |
-| `REDIS_URL` | General Redis |
-| `CELERY_*` | Broker, backend, pool, concurrency |
-| `FRONTEND_PUBLIC_URL` | SPA origin for OAuth and public links |
-| `GOOGLE_OAUTH_*` | Gmail integration |
-| `AUDIT_LOG_*` | Optional Redis buffering for audit payloads |
-| `ESIGN_*` | Optional e-sign artifact directories |
+- `APP_ENV`, `DEBUG`
+- `SECRET_KEY`, `JWT_SECRET_KEY`
+- `DATABASE_URL` (or use `config/database.yml`)
+- `REDIS_URL`
+- `FRONTEND_PUBLIC_URL`
 
-**`config/database.yml`** — Per-environment DB config; **`APP_ENV`** selects the section merged with `default`.
+Optional integrations:
 
-<details>
-<summary><strong>Database CLI</strong> (migrations, seed, reset)</summary>
+- `GOOGLE_OAUTH_*` for Gmail/OAuth flows.
+- `AUDIT_LOG_*` for buffered audit behavior.
+- `ESIGN_*` for e-sign storage and artifact controls.
 
-| Command | Description |
-|---------|-------------|
-| `python manage.py db:create` | Create DB from config |
-| `python manage.py db:migrate` | Alembic upgrade head |
-| `python manage.py db:rollback` | Roll back (see `--step`, `--to`) |
-| `python manage.py db:status` | Current revision |
-| `python manage.py db:history` | History |
-| `python manage.py db:seed` | Run `db/seeds.py` |
-| `python manage.py db:reset` | Downgrade all → migrate → seed |
+---
 
-New migration:
+## Common Commands
+
+### Backend
 
 ```bash
-python manage.py generate migration <description>
-# Edit db/migrations/versions/YYYYMMDD_HHMMSS_<description>.py
+python manage.py runserver
+python manage.py routes
+python manage.py shell
 python manage.py db:migrate
+python manage.py db:rollback
+python manage.py db:seed
+python manage.py worker
+python manage.py scheduler
 ```
 
-</details>
+### Frontend
 
-<details>
-<summary><strong>Background jobs (Celery)</strong></summary>
+```bash
+cd web
+npm run dev
+npm run build
+npm run lint
+```
 
-| Process | Command |
-|---------|---------|
-| Worker | `python manage.py worker` (optional `--queue=name`) |
-| Beat only | `python manage.py scheduler` |
-
-By default **`worker`** also runs **Beat** unless **`--no-beat`**. Workers default to **gevent** with high concurrency; tune **`CELERY_WORKER_POOL`** / **`CELERY_WORKER_CONCURRENCY`** for CPU- or DB-heavy loads.
-
-Typical tasks: e-sign (merge HTML, links, PDF packaging), label search document sync, audit flush Redis → PostgreSQL. Some paths fall back to **inline** execution if Redis or enqueue fails.
-
-</details>
-
-<details>
-<summary><strong>API shape & code organization</strong></summary>
-
-- Base path: **`/api/v1`** (`config/routes.py`).
-- **`GET /health`** — unauthenticated.
-- **`/docs`**, **`/redoc`** — when **`DEBUG=true`**.
-- JSON envelope: **`success`**, **`data`**, **`meta`**, **`error`** via controller helpers.
-- **Routes:** registered only in **`config/routes.py`**.
-- **Controllers:** concerns such as **`Authenticatable`**, **`@before_action`**, **`render_json` / `render_error`**.
-- **Services:** return **`{"ok": true/false, ...}`** — avoid raising HTTP exceptions inside services.
-- **Models:** SQLAlchemy **`Mapped` / `mapped_column`**, tenant **`account_id`**, **`to_dict()`** for API payloads.
-
-Contributor patterns: **`.cursor/rules/niyam-conventions.mdc`**.
-
-</details>
-
-<details>
-<summary><strong>CLI reference</strong></summary>
-
-| Command | Description |
-|---------|-------------|
-| `python manage.py runserver [--port] [--host]` | Uvicorn + reload |
-| `python manage.py routes` | List routes |
-| `python manage.py shell` | REPL with `db` and models |
-| `python manage.py worker` | Celery worker |
-| `python manage.py scheduler` | Celery Beat |
-| `python manage.py generate migration \| controller \| model \| job \| service` | Scaffolds |
-
-`manage.py` accepts **`db:migrate`** or **`db migrate`**.
-
-</details>
-
-<details>
-<summary><strong>Testing</strong></summary>
+### Tests
 
 ```bash
 pytest tests/ -v
 ```
 
-Optional coverage:
-
-```bash
-pip install pytest-cov
-pytest tests/ -v --cov=app --cov-report=term-missing
-```
-
-</details>
-
 ---
 
 ## Deployment
 
-1. Set **`APP_ENV`**, **`DEBUG=false`**, strong **`SECRET_KEY`** and **`JWT_SECRET_KEY`**, production **`DATABASE_URL`** / **`database.yml`**, Redis for Celery and audit.
-2. Run **`python manage.py db:migrate`**.
-3. Run the API with a production ASGI stack (for example **Gunicorn + Uvicorn** workers).
-4. Run **Celery workers** and a dedicated **Beat** process if you use **`--no-beat`** on workers.
-5. Serve **`static/`** (from `web/`: **`npm run build`**) via reverse proxy or CDN; tighten **CORS** in production (`main.py`).
+Recommended production sequence:
+
+1. Set production env values (`APP_ENV`, `DEBUG=false`, secrets, DB, Redis, CORS).
+2. Run migrations: `python manage.py db:migrate`.
+3. Build frontend: `cd web && npm ci && npm run build`.
+4. Run API with production ASGI workers.
+5. Run Celery workers and scheduler.
+6. Serve `static/` via reverse proxy or CDN.
+
+---
+
+## Contributing
+
+Contributions are welcome.
+
+1. Fork the repository.
+2. Create a branch: `git checkout -b feat/your-change`.
+3. Keep changes scoped and add/update tests when needed.
+4. Run checks locally (`pytest`, `npm run build`, `npm run lint`).
+5. Open a pull request with clear context and verification notes.
+
+Please follow the project conventions in `.cursor/rules/niyam-conventions.mdc`.
 
 ---
 
 ## License
 
-See **`pyproject.toml`** for package licensing. Application code: follow your organization’s policy.
+See `pyproject.toml` and your organization policy for license details.
