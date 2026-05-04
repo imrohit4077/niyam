@@ -5,6 +5,8 @@ from typing import Optional
 from sqlalchemy import BigInteger, String, DateTime, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 
+from app.helpers.object_storage import object_storage_enabled
+from app.helpers.uploaded_file_storage import absolute_public_file_url, file_url_to_storage_key
 from app.models.base_model import BaseModel
 
 
@@ -25,4 +27,14 @@ class JobAttachment(BaseModel):
         for k in ("created_at", "updated_at"):
             if isinstance(d.get(k), datetime):
                 d[k] = d[k].isoformat()
+        raw_url = d.get("file_url")
+        if isinstance(raw_url, str):
+            key = file_url_to_storage_key(raw_url)
+            if key is not None:
+                d["object_key"] = key
+                d["file_storage"] = "minio" if object_storage_enabled() else "local"
+            else:
+                d["object_key"] = None
+                d["file_storage"] = "external"
+            d["file_url"] = absolute_public_file_url(raw_url)
         return d

@@ -69,6 +69,10 @@ export interface JobAttachment {
   file_url: string
   created_at: string
   updated_at: string
+  /** S3 object key when file_url is under /files/ (look up in MinIO bucket). */
+  object_key?: string | null
+  /** Where the API reads this path from right now (not historical). */
+  file_storage?: 'minio' | 'local' | 'external' | null
 }
 
 /** Per-job referral bonus rules (API: jobs.referral_settings JSONB). */

@@ -138,7 +138,10 @@ class JobSetupFlowService(BaseService):
             if sec.is_enabled:
                 enabled_sections.append(sec.section_key)
             flds = self._fields_for_section(account_id, sec.id)
-            enabled_fields[sec.section_key] = [f.field_key for f in flds if f.is_enabled]
+            keys = [f.field_key for f in flds if f.is_enabled]
+            if not keys and flds:
+                keys = [f.field_key for f in flds]
+            enabled_fields[sec.section_key] = keys
         return enabled_sections, enabled_fields
 
     def apply_preferences(

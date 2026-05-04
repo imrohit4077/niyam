@@ -1463,7 +1463,11 @@ export default function JobEditorPage() {
     const catalogById = new Map(catalog.map(s => [s.id, s]))
     const orderedIds = [...enabledStepIds]
     const steps = orderedIds
-      .filter(sid => (enabledFieldMap[sid]?.length ?? 0) > 0)
+      .filter(sid => {
+        const n = enabledFieldMap[sid]?.length ?? 0
+        if (n > 0) return true
+        return sid in DEFAULT_JOB_SETUP_FIELDS_BY_SECTION
+      })
       .map(sid => {
         const def = ALL_STEP_DEFS.find(s => s.id === sid)
         if (def) return def

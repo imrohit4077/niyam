@@ -1,16 +1,21 @@
 """Application settings loaded from environment (Niyam ATS)."""
 
 from functools import lru_cache
+from pathlib import Path
 from typing import Literal
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Repo root (parent of config/). Avoid cwd-dependent ".env" so MinIO/JWT load under any launcher cwd.
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent
+_ENV_PATH = _PROJECT_ROOT / ".env"
 
 
 class Settings(BaseSettings):
     """All configuration from environment. Loaded via get_settings()."""
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=str(_ENV_PATH),
         env_file_encoding="utf-8",
         case_sensitive=True,
         extra="ignore",
@@ -75,6 +80,20 @@ class Settings(BaseSettings):
     ESIGN_SIGNED_DOCUMENTS_DIR: str = ""
     # Job attachment files root. Empty = project storage/job_attachments/
     JOB_ATTACHMENTS_DIR: str = ""
+
+    # MinIO / S3-compatible object storage (optional). When MINIO_ENDPOINT is set with
+    # credentials and bucket, uploads go to MinIO and GET /files/... is served from the bucket.
+    MINIO_ENDPOINT: str = ""
+    MINIO_ACCESS_KEY: str = ""
+    MINIO_SECRET_KEY: str = ""
+    MINIO_BUCKET: str = "niyam"
+    MINIO_USE_SSL: bool = False
+    MINIO_REGION: str = ""
+
+    # Optional origin for absolute /files/... links in JSON (e.g. http://localhost:8000 or your API URL).
+    # When set, job attachment file_url and public resume upload responses use this prefix.
+    # If empty, clients see relative paths like /files/... (fine when the SPA proxies /files to the API).
+    PUBLIC_FILES_BASE_URL: str = ""
 
 
 @lru_cache

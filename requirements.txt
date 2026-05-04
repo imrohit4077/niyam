@@ -36,6 +36,7 @@ httpx==0.28.1
 # Utilities
 python-multipart==0.0.17
 pyyaml==6.0.2
+minio==7.2.15
 
 # E-sign: signed packages as PDF (HTML → PDF)
 # WeasyPrint = best CSS fidelity; needs Pango/Cairo/GObject (brew on macOS).
