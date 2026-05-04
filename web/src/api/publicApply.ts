@@ -45,4 +45,16 @@ export const publicApplyApi = {
       method: 'POST',
       body: JSON.stringify(body),
     }),
+
+  uploadResume: async (token: string, file: File): Promise<{ resume_url: string }> => {
+    const fd = new FormData()
+    fd.append('file', file)
+    const res = await fetch(`${BASE}/public/apply/${encodeURIComponent(token)}/resume`, {
+      method: 'POST',
+      body: fd,
+    })
+    const json = (await res.json()) as { success: boolean; error?: string; data?: { resume_url: string } }
+    if (!json.success) throw new Error(json.error || 'Upload failed')
+    return json.data as { resume_url: string }
+  },
 }

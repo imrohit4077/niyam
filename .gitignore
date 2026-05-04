@@ -10,8 +10,10 @@ __pycache__/
 dist/
 build/
 
-# Virtual env
+# Virtual env (never commit interpreter trees)
 .venv/
+.venv312/
+.venv*/
 venv/
 ENV/
 

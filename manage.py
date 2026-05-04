@@ -2,7 +2,7 @@
 """
 Niyam ATS — CLI manager.
 
-Commands: runserver, generate migration|controller|model|job|service, db:migrate|rollback|status|history|seed|reset, routes, worker (starts Beat by default), scheduler, shell.
+Commands: runserver, deps (pip install -r requirements.txt via python -m pip), generate migration|controller|model|job|service, db:migrate|rollback|status|history|seed|reset, routes, worker (starts Beat by default), scheduler, shell.
 """
 
 import os
@@ -30,6 +30,40 @@ def runserver(host: str, port: int) -> None:
     """Start uvicorn with reload."""
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
     subprocess.run(["uvicorn", "main:app", "--host", host, "--port", str(port), "--reload"], check=True)
+
+
+def _pip_module_ok(exe: str, root: str) -> bool:
+    r = subprocess.run([exe, "-m", "pip", "--version"], cwd=root, capture_output=True, text=True)
+    return r.returncode == 0
+
+
+def _bootstrap_pip(exe: str, root: str) -> None:
+    """Some venvs (e.g. uv) ship without pip; ensurepip installs it into this interpreter."""
+    click.echo("pip is missing from this interpreter; running ensurepip …", err=True)
+    r = subprocess.run([exe, "-m", "ensurepip", "--upgrade"], cwd=root)
+    if r.returncode != 0:
+        raise click.ClickException(
+            "ensurepip failed. Try: uv pip install -r requirements.txt  OR  "
+            "python3.12 -m venv .venv312 && .venv312/bin/python -m pip install -r requirements.txt"
+        )
+
+
+@cli.command("deps")
+@click.option("--upgrade-pip", is_flag=True, help="Run pip install --upgrade pip before installing requirements.")
+def deps_cmd(upgrade_pip: bool) -> None:
+    """Install requirements.txt using ``python -m pip`` (bootstraps pip via ensurepip if needed)."""
+    root = os.path.dirname(os.path.abspath(__file__))
+    req = os.path.join(root, "requirements.txt")
+    if not os.path.isfile(req):
+        raise click.ClickException(f"Missing {req}")
+    exe = sys.executable
+    if not _pip_module_ok(exe, root):
+        _bootstrap_pip(exe, root)
+        if not _pip_module_ok(exe, root):
+            raise click.ClickException("pip is still unavailable after ensurepip.")
+    if upgrade_pip:
+        subprocess.run([exe, "-m", "pip", "install", "--upgrade", "pip"], check=True, cwd=root)
+    subprocess.run([exe, "-m", "pip", "install", "-r", req], check=True, cwd=root)
 
 
 @cli.group("db")

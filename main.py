@@ -11,18 +11,17 @@ configure_logging(process_name="web")
 
 from contextlib import asynccontextmanager
 import logging
-from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from fastapi.staticfiles import StaticFiles
 from sqlalchemy.exc import SQLAlchemyError
 
-from config.settings import get_settings
 from config.database import engine
 from config.routes import draw_routes
+from config.settings import get_settings
+from app.http.uploaded_files_routes import register_uploaded_files_routes
 from app.middleware.auth_middleware import AuthMiddleware
 from app.middleware.audit_log_middleware import AuditLogMiddleware
 from app.middleware.logging_middleware import LoggingMiddleware
@@ -31,7 +30,10 @@ from app.middleware.logging_middleware import LoggingMiddleware
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup and shutdown events."""
-    settings = get_settings()
+    from app.helpers.object_storage import ensure_bucket_exists, object_storage_enabled
+
+    if object_storage_enabled():
+        ensure_bucket_exists()
     yield
     engine.dispose()
 
@@ -68,13 +70,7 @@ def create_app() -> FastAPI:
         """Health check endpoint for load balancers and monitoring."""
         return {"status": "ok", "app": settings.APP_NAME}
 
-    attachments_dir = (
-        Path(settings.JOB_ATTACHMENTS_DIR).expanduser().resolve()
-        if settings.JOB_ATTACHMENTS_DIR
-        else Path(__file__).resolve().parent / "storage" / "job_attachments"
-    )
-    attachments_dir.mkdir(parents=True, exist_ok=True)
-    app.mount("/files", StaticFiles(directory=str(attachments_dir)), name="files")
+    register_uploaded_files_routes(app)
 
     draw_routes(app)
 

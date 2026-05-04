@@ -2,14 +2,17 @@
 import re
 import secrets
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import Any
 
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
-from config.settings import get_settings
 from app.helpers.pg_search import ilike_contains, job_search_predicate, normalize_q, trigram_match
+from app.helpers.uploaded_file_storage import (
+    delete_stored_file_if_managed,
+    persist_uploaded_file,
+    safe_upload_filename,
+)
 from app.models.application import Application
 from app.models.job import Job
 from app.models.job_attachment import JobAttachment
@@ -56,18 +59,6 @@ def _next_attachment_id(db: Session) -> int:
 
 def _new_apply_token() -> str:
     return secrets.token_urlsafe(32)
-
-
-def _job_attachments_root() -> Path:
-    settings = get_settings()
-    if settings.JOB_ATTACHMENTS_DIR:
-        return Path(settings.JOB_ATTACHMENTS_DIR).expanduser().resolve()
-    return Path(__file__).resolve().parents[2] / "storage" / "job_attachments"
-
-
-def _safe_file_name(name: str) -> str:
-    cleaned = re.sub(r"[^A-Za-z0-9._-]+", "_", name).strip("._")
-    return cleaned[:140] or "document"
 
 
 class JobService(BaseService):
@@ -335,6 +326,7 @@ class JobService(BaseService):
         att = JobAttachment.find_by(self.db, id=attachment_id, job_id=job_id, account_id=account_id)
         if not att:
             return self.failure("Attachment not found")
+        delete_stored_file_if_managed(att.file_url)
         att.destroy(self.db)
         return self.success({"deleted": True})
 
@@ -351,7 +343,7 @@ class JobService(BaseService):
         job = Job.find_by(self.db, id=job_id, account_id=account_id)
         if not job or job.deleted_at:
             return self.failure("Job not found")
-        filename = _safe_file_name(original_filename or "document")
+        filename = safe_upload_filename(original_filename or "document")
         display_name = (name or "").strip() or filename
         if not file_bytes:
             return self.failure("file is required")
@@ -362,13 +354,8 @@ class JobService(BaseService):
             now.strftime("%Y"),
             now.strftime("%m"),
         ]
-        base_dir = _job_attachments_root()
-        target_dir = base_dir.joinpath(*rel_parts)
-        target_dir.mkdir(parents=True, exist_ok=True)
         unique_name = f"{now.strftime('%Y%m%dT%H%M%S')}_{secrets.token_hex(6)}_{filename}"
-        target_path = target_dir / unique_name
-        target_path.write_bytes(file_bytes)
-        file_url = "/" + "/".join(["files", *rel_parts, unique_name])
+        file_url = persist_uploaded_file(rel_parts, unique_name, file_bytes, original_filename or filename)
 
         att = JobAttachment(
             id=_next_attachment_id(self.db),

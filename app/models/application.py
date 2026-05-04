@@ -5,6 +5,7 @@ from typing import Optional
 from sqlalchemy import BigInteger, String, Boolean, DateTime, Text, Numeric, JSON, ForeignKey, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
+from app.helpers.uploaded_file_storage import absolute_public_file_url
 from app.models.base_model import BaseModel
 
 
@@ -68,4 +69,6 @@ class Application(BaseModel):
                 d[k] = d[k].isoformat()
         if d.get("score") is not None:
             d["score"] = float(d["score"])
+        if d.get("resume_url"):
+            d["resume_url"] = absolute_public_file_url(str(d["resume_url"]))
         return d

@@ -1,8 +1,12 @@
 """Public job page + apply (no auth)—resolved by apply_token."""
 from __future__ import annotations
 
+import os
+import secrets
+from datetime import datetime, timezone
 from typing import Any
 
+from app.helpers.uploaded_file_storage import absolute_public_file_url, persist_uploaded_file, safe_upload_filename
 from app.models.account import Account
 from app.models.job import Job
 from app.models.job_version import JobVersion
@@ -11,6 +15,11 @@ from app.services.base_service import BaseService
 from app.services.custom_attribute_service import CustomAttributeService, ENTITY_APPLICATION
 from app.services.referral_account_settings_service import merged_referral_settings
 from app.services.referral_service import ReferralLinkService
+
+_MAX_RESUME_BYTES = 12 * 1024 * 1024
+_ALLOWED_RESUME_EXT = frozenset(
+    {".pdf", ".doc", ".docx", ".txt", ".rtf", ".png", ".jpg", ".jpeg", ".webp"}
+)
 
 
 def _job_for_token(db, token: str) -> Job | None:
@@ -116,3 +125,30 @@ class PublicApplyService(BaseService):
                 body["referral_utm"] = utm if isinstance(utm, dict) else {}
                 body["source_type"] = "referral"
         return ApplicationService(self.db).create_application(job.account_id, body)
+
+    def upload_resume(self, token: str, file_bytes: bytes, original_filename: str) -> dict:
+        job = _job_for_token(self.db, token)
+        if not job:
+            return self.failure("Job not found")
+        if job.status != "open":
+            return self.failure("This job is not accepting applications right now")
+        if not file_bytes:
+            return self.failure("file is required")
+        if len(file_bytes) > _MAX_RESUME_BYTES:
+            return self.failure("Resume file is too large (max 12 MB)")
+        raw_name = (original_filename or "").strip() or "resume.pdf"
+        fn = safe_upload_filename(raw_name)
+        ext = os.path.splitext(fn)[1].lower()
+        if ext not in _ALLOWED_RESUME_EXT:
+            return self.failure("Unsupported file type for resume")
+        now = datetime.now(timezone.utc)
+        rel_parts = [
+            f"account_{job.account_id}",
+            "public_apply",
+            f"job_{job.id}",
+            now.strftime("%Y"),
+            now.strftime("%m"),
+        ]
+        unique_name = f"{now.strftime('%Y%m%dT%H%M%S')}_{secrets.token_hex(6)}_{fn}"
+        file_url = persist_uploaded_file(rel_parts, unique_name, file_bytes, raw_name)
+        return self.success({"resume_url": absolute_public_file_url(file_url)})

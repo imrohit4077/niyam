@@ -150,6 +150,11 @@ def draw_routes(app: "FastAPI") -> None:
         _wrap(PublicApplyController, "create", lambda c: c.create(), run_before=False),
         methods=["POST"],
     )
+    router.add_api_route(
+        "/public/apply/{token}/resume",
+        _wrap(PublicApplyController, "upload_resume", lambda c: c.upload_resume(), run_before=False),
+        methods=["POST"],
+    )
 
     router.add_api_route(
         "/public/esign/sign/{token}",

@@ -19,12 +19,116 @@
   <a href="https://www.typescriptlang.org/"><img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white"></a>
   <a href="https://www.postgresql.org/"><img alt="PostgreSQL" src="https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white"></a>
   <a href="https://redis.io/"><img alt="Redis" src="https://img.shields.io/badge/Redis-DC382D?style=flat-square&logo=redis&logoColor=white"></a>
+  <a href="https://min.io/"><img alt="MinIO" src="https://img.shields.io/badge/MinIO-S3--compatible%20storage-C72C48?style=flat-square"></a>
 </p>
+
+---
+
+## MinIO object storage
+
+Niyam can store **job JD / attachment files**, **public apply resume uploads**, and other managed blobs on **[MinIO](https://min.io/)** (S3-compatible) instead of only on local disk. The API still exposes files at **`GET /files/...`**; when MinIO is enabled, those requests are streamed from your bucket.
+
+Official docs: [MinIO Object Store](https://docs.min.io/community/minio-object-store/).
+
+### What gets stored
+
+| Flow | Endpoint / behavior |
+|------|----------------------|
+| Recruiter JD / documents | `POST /api/v1/jobs/{job_id}/attachments/upload` (multipart `file`, `name`, optional `doc_type`) |
+| Public candidate resume file | `POST /api/v1/public/apply/{token}/resume` |
+| Download | `GET http://<api-host>/files/...` (same path whether the backend uses disk or MinIO) |
+
+JSON responses for attachments may include **`object_key`** (bucket object path) and **`file_storage`** (`minio` or `local`) so you can confirm behavior. Set **`PUBLIC_FILES_BASE_URL`** (for example `http://127.0.0.1:8000`) if clients need absolute `file_url` values (SPA on another origin, mobile apps, email links).
+
+### Python dependency
+
+The server uses the **`minio`** PyPI package (pinned in `requirements.txt`). Install with the same interpreter you use to run the API:
+
+```bash
+python manage.py deps
+```
+
+If `pip` is missing from your venv, `deps` runs **`python -m ensurepip`** first, then installs from `requirements.txt`. You can also use `python -m pip install -r requirements.txt`.
+
+### Install MinIO Server (no Docker)
+
+**Linux (amd64)** — download the binary, install to `/usr/local/bin`, use a data directory (example: `/mnt/data` or a path you own):
+
+```bash
+wget https://dl.min.io/server/minio/release/linux-amd64/minio
+chmod +x minio
+sudo mv minio /usr/local/bin/
+sudo mkdir -p /mnt/data
+export MINIO_ROOT_USER=admin
+export MINIO_ROOT_PASSWORD='your-strong-password'
+minio server /mnt/data --console-address ":9001"
+```
+
+**macOS (Homebrew)** — typical install:
+
+```bash
+brew install minio
+mkdir -p ~/minio-data
+export MINIO_ROOT_USER=admin
+export MINIO_ROOT_PASSWORD='your-strong-password'
+eval "$(/opt/homebrew/bin/brew shellenv)"
+minio server ~/minio-data --console-address ":9001"
+```
+
+**Ports:** API / S3 endpoint defaults to **`9000`**. Web console defaults to **`9001`** (when `--console-address ":9001"` is set).
+
+- API: `http://127.0.0.1:9000`
+- Console: `http://127.0.0.1:9001`
+
+### Configure Niyam (`.env`)
+
+Copy `.env.example` → `.env`. Settings are loaded from **`<repo>/.env`** regardless of process working directory (`config/settings.py`).
+
+When **all** of the following are non-empty, the app uses MinIO for new uploads and serves `/files/...` from the bucket:
+
+| Variable | Example | Notes |
+|----------|---------|--------|
+| `MINIO_ENDPOINT` | `127.0.0.1:9000` | Host:port only (no `http://`). |
+| `MINIO_ACCESS_KEY` | `admin` | Often same as `MINIO_ROOT_USER` for dev. |
+| `MINIO_SECRET_KEY` | `your-strong-password` | Often same as `MINIO_ROOT_PASSWORD` for dev. |
+| `MINIO_BUCKET` | `niyam` | Created automatically on API startup if missing. |
+| `MINIO_USE_SSL` | `false` | Use `true` behind TLS. |
+| `MINIO_REGION` | *(empty)* | Optional; set if your deployment requires it. |
+
+**Optional:**
+
+| Variable | Purpose |
+|----------|---------|
+| `PUBLIC_FILES_BASE_URL` | Prefix for absolute `file_url` / resume URLs in JSON (e.g. `http://127.0.0.1:8000`). |
+| `JOB_ATTACHMENTS_DIR` | When MinIO is **disabled**, files go under this directory (default: `./storage/job_attachments/`). |
+
+After changing `.env`, **restart the API** (settings are cached in process).
+
+### Frontend dev (Vite)
+
+`web/vite.config.ts` proxies **`/api`** and **`/files`** to the backend so relative `/files/...` links work from `http://localhost:5173`.
+
+### Verify uploads
+
+1. API logs should include a line like **`MinIO put_object ok`** after each successful S3 write.
+2. Open the MinIO **Console** → bucket **`MINIO_BUCKET`** → find the object named like **`object_key`** from the API response.
+3. `GET` the returned **`file_url`** in a browser or `curl`; you should receive the file bytes.
+
+### Troubleshooting
+
+| Symptom | What to check |
+|---------|----------------|
+| `ModuleNotFoundError: minio` | Run `python manage.py deps` with the **same** Python as `runserver`. |
+| `pip` / `No module named pip` in venv | Use `python manage.py deps` (bootstraps pip via `ensurepip`). |
+| MinIO process shows no HTTP lines | Normal; use console or API logs. |
+| `file_storage` is `local` | `MINIO_*` not loaded—confirm `.env` in repo root and restart. |
+| `command not found: minio` (macOS) | Add Homebrew to `PATH` or call `/opt/homebrew/bin/minio`. |
 
 ---
 
 ## Table of Contents
 
+- [MinIO object storage](#minio-object-storage)
 - [Why Niyam ATS](#why-niyam-ats)
 - [Core Features](#core-features)
 - [Hiring Flow](#hiring-flow)
@@ -156,9 +260,12 @@ flowchart TB
   subgraph Data["Infrastructure"]
     PG[("PostgreSQL")]
     RD[("Redis")]
+    MN[("MinIO / S3 optional")]
   end
 
   SPA -->|"/api/v1"| MW --> RT --> CT --> SV --> MD --> PG
+  SV -.->|object files| MN
+  SPA -->|"/files"| MW
   SV --> WK
   BT --> WK
   WK --> RD
@@ -173,6 +280,7 @@ flowchart TB
 - Frontend: React 19, TypeScript, Vite.
 - Database: PostgreSQL.
 - Queue/async: Celery + Redis.
+- Object storage (optional): [MinIO](https://min.io/) S3-compatible API via the `minio` Python client; local disk fallback under `storage/job_attachments/`.
 - Auth/security: JWT, Passlib/bcrypt.
 - Tooling: `manage.py` CLI, pytest, ESLint, TypeScript build checks.
 
@@ -201,14 +309,18 @@ flowchart TB
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+python manage.py deps
 cp .env.example .env
 cp config/database.yml.example config/database.yml
 python manage.py db:migrate
 python manage.py runserver
 ```
 
+`python manage.py deps` runs `python -m pip install -r requirements.txt` (and bootstraps `pip` via `ensurepip` if needed). Use it whenever plain `pip` is not on your `PATH`.
+
 Backend runs at `http://localhost:8000`.
+
+**Optional:** start [MinIO](#minio-object-storage), then add `MINIO_*` variables to `.env` before `runserver` so JD and resume files go to object storage.
 
 ### 2) Frontend setup
 
@@ -232,6 +344,8 @@ Copy `.env.example` to `.env` and set at least:
 - `REDIS_URL`
 - `FRONTEND_PUBLIC_URL`
 
+**MinIO (optional):** see the [MinIO object storage](#minio-object-storage) section at the top of this README for install steps, `.env` variables (`MINIO_ENDPOINT`, keys, bucket, `PUBLIC_FILES_BASE_URL`), and verification.
+
 Optional integrations:
 
 - `GOOGLE_OAUTH_*` for Gmail/OAuth flows.
@@ -245,6 +359,7 @@ Optional integrations:
 ### Backend
 
 ```bash
+python manage.py deps
 python manage.py runserver
 python manage.py routes
 python manage.py shell
@@ -282,6 +397,7 @@ Recommended production sequence:
 4. Run API with production ASGI workers.
 5. Run Celery workers and scheduler.
 6. Serve `static/` via reverse proxy or CDN.
+7. Run **MinIO** (or any S3-compatible endpoint), set `MINIO_*` with strong credentials and `MINIO_USE_SSL=true` when TLS terminates on the object store; set `PUBLIC_FILES_BASE_URL` to your public API origin so attachment URLs resolve for candidates and integrations.
 
 ---
 

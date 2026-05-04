@@ -31,6 +31,8 @@ export default function PublicJobApplyPage() {
   const [submitErr, setSubmitErr] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [done, setDone] = useState(false)
+  const [resumeUploading, setResumeUploading] = useState(false)
+  const [resumeUploadErr, setResumeUploadErr] = useState('')
 
   const [candidate_name, setCandidateName] = useState('')
   const [candidate_email, setCandidateEmail] = useState('')
@@ -78,6 +80,22 @@ export default function PublicJobApplyPage() {
     cover_letter: true,
     portfolio: false,
     linkedin: false,
+  }
+
+  const onResumeFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0]
+    e.target.value = ''
+    if (!f || !token) return
+    setResumeUploadErr('')
+    setResumeUploading(true)
+    try {
+      const { resume_url } = await publicApplyApi.uploadResume(token, f)
+      setResumeUrl(resume_url)
+    } catch (err: unknown) {
+      setResumeUploadErr(err instanceof Error ? err.message : 'Upload failed')
+    } finally {
+      setResumeUploading(false)
+    }
   }
 
   const submit = async (e: React.FormEvent) => {
@@ -267,15 +285,28 @@ export default function PublicJobApplyPage() {
               />
             </label>
             {fields.resume && (
-              <label className="public-apply-field">
-                <span>Resume link (URL)</span>
-                <input
-                  type="url"
-                  value={resume_url}
-                  onChange={e => setResumeUrl(e.target.value)}
-                  placeholder="https://…"
-                />
-              </label>
+              <>
+                <label className="public-apply-field">
+                  <span>Upload resume</span>
+                  <input
+                    type="file"
+                    accept=".pdf,.doc,.docx,.txt,.rtf,.png,.jpg,.jpeg,.webp,application/pdf"
+                    onChange={onResumeFile}
+                    disabled={resumeUploading || submitting}
+                  />
+                  {resumeUploading && <p className="public-apply-muted">Uploading…</p>}
+                  {resumeUploadErr && <p className="auth-error public-apply-error">{resumeUploadErr}</p>}
+                </label>
+                <label className="public-apply-field">
+                  <span>Or resume link (URL)</span>
+                  <input
+                    type="url"
+                    value={resume_url}
+                    onChange={e => setResumeUrl(e.target.value)}
+                    placeholder="https://…"
+                  />
+                </label>
+              </>
             )}
             {fields.linkedin && (
               <label className="public-apply-field">
