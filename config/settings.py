@@ -76,6 +76,9 @@ class Settings(BaseSettings):
     # Job attachment files root. Empty = project storage/job_attachments/
     JOB_ATTACHMENTS_DIR: str = ""
 
+    # Public candidate portal: all portal auth and applications are scoped to this account (0 = disabled).
+    CANDIDATE_PORTAL_ACCOUNT_ID: int = 0
+
 
 @lru_cache
 def get_settings() -> Settings:

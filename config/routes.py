@@ -110,6 +110,7 @@ def draw_routes(app: "FastAPI") -> None:
     from app.controllers.scorecards_controller import ScorecardsController
     from app.controllers.account_members_controller import AccountMembersController
     from app.controllers.public_apply_controller import PublicApplyController
+    from app.controllers.candidate_portal_controller import CandidatePortalController
     from app.controllers.esign_templates_controller import EsignTemplatesController
     from app.controllers.esign_stage_rules_controller import EsignStageRulesController
     from app.controllers.esign_requests_controller import EsignRequestsController
@@ -150,6 +151,16 @@ def draw_routes(app: "FastAPI") -> None:
         _wrap(PublicApplyController, "create", lambda c: c.create(), run_before=False),
         methods=["POST"],
     )
+    router.add_api_route(
+        "/public/candidate-portal/register",
+        _wrap(CandidatePortalController, "register", lambda c: c.register(), run_before=False),
+        methods=["POST"],
+    )
+    router.add_api_route(
+        "/public/candidate-portal/login",
+        _wrap(CandidatePortalController, "login", lambda c: c.login(), run_before=False),
+        methods=["POST"],
+    )
 
     router.add_api_route(
         "/public/esign/sign/{token}",
@@ -178,6 +189,31 @@ def draw_routes(app: "FastAPI") -> None:
         "/profile",
         _wrap(ProfileController, "show", lambda c: c.show()),
         methods=["GET"],
+    )
+    router.add_api_route(
+        "/candidate_portal/me",
+        _wrap(CandidatePortalController, "me", lambda c: c.me()),
+        methods=["GET"],
+    )
+    router.add_api_route(
+        "/candidate_portal/me",
+        _wrap(CandidatePortalController, "update_me", lambda c: c.update_me()),
+        methods=["PATCH"],
+    )
+    router.add_api_route(
+        "/candidate_portal/me/applications",
+        _wrap(CandidatePortalController, "my_applications", lambda c: c.my_applications()),
+        methods=["GET"],
+    )
+    router.add_api_route(
+        "/candidate_portal/me/upload_photo",
+        _wrap(CandidatePortalController, "upload_photo", lambda c: c.upload_photo()),
+        methods=["POST"],
+    )
+    router.add_api_route(
+        "/candidate_portal/me/upload_resume",
+        _wrap(CandidatePortalController, "upload_resume", lambda c: c.upload_resume()),
+        methods=["POST"],
     )
 
     router.add_api_route(
