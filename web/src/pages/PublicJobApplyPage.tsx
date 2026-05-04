@@ -165,6 +165,12 @@ export default function PublicJobApplyPage() {
               Thank you{job.company_name ? ` for applying to ${job.company_name}` : ''}. The hiring team has your
               details and may follow up by email.
             </p>
+            {token && (
+              <p className="public-apply-muted">
+                Want to track your application and manage your profile?{' '}
+                <Link to="/candidate-portal">Open candidate portal</Link>.
+              </p>
+            )}
           </div>
         </main>
       </div>

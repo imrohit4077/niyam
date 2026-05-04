@@ -27,6 +27,7 @@ from app.models.referral_bonus import ReferralBonus
 from app.models.audit_log_entry import AuditLogEntry
 from app.models.audit_log_delivery_failure import AuditLogDeliveryFailure
 from app.models.application import Application
+from app.models.candidate_portal_profile import CandidatePortalProfile
 from app.models.custom_attribute_definition import CustomAttributeDefinition
 from app.models.hiring_plan import HiringPlan
 from app.models.pipeline_stage import PipelineStage
@@ -52,7 +53,7 @@ __all__ = [
     "BaseModel", "Timestampable", "SoftDeletable", "Sluggable",
     "User", "Account", "AccountUser", "Role", "AccountUserRole",
     "Permission", "RolePermission", "JobTeamMember",
-    "Job", "JobAttachment", "JobVersion", "JobBoard", "JobPosting", "Application",
+    "Job", "JobAttachment", "JobVersion", "JobBoard", "JobPosting", "Application", "CandidatePortalProfile",
     "HiringPlan", "PipelineStage",
     "InterviewPlan", "InterviewKit", "InterviewAssignment", "InterviewScorecard",
     "EsignTemplate", "EsignStageRule", "EsignRequest",

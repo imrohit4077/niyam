@@ -27,6 +27,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
         "/api/v1/auth/login",
         "/api/v1/auth/refresh",
         "/api/v1/public/esign",
+        "/api/v1/public/candidate-portal",
         "/api/v1/webhooks/esign",
         "/api/v1/communication_channels/oauth/google/callback",
     }

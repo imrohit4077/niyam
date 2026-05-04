@@ -6,6 +6,8 @@ import LoginPage from './pages/LoginPage'
 import JobEditorPage from './pages/JobEditorPage'
 import PublicJobApplyPage from './pages/PublicJobApplyPage'
 import PublicEsignSignPage from './pages/PublicEsignSignPage'
+import CandidatePortalPage from './pages/CandidatePortalPage'
+import CandidatePortalLegacyRedirect from './pages/CandidatePortalLegacyRedirect'
 import ApplicationDetailPage from './pages/ApplicationDetailPage'
 import EsignDocumentsPage from './pages/EsignDocumentsPage'
 import DashboardLayout from './layouts/DashboardLayout'
@@ -136,6 +138,8 @@ function AppRoutes() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/apply/:token" element={<PublicJobApplyPage />} />
+      <Route path="/candidate-portal" element={<CandidatePortalPage />} />
+      <Route path="/candidate-portal/:token" element={<CandidatePortalLegacyRedirect />} />
       <Route path="/esign/sign/:token" element={<PublicEsignSignPage />} />
       <Route element={<RequireAuth />}>
         <Route path="/account/:accountId" element={<AccountRedirect />}>
