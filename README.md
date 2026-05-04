@@ -19,6 +19,7 @@
   <a href="https://www.typescriptlang.org/"><img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white"></a>
   <a href="https://www.postgresql.org/"><img alt="PostgreSQL" src="https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white"></a>
   <a href="https://redis.io/"><img alt="Redis" src="https://img.shields.io/badge/Redis-DC382D?style=flat-square&logo=redis&logoColor=white"></a>
+  <a href="https://min.io/"><img alt="MinIO" src="https://img.shields.io/badge/MinIO-S3--compatible%20storage-C72C48?style=flat-square"></a>
 </p>
 
 ---
@@ -156,11 +157,11 @@ flowchart TB
   subgraph Data["Infrastructure"]
     PG[("PostgreSQL")]
     RD[("Redis")]
-    OBJ[("Object storage optional")]
+    MN[("MinIO / S3 optional")]
   end
 
   SPA -->|"/api/v1"| MW --> RT --> CT --> SV --> MD --> PG
-  SV -.->|uploaded files| OBJ
+  SV -.->|object uploads| MN
   SPA -->|"/files"| MW
   SV --> WK
   BT --> WK
@@ -176,7 +177,7 @@ flowchart TB
 - Frontend: React 19, TypeScript, Vite.
 - Database: PostgreSQL.
 - Queue/async: Celery + Redis.
-- File storage: local disk by default; optional S3-compatible bucket (see [Configuration](#configuration)) for JD attachments, public apply resumes, and similar blobs.
+- File storage: local disk by default; optional **[MinIO](https://min.io/)** (S3-compatible) or another S3 API (see [Configuration](#configuration)) for JD attachments, public apply resumes, and similar blobs.
 - Auth/security: JWT, Passlib/bcrypt.
 - Tooling: `manage.py` CLI, pytest, ESLint, TypeScript build checks.
 
