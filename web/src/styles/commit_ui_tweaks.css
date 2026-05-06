@@ -74138,3 +74138,16 @@
   transform: translateY(-1px);
   transition: transform 140ms ease;
 }
+
+/* Commit 5504/10000: improve grid gaps */
+.ui-commit-card-5504 {
+  border-radius: 12px;
+  padding: 8px;
+  box-shadow: 0 2px 8px rgba(17, 24, 39, 0.04);
+  border: 1px solid hsl(64 20% 84%);
+}
+
+.ui-commit-card-5504:hover {
+  transform: translateY(-1px);
+  transition: transform 140ms ease;
+}
