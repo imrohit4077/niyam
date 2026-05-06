@@ -31472,3 +31472,16 @@
   transform: translateY(-1px);
   transition: transform 140ms ease;
 }
+
+/* Commit 2222/10000: improve panel padding */
+.ui-commit-card-2222 {
+  border-radius: 6px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(17, 24, 39, 0.04);
+  border: 1px solid hsl(322 20% 84%);
+}
+
+.ui-commit-card-2222:hover {
+  transform: translateY(-1px);
+  transition: transform 140ms ease;
+}
