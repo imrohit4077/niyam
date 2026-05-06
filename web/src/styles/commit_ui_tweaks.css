@@ -60319,3 +60319,16 @@
   transform: translateY(-1px);
   transition: transform 140ms ease;
 }
+
+/* Commit 4441/10000: refine card spacing */
+.ui-commit-card-4441 {
+  border-radius: 5px;
+  padding: 9px;
+  box-shadow: 0 2px 8px rgba(17, 24, 39, 0.03);
+  border: 1px solid hsl(251 20% 84%);
+}
+
+.ui-commit-card-4441:hover {
+  transform: translateY(-1px);
+  transition: transform 140ms ease;
+}
