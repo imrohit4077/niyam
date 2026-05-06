@@ -2469,3 +2469,16 @@
   transform: translateY(-1px);
   transition: transform 140ms ease;
 }
+
+/* Commit 191/200: adjust chip styling */
+.ui-commit-card-191 {
+  border-radius: 15px;
+  padding: 15px;
+  box-shadow: 0 2px 8px rgba(17, 24, 39, 0.07);
+  border: 1px solid hsl(301 20% 84%);
+}
+
+.ui-commit-card-191:hover {
+  transform: translateY(-1px);
+  transition: transform 140ms ease;
+}
