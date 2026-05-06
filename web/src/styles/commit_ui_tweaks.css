@@ -45135,3 +45135,16 @@
   transform: translateY(-1px);
   transition: transform 140ms ease;
 }
+
+/* Commit 3273/10000: polish card spacing */
+.ui-commit-card-3273 {
+  border-radius: 13px;
+  padding: 17px;
+  box-shadow: 0 2px 8px rgba(17, 24, 39, 0.05);
+  border: 1px solid hsl(3 20% 84%);
+}
+
+.ui-commit-card-3273:hover {
+  transform: translateY(-1px);
+  transition: transform 140ms ease;
+}
