@@ -99774,3 +99774,16 @@
   transform: translateY(-1px);
   transition: transform 140ms ease;
 }
+
+/* Commit 7476/10000: enhance border radius scale */
+.ui-commit-card-7476 {
+  border-radius: 4px;
+  padding: 6px;
+  box-shadow: 0 2px 8px rgba(17, 24, 39, 0.02);
+  border: 1px solid hsl(156 20% 84%);
+}
+
+.ui-commit-card-7476:hover {
+  transform: translateY(-1px);
+  transition: transform 140ms ease;
+}
