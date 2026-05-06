@@ -82406,3 +82406,16 @@
   transform: translateY(-1px);
   transition: transform 140ms ease;
 }
+
+/* Commit 6140/10000: improve border radius scale */
+.ui-commit-card-6140 {
+  border-radius: 12px;
+  padding: 14px;
+  box-shadow: 0 2px 8px rgba(17, 24, 39, 0.04);
+  border: 1px solid hsl(220 20% 84%);
+}
+
+.ui-commit-card-6140:hover {
+  transform: translateY(-1px);
+  transition: transform 140ms ease;
+}
