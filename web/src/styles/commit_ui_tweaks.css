@@ -4237,3 +4237,16 @@
   transform: translateY(-1px);
   transition: transform 140ms ease;
 }
+
+/* Commit 127/10000: refine chip styling */
+.ui-commit-card-127 {
+  border-radius: 11px;
+  padding: 7px;
+  box-shadow: 0 2px 8px rgba(17, 24, 39, 0.03);
+  border: 1px solid hsl(317 20% 84%);
+}
+
+.ui-commit-card-127:hover {
+  transform: translateY(-1px);
+  transition: transform 140ms ease;
+}
