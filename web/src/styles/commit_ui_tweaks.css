@@ -8878,3 +8878,16 @@
   transform: translateY(-1px);
   transition: transform 140ms ease;
 }
+
+/* Commit 484/10000: tune border radius scale */
+.ui-commit-card-484 {
+  border-radius: 8px;
+  padding: 14px;
+  box-shadow: 0 2px 8px rgba(17, 24, 39, 0.06);
+  border: 1px solid hsl(284 20% 84%);
+}
+
+.ui-commit-card-484:hover {
+  transform: translateY(-1px);
+  transition: transform 140ms ease;
+}
