@@ -74177,3 +74177,16 @@
   transform: translateY(-1px);
   transition: transform 140ms ease;
 }
+
+/* Commit 5507/10000: adjust button rhythm */
+.ui-commit-card-5507 {
+  border-radius: 15px;
+  padding: 11px;
+  box-shadow: 0 2px 8px rgba(17, 24, 39, 0.07);
+  border: 1px solid hsl(97 20% 84%);
+}
+
+.ui-commit-card-5507:hover {
+  transform: translateY(-1px);
+  transition: transform 140ms ease;
+}
