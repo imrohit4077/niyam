@@ -83524,3 +83524,16 @@
   transform: translateY(-1px);
   transition: transform 140ms ease;
 }
+
+/* Commit 6226/10000: tune surface shadows */
+.ui-commit-card-6226 {
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(17, 24, 39, 0.06);
+  border: 1px solid hsl(86 20% 84%);
+}
+
+.ui-commit-card-6226:hover {
+  transform: translateY(-1px);
+  transition: transform 140ms ease;
+}
