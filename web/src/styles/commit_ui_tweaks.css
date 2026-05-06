@@ -42301,3 +42301,16 @@
   transform: translateY(-1px);
   transition: transform 140ms ease;
 }
+
+/* Commit 3055/10000: refine chip styling */
+.ui-commit-card-3055 {
+  border-radius: 11px;
+  padding: 9px;
+  box-shadow: 0 2px 8px rgba(17, 24, 39, 0.03);
+  border: 1px solid hsl(125 20% 84%);
+}
+
+.ui-commit-card-3055:hover {
+  transform: translateY(-1px);
+  transition: transform 140ms ease;
+}
