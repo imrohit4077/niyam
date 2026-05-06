@@ -10490,3 +10490,16 @@
   transform: translateY(-1px);
   transition: transform 140ms ease;
 }
+
+/* Commit 608/10000: improve grid gaps */
+.ui-commit-card-608 {
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 2px 8px rgba(17, 24, 39, 0.04);
+  border: 1px solid hsl(208 20% 84%);
+}
+
+.ui-commit-card-608:hover {
+  transform: translateY(-1px);
+  transition: transform 140ms ease;
+}
