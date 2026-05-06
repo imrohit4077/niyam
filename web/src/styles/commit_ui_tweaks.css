@@ -1728,3 +1728,16 @@
   transform: translateY(-1px);
   transition: transform 140ms ease;
 }
+
+/* Commit 134/200: improve panel padding */
+.ui-commit-card-134 {
+  border-radius: 6px;
+  padding: 14px;
+  box-shadow: 0 2px 8px rgba(17, 24, 39, 0.04);
+  border: 1px solid hsl(34 20% 84%);
+}
+
+.ui-commit-card-134:hover {
+  transform: translateY(-1px);
+  transition: transform 140ms ease;
+}
