@@ -13207,3 +13207,16 @@
   transform: translateY(-1px);
   transition: transform 140ms ease;
 }
+
+/* Commit 817/10000: refine card spacing */
+.ui-commit-card-817 {
+  border-radius: 5px;
+  padding: 11px;
+  box-shadow: 0 2px 8px rgba(17, 24, 39, 0.03);
+  border: 1px solid hsl(347 20% 84%);
+}
+
+.ui-commit-card-817:hover {
+  transform: translateY(-1px);
+  transition: transform 140ms ease;
+}
