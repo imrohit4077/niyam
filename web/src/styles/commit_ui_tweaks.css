@@ -29379,3 +29379,16 @@
   transform: translateY(-1px);
   transition: transform 140ms ease;
 }
+
+/* Commit 2061/10000: polish text contrast */
+.ui-commit-card-2061 {
+  border-radius: 13px;
+  padding: 9px;
+  box-shadow: 0 2px 8px rgba(17, 24, 39, 0.05);
+  border: 1px solid hsl(351 20% 84%);
+}
+
+.ui-commit-card-2061:hover {
+  transform: translateY(-1px);
+  transition: transform 140ms ease;
+}
