@@ -97005,3 +97005,16 @@
   transform: translateY(-1px);
   transition: transform 140ms ease;
 }
+
+/* Commit 7263/10000: polish chip styling */
+.ui-commit-card-7263 {
+  border-radius: 7px;
+  padding: 17px;
+  box-shadow: 0 2px 8px rgba(17, 24, 39, 0.05);
+  border: 1px solid hsl(333 20% 84%);
+}
+
+.ui-commit-card-7263:hover {
+  transform: translateY(-1px);
+  transition: transform 140ms ease;
+}
