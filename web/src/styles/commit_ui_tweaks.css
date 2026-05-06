@@ -81548,3 +81548,16 @@
   transform: translateY(-1px);
   transition: transform 140ms ease;
 }
+
+/* Commit 6074/10000: improve surface shadows */
+.ui-commit-card-6074 {
+  border-radius: 6px;
+  padding: 18px;
+  box-shadow: 0 2px 8px rgba(17, 24, 39, 0.04);
+  border: 1px solid hsl(214 20% 84%);
+}
+
+.ui-commit-card-6074:hover {
+  transform: translateY(-1px);
+  transition: transform 140ms ease;
+}
