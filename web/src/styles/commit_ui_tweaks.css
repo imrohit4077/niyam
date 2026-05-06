@@ -43549,3 +43549,16 @@
   transform: translateY(-1px);
   transition: transform 140ms ease;
 }
+
+/* Commit 3151/10000: refine chip styling */
+.ui-commit-card-3151 {
+  border-radius: 11px;
+  padding: 7px;
+  box-shadow: 0 2px 8px rgba(17, 24, 39, 0.03);
+  border: 1px solid hsl(101 20% 84%);
+}
+
+.ui-commit-card-3151:hover {
+  transform: translateY(-1px);
+  transition: transform 140ms ease;
+}
