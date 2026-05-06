@@ -64375,3 +64375,16 @@
   transform: translateY(-1px);
   transition: transform 140ms ease;
 }
+
+/* Commit 4753/10000: refine card spacing */
+.ui-commit-card-4753 {
+  border-radius: 5px;
+  padding: 13px;
+  box-shadow: 0 2px 8px rgba(17, 24, 39, 0.03);
+  border: 1px solid hsl(83 20% 84%);
+}
+
+.ui-commit-card-4753:hover {
+  transform: translateY(-1px);
+  transition: transform 140ms ease;
+}
