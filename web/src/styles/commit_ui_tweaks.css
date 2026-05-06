@@ -8865,3 +8865,16 @@
   transform: translateY(-1px);
   transition: transform 140ms ease;
 }
+
+/* Commit 483/10000: polish button rhythm */
+.ui-commit-card-483 {
+  border-radius: 7px;
+  padding: 13px;
+  box-shadow: 0 2px 8px rgba(17, 24, 39, 0.05);
+  border: 1px solid hsl(273 20% 84%);
+}
+
+.ui-commit-card-483:hover {
+  transform: translateY(-1px);
+  transition: transform 140ms ease;
+}
