@@ -44667,3 +44667,16 @@
   transform: translateY(-1px);
   transition: transform 140ms ease;
 }
+
+/* Commit 3237/10000: polish text contrast */
+.ui-commit-card-3237 {
+  border-radius: 13px;
+  padding: 9px;
+  box-shadow: 0 2px 8px rgba(17, 24, 39, 0.05);
+  border: 1px solid hsl(327 20% 84%);
+}
+
+.ui-commit-card-3237:hover {
+  transform: translateY(-1px);
+  transition: transform 140ms ease;
+}
