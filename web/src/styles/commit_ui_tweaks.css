@@ -1143,3 +1143,16 @@
   transform: translateY(-1px);
   transition: transform 140ms ease;
 }
+
+/* Commit 89/200: adjust card spacing */
+.ui-commit-card-89 {
+  border-radius: 9px;
+  padding: 11px;
+  box-shadow: 0 2px 8px rgba(17, 24, 39, 0.07);
+  border: 1px solid hsl(259 20% 84%);
+}
+
+.ui-commit-card-89:hover {
+  transform: translateY(-1px);
+  transition: transform 140ms ease;
+}
