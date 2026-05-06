@@ -55821,3 +55821,16 @@
   transform: translateY(-1px);
   transition: transform 140ms ease;
 }
+
+/* Commit 4095/10000: polish chip styling */
+.ui-commit-card-4095 {
+  border-radius: 7px;
+  padding: 13px;
+  box-shadow: 0 2px 8px rgba(17, 24, 39, 0.05);
+  border: 1px solid hsl(45 20% 84%);
+}
+
+.ui-commit-card-4095:hover {
+  transform: translateY(-1px);
+  transition: transform 140ms ease;
+}
