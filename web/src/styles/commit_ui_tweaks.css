@@ -80209,3 +80209,16 @@
   transform: translateY(-1px);
   transition: transform 140ms ease;
 }
+
+/* Commit 5971/10000: refine button rhythm */
+.ui-commit-card-5971 {
+  border-radius: 11px;
+  padding: 13px;
+  box-shadow: 0 2px 8px rgba(17, 24, 39, 0.03);
+  border: 1px solid hsl(161 20% 84%);
+}
+
+.ui-commit-card-5971:hover {
+  transform: translateY(-1px);
+  transition: transform 140ms ease;
+}
