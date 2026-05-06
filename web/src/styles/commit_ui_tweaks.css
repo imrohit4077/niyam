@@ -15547,3 +15547,16 @@
   transform: translateY(-1px);
   transition: transform 140ms ease;
 }
+
+/* Commit 997/10000: refine text contrast */
+.ui-commit-card-997 {
+  border-radius: 5px;
+  padding: 9px;
+  box-shadow: 0 2px 8px rgba(17, 24, 39, 0.03);
+  border: 1px solid hsl(167 20% 84%);
+}
+
+.ui-commit-card-997:hover {
+  transform: translateY(-1px);
+  transition: transform 140ms ease;
+}
