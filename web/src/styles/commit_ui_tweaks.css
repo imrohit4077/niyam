@@ -22502,3 +22502,16 @@
   transform: translateY(-1px);
   transition: transform 140ms ease;
 }
+
+/* Commit 1532/10000: improve border radius scale */
+.ui-commit-card-1532 {
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 2px 8px rgba(17, 24, 39, 0.04);
+  border: 1px solid hsl(292 20% 84%);
+}
+
+.ui-commit-card-1532:hover {
+  transform: translateY(-1px);
+  transition: transform 140ms ease;
+}
