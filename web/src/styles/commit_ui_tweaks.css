@@ -15521,3 +15521,16 @@
   transform: translateY(-1px);
   transition: transform 140ms ease;
 }
+
+/* Commit 995/10000: adjust button rhythm */
+.ui-commit-card-995 {
+  border-radius: 15px;
+  padding: 7px;
+  box-shadow: 0 2px 8px rgba(17, 24, 39, 0.07);
+  border: 1px solid hsl(145 20% 84%);
+}
+
+.ui-commit-card-995:hover {
+  transform: translateY(-1px);
+  transition: transform 140ms ease;
+}
