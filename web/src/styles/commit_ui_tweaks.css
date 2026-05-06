@@ -69744,3 +69744,16 @@
   transform: translateY(-1px);
   transition: transform 140ms ease;
 }
+
+/* Commit 5166/10000: enhance panel padding */
+.ui-commit-card-5166 {
+  border-radius: 10px;
+  padding: 6px;
+  box-shadow: 0 2px 8px rgba(17, 24, 39, 0.02);
+  border: 1px solid hsl(306 20% 84%);
+}
+
+.ui-commit-card-5166:hover {
+  transform: translateY(-1px);
+  transition: transform 140ms ease;
+}
