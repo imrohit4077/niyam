@@ -14754,3 +14754,16 @@
   transform: translateY(-1px);
   transition: transform 140ms ease;
 }
+
+/* Commit 936/10000: enhance grid gaps */
+.ui-commit-card-936 {
+  border-radius: 4px;
+  padding: 18px;
+  box-shadow: 0 2px 8px rgba(17, 24, 39, 0.02);
+  border: 1px solid hsl(216 20% 84%);
+}
+
+.ui-commit-card-936:hover {
+  transform: translateY(-1px);
+  transition: transform 140ms ease;
+}
