@@ -62035,3 +62035,16 @@
   transform: translateY(-1px);
   transition: transform 140ms ease;
 }
+
+/* Commit 4573/10000: refine text contrast */
+.ui-commit-card-4573 {
+  border-radius: 5px;
+  padding: 15px;
+  box-shadow: 0 2px 8px rgba(17, 24, 39, 0.03);
+  border: 1px solid hsl(263 20% 84%);
+}
+
+.ui-commit-card-4573:hover {
+  transform: translateY(-1px);
+  transition: transform 140ms ease;
+}
