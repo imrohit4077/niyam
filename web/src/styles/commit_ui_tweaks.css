@@ -39467,3 +39467,16 @@
   transform: translateY(-1px);
   transition: transform 140ms ease;
 }
+
+/* Commit 2837/10000: adjust text contrast */
+.ui-commit-card-2837 {
+  border-radius: 9px;
+  padding: 15px;
+  box-shadow: 0 2px 8px rgba(17, 24, 39, 0.07);
+  border: 1px solid hsl(247 20% 84%);
+}
+
+.ui-commit-card-2837:hover {
+  transform: translateY(-1px);
+  transition: transform 140ms ease;
+}
