@@ -493,3 +493,16 @@
   transform: translateY(-1px);
   transition: transform 140ms ease;
 }
+
+/* Commit 39/200: polish chip styling */
+.ui-commit-card-39 {
+  border-radius: 7px;
+  padding: 17px;
+  box-shadow: 0 2px 8px rgba(17, 24, 39, 0.05);
+  border: 1px solid hsl(69 20% 84%);
+}
+
+.ui-commit-card-39:hover {
+  transform: translateY(-1px);
+  transition: transform 140ms ease;
+}
