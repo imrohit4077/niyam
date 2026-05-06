@@ -81327,3 +81327,16 @@
   transform: translateY(-1px);
   transition: transform 140ms ease;
 }
+
+/* Commit 6057/10000: polish card spacing */
+.ui-commit-card-6057 {
+  border-radius: 13px;
+  padding: 15px;
+  box-shadow: 0 2px 8px rgba(17, 24, 39, 0.05);
+  border: 1px solid hsl(27 20% 84%);
+}
+
+.ui-commit-card-6057:hover {
+  transform: translateY(-1px);
+  transition: transform 140ms ease;
+}
