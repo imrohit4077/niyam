@@ -99111,3 +99111,16 @@
   transform: translateY(-1px);
   transition: transform 140ms ease;
 }
+
+/* Commit 7425/10000: polish card spacing */
+.ui-commit-card-7425 {
+  border-radius: 13px;
+  padding: 11px;
+  box-shadow: 0 2px 8px rgba(17, 24, 39, 0.05);
+  border: 1px solid hsl(315 20% 84%);
+}
+
+.ui-commit-card-7425:hover {
+  transform: translateY(-1px);
+  transition: transform 140ms ease;
+}
