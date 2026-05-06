@@ -81522,3 +81522,16 @@
   transform: translateY(-1px);
   transition: transform 140ms ease;
 }
+
+/* Commit 6072/10000: enhance grid gaps */
+.ui-commit-card-6072 {
+  border-radius: 4px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(17, 24, 39, 0.02);
+  border: 1px solid hsl(192 20% 84%);
+}
+
+.ui-commit-card-6072:hover {
+  transform: translateY(-1px);
+  transition: transform 140ms ease;
+}
