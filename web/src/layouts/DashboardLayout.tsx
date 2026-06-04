@@ -71,12 +71,10 @@ export default function DashboardLayout() {
     /^\/account\/\d+\/jobs\/\d+\/edit/.test(pathname) ||
     /^\/account\/\d+\/structured-hiring/.test(pathname)
 
-  /** Full-width light gray canvas for job editor (reliable without :has() support). */
+  /** Full-width light gray canvas for job editor + role kickoff wizard (no :has()). */
   const jobEditorWizard =
-    /^\/account\/\d+\/jobs\/new\/?$/.test(pathname) || /^\/account\/\d+\/jobs\/\d+\/edit/.test(pathname)
-
-  /** Role kickoff create/edit: light full-width canvas (form supplies card + footer). */
-  const roleKickoffFormCanvas =
+    /^\/account\/\d+\/jobs\/new\/?$/.test(pathname) ||
+    /^\/account\/\d+\/jobs\/\d+\/edit/.test(pathname) ||
     /^\/account\/\d+\/jobs\/role-kickoff\/new\/?$/.test(pathname) ||
     /^\/account\/\d+\/jobs\/role-kickoff\/\d+\/edit\/?$/.test(pathname)
 
@@ -143,7 +141,7 @@ export default function DashboardLayout() {
           ) : null}
 
           <div
-            className={`main-body${hideMainHeader ? ' main-body--flush-top' : ''}${jobEditorWizard ? ' main-body--job-editor-wizard' : ''}${roleKickoffFormCanvas ? ' main-body--role-kickoff-form' : ''}`}
+            className={`main-body${hideMainHeader ? ' main-body--flush-top' : ''}${jobEditorWizard ? ' main-body--job-editor-wizard' : ''}`}
           >
             <Outlet context={ctx} />
           </div>

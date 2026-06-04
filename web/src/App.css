@@ -7458,6 +7458,139 @@ a.list-row:visited {
   padding-right: 4px;
 }
 
+.job-editor-page--kickoff {
+  padding-bottom: 48px;
+}
+
+.jobs-hub-layout:has(.job-editor-page--kickoff) .jobs-hub-subnav {
+  display: none;
+}
+
+.jobs-hub-layout:has(.job-editor-page--kickoff) .jobs-hub-outlet {
+  margin-top: 0;
+}
+
+.job-editor-page--kickoff .rkw-skill-chips-inner {
+  border-color: #e5e7eb;
+  background: #fff;
+  border-radius: 8px;
+  min-height: 42px;
+}
+
+.job-editor-page--kickoff .rkw-skill-chips-inner:focus-within {
+  border-color: #4dd0e1;
+  box-shadow: 0 0 0 1px rgba(0, 188, 212, 0.35);
+}
+
+.job-editor-page--kickoff .rkw-pipeline-panel {
+  border-color: #e5e7eb;
+  border-radius: 10px;
+}
+
+.rk-salary-symbol-wrap {
+  position: relative;
+}
+
+.rk-salary-symbol {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-muted);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.rk-salary-input {
+  padding-left: 2.25rem !important;
+  width: 100%;
+}
+
+.rk-kickoff-salary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px 20px;
+  align-items: start;
+  margin-bottom: 0;
+}
+
+@media (max-width: 640px) {
+  .rk-kickoff-salary-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Role kickoff wizard — aligned form sections */
+.rk-kickoff-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 720px;
+}
+
+.rk-field--title {
+  margin-bottom: 22px;
+  max-width: 100%;
+}
+
+.rk-kickoff-role-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 112px minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+  max-width: 100%;
+}
+
+.rk-kickoff-role-grid .job-editor-field {
+  min-width: 0;
+}
+
+.rk-field--openings .job-editor-input {
+  text-align: center;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.rk-field-hint {
+  margin-top: 6px;
+  margin-bottom: 0;
+  min-height: 0;
+}
+
+.job-editor-page--kickoff .rk-field-hint {
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.job-editor-page--kickoff .job-basic-section-lead {
+  margin-bottom: 20px;
+}
+
+.job-editor-page--kickoff .job-editor-sheet-body--step .job-step-pane {
+  max-width: 100%;
+}
+
+.job-editor-page--kickoff .job-compensation-card {
+  max-width: 640px;
+}
+
+.rk-skill-chips {
+  width: 100%;
+}
+
+@media (max-width: 640px) {
+  .rk-kickoff-role-grid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .rk-field--openings {
+    max-width: 160px;
+  }
+}
+
 .job-editor-split {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 308px;

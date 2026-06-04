@@ -1,314 +1,442 @@
 ---
-description: Niyam coding conventions — Layered FastAPI project. Applies to all Python and TypeScript files.
-alwaysApply: true
+
+## What is Niyam?
+
+**Niyam** is a full-stack **AI-powered Applicant Tracking System (ATS)** — a modern alternative to Greenhouse/Lever/SmartRecruiters.
+
+- **Backend:** Python 3.11+ · FastAPI · SQLAlchemy 2.0 · PostgreSQL · Alembic migrations
+- **Frontend:** React 19 · TypeScript · Vite · React Router 7 · TipTap editor · `@dnd-kit`
+- **Queue/Async:** Celery + Redis (gevent pool)
+- **PDF generation:** WeasyPrint (preferred) with fpdf2 fallback
+- **Auth:** JWT (access + refresh tokens) via `python-jose` + Passlib/bcrypt
+
 ---
 
-# Niyam — FastAPI conventions (ATS)
-
-This codebase is a **FastAPI + SQLAlchemy** app that uses controllers, services, and models consistently.
-Always follow these patterns precisely. Never invent new structural patterns.
-
----
-
-## Project Layout
+## Repository Layout
 
 ```
-app/
-  controllers/       # Handle HTTP: auth, params, call service, render_json
-  controllers/concerns/  # Shared controller mixins (Authenticatable, Paginatable)
-  models/            # SQLAlchemy models inheriting BaseModel
-  models/concerns/   # Model mixins (Timestampable, SoftDeletable, Sluggable)
-  services/          # Business logic, return success()/failure()
-  jobs/              # Celery async tasks inheriting BaseJob
-  middleware/        # ASGI middlewares (Auth, AuditLog, Logging)
-  helpers/           # Pure utility functions (JWT, responses, etc.)
-  schemas/           # Pydantic: request validation and response shapes only
-config/
-  routes.py          # ALL routes live here (single registry)
-  settings.py        # App settings via pydantic-settings
-  database.py        # Engine, SessionLocal, get_db, Base
-  celery.py          # Celery app instance and queue config
-  schedule.py        # Celery Beat schedule entries
-db/
-  migrations/versions/  # Alembic migration files
-  seeds.py           # Seed data
+niyam/
+├── main.py                  # FastAPI app factory, middleware, /health
+├── manage.py                # CLI: runserver, db:*, worker, scheduler, shell, routes
+├── requirements.txt
+├── pyproject.toml
+├── alembic.ini
+├── .env.example
+│
+├── config/
+│   ├── routes.py            # ← SINGLE place where ALL HTTP routes are registered
+│   ├── settings.py          # Pydantic Settings (reads .env)
+│   ├── database.py          # SQLAlchemy engine + session
+│   ├── database.yml         # Per-env DB config (APP_ENV selects section)
+│   ├── celery_app.py        # Celery instance
+│   └── schedule.py          # Celery Beat schedule
+│
+├── app/
+│   ├── controllers/         # HTTP layer: request parsing, auth checks, render_json
+│   ├── services/            # Business logic; return {"ok": True/False, ...}
+│   ├── models/              # SQLAlchemy ORM models (Mapped / mapped_column)
+│   ├── jobs/                # Celery async tasks
+│   ├── middleware/          # auth_middleware, audit_log_middleware, logging_middleware
+│   ├── schemas/             # Pydantic request/response schemas
+│   └── helpers/             # Utilities (object_storage, etc.)
+│
+├── db/
+│   └── migrations/versions/ # Alembic migration files
+│
+├── web/                     # React SPA source
+│   ├── src/
+│   │   ├── pages/           # Route-level page components
+│   │   ├── components/      # Reusable UI components
+│   │   ├── hooks/           # Custom React hooks
+│   │   ├── api/             # API client functions (fetch wrappers)
+│   │   └── types/           # TypeScript types/interfaces
+│   └── vite.config.ts       # Builds to ../static/; proxies /api → localhost:8000
+│
+├── static/                  # Production SPA bundle (output of npm run build)
+├── tests/
+└── scripts/
 ```
 
 ---
 
-## Models (`app/models/`)
-
-- Inherit `BaseModel` from `app.models.base_model`
-- Use SQLAlchemy 2 `Mapped` / `mapped_column` syntax
-- Always declare `__tablename__` as plural snake_case
-- Always include `account_id` FK for tenant-scoped models
-- Use FK with `ondelete="CASCADE"` or `"RESTRICT"` explicitly
-- Override `to_dict()` to serialize dates as `.isoformat()` and rename/add computed fields
-- Use concerns as mixins (`Timestampable`, `SoftDeletable`, `Sluggable`)
-- Use model callbacks (`@before_save`, `@after_create`, etc.) for side effects, never in controllers
+## Application Entry Point (`main.py`)
 
 ```python
-# ✅ CORRECT model
-from sqlalchemy import BigInteger, String, ForeignKey
-from sqlalchemy.orm import Mapped, mapped_column
-from app.models.base_model import BaseModel
+# FastAPI app factory pattern
+def create_app() -> FastAPI:
+    app = FastAPI(title=settings.APP_NAME, lifespan=lifespan, ...)
 
-class Job(BaseModel):
-    __tablename__ = "jobs"
+    # Middleware order (last-added = first-to-run on request):
+    app.add_middleware(LoggingMiddleware)   # 1st to run
+    app.add_middleware(AuthMiddleware)      # 2nd
+    app.add_middleware(AuditLogMiddleware)  # 3rd
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    account_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("accounts.id", ondelete="CASCADE"), nullable=False)
-    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    # Routes
+    draw_routes(app)                        # all routes from config/routes.py
+    register_uploaded_files_routes(app)     # file upload endpoints
 
-    def to_dict(self) -> dict:
-        d = super().to_dict()
-        if isinstance(d.get("created_at"), datetime):
-            d["created_at"] = d["created_at"].isoformat()
-        return d
+    return app
+
+app = create_app()
 ```
 
+**Health check:** `GET /health` — unauthenticated, no JWT required.  
+**OpenAPI docs:** `/docs` and `/redoc` — only when `DEBUG=true`.
+
+---
+
+## Route Registration — THE GOLDEN RULE
+
+> **ALL routes are registered in `config/routes.py` only.**  
+> Never add `@app.get(...)` decorators directly on controller methods or anywhere else.
+
 ```python
-# ❌ WRONG — never use legacy Column() syntax or skip account_id on tenant models
+# config/routes.py pattern (simplified)
+def draw_routes(app: FastAPI):
+    app.include_router(jobs_router, prefix="/api/v1")
+    app.include_router(applications_router, prefix="/api/v1")
+    # ... every feature module registered here
+```
+
+Base path: `/api/v1/...`
+
+---
+
+## Auth Flow
+
+- **Login:** `POST /api/v1/auth/login` → returns `{ access_token, refresh_token }`
+- **Tokens:** JWT signed with `JWT_SECRET_KEY`; access token short-lived, refresh token long-lived
+- **Middleware:** `AuthMiddleware` validates `Bearer <token>` on every non-public route
+- **Multi-tenancy:** Every model has `account_id`; all queries are scoped to the current account
+- **Public routes (no auth):** `/health`, `/api/v1/public/jobs/:token/apply`, `/api/v1/public/esign/:token`
+
+---
+
+## Controller Conventions
+
+Controllers live in `app/controllers/`. They:
+1. Parse and validate request data (use Pydantic schemas from `app/schemas/`)
+2. Call one or more service methods
+3. Return responses via `render_json` / `render_error` helpers
+
+Key patterns:
+```python
+class JobsController(Authenticatable):
+    @before_action("set_job", only=["show", "update", "destroy"])
+    async def index(self, request: Request):
+        result = await JobService.list(account_id=request.state.account_id)
+        return self.render_json(result["data"])
+
+    async def set_job(self, request: Request):
+        # loads self.job from DB, raises 404 if not found
+        ...
+```
+
+- `Authenticatable` mixin injects `request.state.current_user` and `request.state.account_id`
+- `@before_action` runs setup methods before specified actions
+- `render_json(data, status=200)` → `{"success": True, "data": data}`
+- `render_error(message, status=422)` → `{"success": False, "error": message, "code": status}`
+
+---
+
+## Service Conventions
+
+Services live in `app/services/`. Rules:
+- **Always return a dict:** `{"ok": True, "data": ...}` or `{"ok": False, "error": "..."}`
+- **Never raise HTTP exceptions** inside services — that's the controller's job
+- Services may call other services or enqueue Celery jobs
+- Use SQLAlchemy sessions via dependency injection or context managers
+
+```python
+class JobService:
+    @staticmethod
+    async def create(account_id: int, payload: dict) -> dict:
+        try:
+            job = Job(account_id=account_id, **payload)
+            db.add(job)
+            db.commit()
+            return {"ok": True, "data": job.to_dict()}
+        except Exception as e:
+            db.rollback()
+            return {"ok": False, "error": str(e)}
+```
+
+---
+
+## Model Conventions
+
+Models live in `app/models/`. Rules:
+- Use SQLAlchemy 2.0 style: `Mapped[type]` / `mapped_column()`
+- Every multi-tenant model has `account_id: Mapped[int]` (FK to accounts)
+- Every model implements `to_dict()` for API serialization
+- Soft deletes via `archived_at` / `is_archived` pattern (not hard deletes)
+
+```python
 class Job(Base):
     __tablename__ = "jobs"
-    id = Column(Integer, primary_key=True)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    account_id: Mapped[int] = mapped_column(ForeignKey("accounts.id"), nullable=False)
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    status: Mapped[str] = mapped_column(String(50), default="draft")
+    archived_at: Mapped[datetime | None] = mapped_column(nullable=True)
+    created_at: Mapped[datetime] = mapped_column(default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(onupdate=func.now())
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "title": self.title,
+            "status": self.status,
+            ...
+        }
 ```
 
 ---
 
-## Controllers (`app/controllers/`)
+## JSON Response Envelope
 
-- Inherit `BaseController` (and concern mixins like `Authenticatable`)
-- Use `@before_action` to guard actions — never inline auth checks inside action methods
-- Use `self.request.path_params["key"]` for path params (cast to `int` explicitly)
-- Use `self.params` for merged path + query + body
-- Always delegate business logic to a **Service** — controllers only orchestrate
-- Return `self.render_json(data)` for success, `self.render_error(msg, status=N)` for errors
-- Branch on `result["ok"]`: if `True` render data, if `False` render error
-
-```python
-# ✅ CORRECT controller
-from app.controllers.base_controller import BaseController, before_action
-from app.controllers.concerns.authenticatable import Authenticatable
-from app.services.job_service import JobService
-
-class JobsController(BaseController, Authenticatable):
-
-    @before_action
-    def require_auth(self):
-        self.authenticate_user()
-
-    def index(self):
-        result = JobService(self.db).list_jobs(self.current_user["account_id"])
-        if not result["ok"]:
-            return self.render_error(result["error"], status=400)
-        return self.render_json(result["data"])
-
-    def show(self):
-        job_id = int(self.request.path_params["id"])
-        result = JobService(self.db).find_job(job_id)
-        if not result["ok"]:
-            return self.render_error(result["error"], status=404)
-        return self.render_json(result["data"])
-```
-
-```python
-# ❌ WRONG — no direct DB queries in controllers, no inline auth, no raw exceptions
-def index(self):
-    jobs = self.db.query(Job).all()   # wrong — use service
-    return {"jobs": jobs}
-```
-
----
-
-## Services (`app/services/`)
-
-- Inherit `BaseService`
-- Always return `self.success(data)` → `{"ok": True, "data": ...}` or `self.failure(msg)` → `{"ok": False, "error": ...}`
-- Never raise HTTP exceptions — return `failure()` instead
-- All DB queries and business rules belong here
-- Name methods clearly: `list_*`, `find_*`, `create_*`, `update_*`, `destroy_*`
-
-```python
-# ✅ CORRECT service
-from app.services.base_service import BaseService
-from app.models.job import Job
-
-class JobService(BaseService):
-
-    def list_jobs(self, account_id: int) -> dict:
-        jobs = Job.where(self.db, account_id=account_id)
-        return self.success([j.to_dict() for j in jobs])
-
-    def find_job(self, job_id: int) -> dict:
-        job = Job.find_by(self.db, id=job_id)
-        if not job:
-            return self.failure("Job not found")
-        return self.success(job.to_dict())
-```
-
-```python
-# ❌ WRONG — never raise HTTPException in a service
-def find_job(self, job_id):
-    job = self.db.query(Job).get(job_id)
-    if not job:
-        raise HTTPException(status_code=404)  # wrong
-```
-
----
-
-## Routes (`config/routes.py`)
-
-- **All routes are declared in `draw_routes()`** — `config/routes.py`
-- Use `resources(router, "/path", ControllerClass)` for standard CRUD
-- Use `router.add_api_route(...)` + `_wrap(Controller, "action", lambda c: c.action())` for custom routes
-- All routes are under the `/api/v1` prefix (set on the router)
-- Import controllers inside `draw_routes()` to avoid circular imports
-- Group routes by resource with comments
-- Public routes pass `run_before=False` to `_wrap()`
-
-```python
-# ✅ CORRECT route registration
-resources(router, "/jobs", JobsController)
-
-router.add_api_route(
-    "/jobs/{job_id:int}/analytics",
-    _wrap(JobsController, "analytics", lambda c: c.analytics()),
-    methods=["GET"],
-)
-
-# Public route (no auth)
-router.add_api_route(
-    "/public/apply/{token}",
-    _wrap(PublicApplyController, "show", lambda c: c.show(), run_before=False),
-    methods=["GET"],
-)
-```
-
-```python
-# ❌ WRONG — never add routes in controller files or main.py
-app.get("/jobs")(some_function)
-```
-
----
-
-## Jobs (`app/jobs/`)
-
-- Inherit `BaseJob` OR use `@celery_app.task` decorator directly for simple tasks
-- Override `perform(**kwargs)` for the main logic
-- Use `MyJob.perform_later(**kwargs)` to enqueue, `MyJob.perform_now(**kwargs)` for sync
-- Set class-level `queue`, `retry_limit`, `retry_delay`
-- Register scheduled jobs in `config/schedule.py` using `beat_entry()`
-
-```python
-# ✅ CORRECT job
-from app.jobs.base_job import BaseJob
-
-class WelcomeEmailJob(BaseJob):
-    queue = "mailers"
-    retry_limit = 3
-
-    def perform(self, user_id: int) -> None:
-        # send email logic here
-        pass
-
-# Enqueue: WelcomeEmailJob.perform_later(user_id=123)
-```
-
----
-
-## Migrations (`db/migrations/versions/`)
-
-- Named: `YYYYMMDD_HHMMSS_description.py`
-- Run via `python manage.py db:migrate`
-- Always include `upgrade()` and `downgrade()`
-- Use Alembic `op.create_table`, `op.add_column`, etc.
-- Never modify existing migrations — always create a new one
-
----
-
-## Schemas (`app/schemas/`)
-
-- Use Pydantic for **request body validation** and **response shape typing** only
-- Never use Pydantic for DB operations — that is always SQLAlchemy
-- Keep schemas thin; avoid duplicating model fields
-
----
-
-## Response Format
-
-All API responses use this envelope (via `render_json` / `render_error`):
+All API responses use this consistent shape:
 
 ```json
 // Success
-{ "success": true, "data": ..., "meta": { "page": 1, "total": 50 } }
+{ "success": true, "data": { ... }, "meta": { "total": 100, "page": 1 } }
 
 // Error
-{ "success": false, "error": "Not found", "code": 404 }
+{ "success": false, "error": "Human-readable message", "code": 422 }
 ```
 
-Never return raw dicts directly from controllers — always use `render_json` / `render_error`.
+`meta` is optional (used for paginated lists).
 
 ---
 
-## Authentication
+## Domain Feature Modules
 
-- `AuthMiddleware` sets `request.state.current_user` from the Bearer JWT
-- Mix `Authenticatable` into controllers; call `self.authenticate_user()` in a `@before_action`
-- Use `self.current_user` (dict from JWT payload) in controller methods
-- Use `require_admin()` / `require_owner()` from `Authenticatable` for role checks
+Each feature follows the pattern: `config/routes.py` → `app/controllers/<feature>/` → `app/services/<feature>/` → `app/models/<model>.py`
 
----
+### Core Domains
 
-## Multi-Tenancy
+| Domain | Key Models | Key Routes |
+|--------|-----------|------------|
+| **Auth** | `User`, `Account` | `POST /auth/login`, `POST /auth/refresh`, `GET /auth/me` |
+| **Jobs** | `Job`, `JobVersion`, `JobAttachment` | `GET/POST /jobs`, `GET/PUT/DELETE /jobs/:id` |
+| **Applications** | `Application`, `Candidate` | `GET/POST /applications`, `PUT /applications/:id/move` |
+| **Pipeline** | `PipelineStage` | `GET/POST /jobs/:id/stages`, reorder stages |
+| **Interviews** | `InterviewPlan`, `InterviewKit`, `InterviewAssignment`, `Scorecard` | `/jobs/:id/interview-plans`, `/assignments`, `/scorecards` |
+| **E-Signatures** | `ESignTemplate`, `ESignStageRule`, `SigningRequest` | `/esign/templates`, `/esign/rules`, `/esign/requests` |
+| **Referrals** | `ReferralProgram`, `ReferralBonus` | `/referrals`, `/referrals/leaderboard`, `GET /referrals/bonuses/export` |
+| **Audit** | `AuditLog` | `GET /audit/logs`, `/audit/delivery-failures` |
+| **Workspace** | `Organization`, `Department`, `Label`, `CustomAttributeDefinition` | `/organization`, `/departments`, `/labels`, `/custom-fields` |
+| **Communication** | `CommunicationChannel` | `/channels`, `/channels/:id/test`, `/channels/:id/set-default` |
 
-- All tenant-scoped models have `account_id`
-- Always filter queries by `account_id` in service methods — never return cross-tenant data
-- Resolve `account_id` via `AccountUser.find_by(self.db, user_id=user_id)` in the controller, then pass it to the service
+### Public (No Auth) Routes
 
----
-
-## Frontend (`web/src/`)
-
-- API calls live in `web/src/api/*.ts` — one file per resource (e.g. `jobs.ts`, `scorecards.ts`)
-- All API calls use `Authorization: Bearer <token>` header
-- Expect `{ success, data }` envelope from every endpoint
-- Pages live in `web/src/pages/`, layouts in `web/src/layouts/`
-- Use React context from `web/src/contexts/` for global state (auth, account)
-
----
-
-## Naming Conventions
-
-| Thing | Convention | Example |
-|---|---|---|
-| Model class | `PascalCase` | `InterviewScorecard` |
-| Model file | `snake_case.py` | `interview_scorecard.py` |
-| Table name | `plural_snake_case` | `scorecards` |
-| Controller class | `PascalCase` + `Controller` suffix | `ScorecardsController` |
-| Controller file | `snake_case_controller.py` | `scorecards_controller.py` |
-| Service class | `PascalCase` + `Service` suffix | `ScorecardService` |
-| Service file | `snake_case_service.py` | `scorecard_service.py` |
-| Job class | `PascalCase` + `Job` suffix | `AuditLogFlushJob` |
-| Job file | `snake_case_job.py` | `audit_log_flush_job.py` |
-| Migration file | `YYYYMMDD_HHMMSS_verb_noun.py` | `20260315_create_scorecards.py` |
+- `GET /public/jobs/:token` — branded apply page data
+- `POST /public/jobs/:token/apply` — submit application
+- `GET /public/esign/:token` — load signing document
+- `POST /public/esign/:token/sign` — capture signature
+- `GET /public/esign/:token/download` — download signed PDF
 
 ---
 
-## Do's and Don'ts
+## Celery Background Jobs (`app/jobs/`)
 
-**Do:**
-- Keep controllers thin — auth, params, call service, return response
-- Keep services focused — one service per resource, clear method names
-- Always cast path params to `int` explicitly
-- Use `Model.find(db, id)` (raises 404) or `Model.find_by(db, **kw)` (returns None)
-- Always scope DB queries to `account_id`
-- Add new routes in `config/routes.py` only
+Workers process async tasks. Key jobs:
 
-**Don't:**
-- Write DB queries in controllers
-- Raise `HTTPException` in services
-- Use `self.db.query(Model)` legacy style — use `select()` or `BaseModel` class methods
-- Add FastAPI route decorators outside `config/routes.py`
-- Skip `@before_action` for auth — never inline auth in action methods
-- Commit model changes without a corresponding Alembic migration
+| Job | Trigger | Purpose |
+|-----|---------|---------|
+| `deliver_esign_package` | Stage change or manual request | Merge HTML template, generate PDF, send to candidate |
+| `sync_label_search` | Label create/update | Keep search index in sync |
+| `flush_audit_buffer` | Celery Beat (scheduled) | Flush Redis-buffered audit events → PostgreSQL |
+| `send_email` | Various | Outbound email via configured channel |
+
+**Inline fallback:** If Redis/Celery is unavailable, some paths execute the task inline synchronously.
+
+Beat schedule defined in `config/schedule.py`. Worker command: `python manage.py worker`.
+
+---
+
+## Database & Migrations
+
+```bash
+# Create new migration
+python manage.py generate migration <description>
+# Edit: db/migrations/versions/YYYYMMDD_HHMMSS_<description>.py
+
+# Apply migrations
+python manage.py db:migrate
+
+# Other commands
+python manage.py db:rollback [--step N] [--to <rev>]
+python manage.py db:status
+python manage.py db:seed
+python manage.py db:reset   # downgrade all → migrate → seed
+```
+
+Config: `config/database.yml` (per-env). `APP_ENV` (default `development`) selects the section. `DATABASE_URL` env var overrides the yml.
+
+---
+
+## Frontend (`web/`)
+
+- **Dev:** `cd web && npm run dev` → `http://localhost:5173`, proxies `/api` → `http://localhost:8000`
+- **Build:** `npm run build` → emits to `../static/` (served by reverse proxy in production)
+- **Router:** React Router 7 with file-based or config-based routes in `web/src/`
+- **API calls:** All in `web/src/api/` — use fetch with Bearer token from localStorage/context
+- **Rich text:** TipTap editor for job descriptions and e-sign template bodies
+- **Drag-and-drop:** `@dnd-kit` for pipeline stage kanban reordering
+
+Key frontend routes (URL → page):
+```
+/                     → Dashboard
+/jobs                 → Jobs list (grid/list/table views)
+/jobs/:id             → Job detail / pipeline kanban
+/jobs/:id/edit        → Job editor wizard
+/candidates           → Candidate pool
+/interviews           → My interview assignments workbench
+/referrals            → Referrals hub
+/esign-documents      → Signed documents library
+/settings/*           → Organization, departments, custom fields, labels, channels, audit
+/settings/esign/*     → E-sign templates, rules, advanced
+```
+
+---
+
+## Environment Variables (`.env`)
+
+| Variable | Purpose |
+|----------|---------|
+| `APP_NAME` | Display name |
+| `APP_ENV` | `development` / `production` (selects database.yml section) |
+| `DEBUG` | `true` enables OpenAPI docs and `allow_origins=["*"]` CORS |
+| `SECRET_KEY` | App secret |
+| `DATABASE_URL` | Overrides `config/database.yml` if set |
+| `JWT_SECRET_KEY` | Token signing key |
+| `JWT_ACCESS_TOKEN_EXPIRE_MINUTES` | Access token lifetime |
+| `JWT_REFRESH_TOKEN_EXPIRE_DAYS` | Refresh token lifetime |
+| `REDIS_URL` | Redis for Celery broker + audit buffer |
+| `CELERY_BROKER_URL` | Celery broker (usually same as REDIS_URL) |
+| `CELERY_RESULT_BACKEND` | Celery result backend |
+| `CELERY_WORKER_POOL` | `gevent` (default) or `prefork` |
+| `CELERY_WORKER_CONCURRENCY` | Number of concurrent workers |
+| `FRONTEND_PUBLIC_URL` | SPA origin — used for OAuth return URLs and public signing links |
+| `GOOGLE_OAUTH_CLIENT_ID` | Gmail OAuth integration |
+| `GOOGLE_OAUTH_CLIENT_SECRET` | Gmail OAuth integration |
+| `AUDIT_LOG_BUFFER_ENABLED` | `true` to buffer audit events in Redis |
+| `AUDIT_LOG_BUFFER_FLUSH_INTERVAL` | Seconds between Beat flushes |
+| `ESIGN_ARTIFACTS_DIR` | Directory for generated signed PDFs |
+
+---
+
+## CLI Reference (`manage.py`)
+
+```bash
+python manage.py runserver [--port 8000] [--host 0.0.0.0]
+python manage.py routes                        # list all registered routes
+python manage.py shell                         # REPL with `db` and models pre-imported
+python manage.py worker [--queue=name] [--no-beat]
+python manage.py scheduler                     # Celery Beat only
+
+# Scaffolding generators
+python manage.py generate migration <name>
+python manage.py generate controller <name>
+python manage.py generate model <name>
+python manage.py generate service <name>
+python manage.py generate job <name>
+```
+
+---
+
+## Testing
+
+```bash
+pytest tests/ -v
+pytest tests/ -v --cov=app --cov-report=term-missing
+```
+
+Test DB uses SQLite (`test_run.db`, `test_manual.db` in project root).
+
+---
+
+## Key Architectural Rules — Follow These Always
+
+1. **Routes go in `config/routes.py` only.** Never add route decorators elsewhere.
+2. **Services never raise HTTP exceptions.** Return `{"ok": False, "error": "..."}` instead.
+3. **Controllers never contain business logic.** Delegate everything to services.
+4. **All DB queries must be scoped to `account_id`.** Multi-tenancy is enforced at the query level, not via middleware.
+5. **Use `to_dict()` for serialization.** Don't leak ORM objects to controllers.
+6. **Async tasks must have inline fallbacks** when Redis is unavailable.
+7. **Migrations are always reversible.** Write both `upgrade()` and `downgrade()` in every migration.
+8. **Never hard-delete records.** Use `archived_at` / soft-delete pattern.
+9. **PDF generation:** Try WeasyPrint first, fall back to fpdf2 if system libs missing.
+10. **Frontend API calls** always go through `web/src/api/` — never inline fetch in components.
+
+---
+
+## Common Task Playbook
+
+### Add a new API endpoint
+
+1. Create/update the controller in `app/controllers/<feature>/`
+2. Create/update the service in `app/services/<feature>/`
+3. Add the route to `config/routes.py` under `/api/v1`
+4. If new DB columns needed: `python manage.py generate migration <name>` then edit and `db:migrate`
+
+### Add a new background job
+
+1. Create file in `app/jobs/<name>_job.py`
+2. Define as a `@celery_app.task`
+3. Import and register in `config/celery_app.py` or auto-discovered
+4. For scheduled jobs, add entry to `config/schedule.py`
+
+### Add a new frontend page
+
+1. Create page component in `web/src/pages/`
+2. Add API calls in `web/src/api/`
+3. Register route in frontend router config
+4. All data fetching via custom hooks in `web/src/hooks/`
+
+### Create a DB migration
+
+```bash
+python manage.py generate migration add_<something>_to_<table>
+# Edit the generated file in db/migrations/versions/
+python manage.py db:migrate
+```
+
+---
+
+## E-Sign Flow (End-to-End)
+
+```
+Recruiter creates template (HTML with merge tags) in Settings > E-Sign Templates
+   ↓
+Recruiter creates stage rule: "when candidate enters Offer stage → send template X"
+   ↓
+Candidate moves to that pipeline stage
+   ↓
+AuditLogMiddleware or stage-change service fires → enqueues deliver_esign_package Celery task
+   ↓
+Worker: merges HTML template with candidate data, generates PDF (WeasyPrint/fpdf2),
+        creates SigningRequest with unique token, emails candidate
+   ↓
+Candidate opens tokenized URL (/public/esign/:token) — no login required
+   ↓
+Candidate reviews, enters legal name, signs → POST /public/esign/:token/sign
+   ↓
+Worker generates final signed PDF, stores in ESIGN_ARTIFACTS_DIR
+   ↓
+Candidate downloads PDF; recruiter sees status in candidate record and signed docs library
+```
+
+---
+
+## Audit Log Flow
+
+- `AuditLogMiddleware` captures every mutating request (POST/PUT/PATCH/DELETE)
+- If `AUDIT_LOG_BUFFER_ENABLED=true`: events written to Redis list
+- Celery Beat runs `flush_audit_buffer` on schedule → batch-inserts to `audit_logs` table
+- If Redis unavailable: events written directly to PostgreSQL synchronously
+- Recruiters browse via Settings > Audit & Compliance (`GET /api/v1/audit/logs`)
+
+---

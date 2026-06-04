@@ -1,5 +1,4 @@
 import {
-  forwardRef,
   useCallback,
   useEffect,
   useMemo,
@@ -8,9 +7,8 @@ import {
   type ClipboardEvent,
   type KeyboardEvent,
   type ReactNode,
-  type RefObject,
 } from 'react'
-import { Link, useNavigate, useOutletContext, useParams } from 'react-router-dom'
+import { Link, useNavigate, useOutletContext, useParams, useSearchParams } from 'react-router-dom'
 import { accountMembersApi } from '../api/accountMembers'
 import { getOrganizationSettings, type OrganizationSettings } from '../api/accountOrganization'
 import { fetchCountriesCatalog, type CountryRow } from '../api/reference'
@@ -23,12 +21,67 @@ import { COMMON_CURRENCIES, normalizeCurrencyCode } from '../lib/currency'
 const LEGACY_DEPT_PREFIX = '__legacy_dept__'
 const LEGACY_LOC_PREFIX = '__legacy_loc__'
 
-const STEPS = [
-  { id: 'details', label: 'Role details' },
-  { id: 'objectives', label: 'Objectives' },
-  { id: 'skills', label: 'Skills & comp' },
-  { id: 'pipeline', label: 'Pipeline & recruiter' },
-] as const
+const KICKOFF_STEP_PARAM = 'step'
+
+type KickoffStepId = 'role_details' | 'objectives' | 'skills' | 'compensation' | 'pipeline' | 'recruiter'
+
+const KICKOFF_STEPS: {
+  id: KickoffStepId
+  label: string
+  short: string
+  railTitle: string
+  railBody: string
+}[] = [
+  {
+    id: 'role_details',
+    label: 'Role details',
+    short: 'Title, department, openings, location',
+    railTitle: 'Define the role',
+    railBody:
+      'Core metadata so your recruiter knows what to open and where the role sits in your organization.',
+  },
+  {
+    id: 'objectives',
+    label: 'Objectives',
+    short: 'Why hiring & success metrics',
+    railTitle: 'Align on outcomes',
+    railBody: 'Share business context, 30/60/90 milestones, and how you will measure success for this hire.',
+  },
+  {
+    id: 'skills',
+    label: 'Skills & experience',
+    short: 'Must-haves, nice-to-haves, seniority',
+    railTitle: 'Candidate profile',
+    railBody: 'Tag required and preferred skills plus experience notes for screening and structured interviews.',
+  },
+  {
+    id: 'compensation',
+    label: 'Compensation',
+    short: 'Salary range & budget notes',
+    railTitle: 'Budget alignment',
+    railBody: 'Indicative salary band and constraints—you can refine with your recruiter before the job is posted.',
+  },
+  {
+    id: 'pipeline',
+    label: 'Hiring pipeline',
+    short: 'Interview stages & order',
+    railTitle: 'Structured hiring',
+    railBody: 'Choose workspace stage templates and set the order for this role’s interview flow.',
+  },
+  {
+    id: 'recruiter',
+    label: 'Recruiter',
+    short: 'Who owns this kickoff',
+    railTitle: 'Hand off',
+    railBody: 'Assign the recruiter who will review, approve, and convert this request into a job.',
+  },
+]
+
+function kickoffStepIndexFromSearch(raw: string | null): number {
+  if (!raw) return 0
+  const idx = KICKOFF_STEPS.findIndex(s => s.id === raw)
+  return idx >= 0 ? idx : 0
+}
 
 function normalizeOrgForKickoff(row: OrganizationSettings): OrganizationSettings {
   return {
@@ -81,67 +134,26 @@ function currencyNarrowSymbol(code: string): string {
   }
 }
 
-function RkwSvg({ children }: { children: ReactNode }) {
-  return (
-    <svg
-      className="rkw-ico"
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.65"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-    >
-      {children}
-    </svg>
-  )
-}
-
-const RkwSection = forwardRef<
-  HTMLElement,
-  {
-    id?: string
-    icon: ReactNode
-    title: string
-    description?: string
-    children: ReactNode
-  }
->(function RkwSection({ id, icon, title, description, children }, ref) {
-  return (
-    <section ref={ref} className="rkw-section" id={id}>
-      <div className="rkw-section-head">
-        <span className="rkw-section-icon-wrap">{icon}</span>
-        <div className="rkw-section-titles">
-          <h2 className="rkw-section-title">{title}</h2>
-          {description ? <p className="rkw-section-desc">{description}</p> : null}
-        </div>
-      </div>
-      <div className="rkw-section-body">{children}</div>
-    </section>
-  )
-})
-
-function Field({
+function KickoffField({
   id,
   label,
   hint,
+  className,
   children,
 }: {
   id?: string
   label: string
   hint?: string
+  className?: string
   children: ReactNode
 }) {
   return (
-    <div className="rkw-field">
-      <label className="rkw-label" htmlFor={id}>
+    <div className={`job-editor-field${className ? ` ${className}` : ''}`}>
+      <label className="job-editor-label" htmlFor={id}>
         {label}
       </label>
       {children}
-      {hint ? <p className="rkw-hint">{hint}</p> : null}
+      {hint ? <p className="job-editor-field-hint rk-field-hint">{hint}</p> : null}
     </div>
   )
 }
@@ -212,11 +224,11 @@ function SkillChipsField({
   }
 
   return (
-    <div className="rkw-field">
-      <label className="rkw-label" htmlFor={id}>
+    <div className="job-editor-field">
+      <label className="job-editor-label" htmlFor={id}>
         {label}
       </label>
-      <div className="rkw-skill-chips" aria-label={label}>
+      <div className="rkw-skill-chips rk-skill-chips" aria-label={label}>
         <div className="rkw-skill-chips-inner">
           {chips.map((c, i) => (
             <span key={`${c}-${i}`} className="rkw-skill-chip">
@@ -246,7 +258,7 @@ function SkillChipsField({
           />
         </div>
       </div>
-      {hint ? <p className="rkw-hint">{hint}</p> : null}
+      {hint ? <p className="job-editor-field-hint rk-field-hint">{hint}</p> : null}
     </div>
   )
 }
@@ -256,21 +268,31 @@ export default function RoleKickoffFormPage() {
   const { kickoffId } = useParams<{ kickoffId: string }>()
   const isEdit = Boolean(kickoffId)
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const toast = useToast()
   const base = `/account/${accountId}/jobs/role-kickoff`
   const aid = Number(accountId)
 
-  const refDetails = useRef<HTMLElement | null>(null)
-  const refObjectives = useRef<HTMLElement | null>(null)
-  const refSkills = useRef<HTMLElement | null>(null)
-  const refPipelineWrap = useRef<HTMLDivElement | null>(null)
-  const anchorRefs: (RefObject<HTMLElement | null> | RefObject<HTMLDivElement | null>)[] = [
-    refDetails,
-    refObjectives,
-    refSkills,
-    refPipelineWrap,
-  ]
-  const [activeStep, setActiveStep] = useState(0)
+  const stepParamRaw = searchParams.get(KICKOFF_STEP_PARAM)
+  const stepIndex = useMemo(() => kickoffStepIndexFromSearch(stepParamRaw), [stepParamRaw])
+  const currentStep = KICKOFF_STEPS[stepIndex] ?? KICKOFF_STEPS[0]!
+  const stepId = currentStep.id
+  const isLastStep = stepIndex >= KICKOFF_STEPS.length - 1
+
+  useEffect(() => {
+    const canonicalId = KICKOFF_STEPS[stepIndex]?.id
+    if (!canonicalId) return
+    if (stepParamRaw !== canonicalId) {
+      setSearchParams(
+        prev => {
+          const next = new URLSearchParams(prev)
+          next.set(KICKOFF_STEP_PARAM, canonicalId)
+          return next
+        },
+        { replace: true },
+      )
+    }
+  }, [stepIndex, stepParamRaw, setSearchParams])
 
   const [recruiters, setRecruiters] = useState<{ id: number; name: string; email: string }[]>([])
   const [orgSettings, setOrgSettings] = useState<OrganizationSettings | null>(null)
@@ -340,10 +362,45 @@ export default function RoleKickoffFormPage() {
     return `${LEGACY_LOC_PREFIX}${location}`
   }, [location, locationOptions])
 
-  const scrollToStep = (index: number) => {
-    setActiveStep(index)
-    anchorRefs[index]?.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }
+  const goToStepIndex = useCallback(
+    (idx: number) => {
+      if (idx < 0 || idx >= KICKOFF_STEPS.length) return
+      const id = KICKOFF_STEPS[idx]?.id
+      if (!id) return
+      setSearchParams(
+        prev => {
+          const next = new URLSearchParams(prev)
+          next.set(KICKOFF_STEP_PARAM, id)
+          return next
+        },
+        { replace: true },
+      )
+    },
+    [setSearchParams],
+  )
+
+  const validateStep = useCallback(
+    (id: KickoffStepId): string | null => {
+      if (id === 'role_details' && !title.trim()) return 'Job title is required.'
+      if (id === 'recruiter' && !assignedRecruiterId) return 'Please assign a recruiter.'
+      return null
+    },
+    [title, assignedRecruiterId],
+  )
+
+  const goStep = useCallback(
+    (delta: number) => {
+      if (delta > 0) {
+        const err = validateStep(stepId)
+        if (err) {
+          toast.error('Validation', err)
+          return
+        }
+      }
+      goToStepIndex(stepIndex + delta)
+    },
+    [validateStep, stepId, stepIndex, goToStepIndex, toast],
+  )
 
   useEffect(() => {
     if (isEdit) {
@@ -518,508 +575,567 @@ export default function RoleKickoffFormPage() {
     }
   }
 
+  const handleProceed = () => {
+    const err = validateStep(stepId)
+    if (err) {
+      toast.error('Validation', err)
+      return
+    }
+    if (isLastStep) void submit()
+    else goStep(1)
+  }
+
   const deptSettingsPath = `/account/${accountId}/settings/organization`
   const stagesSettingsPath = `/account/${accountId}/structured-hiring/stages`
 
   if (loadingMeta) {
     return (
-      <div className="rkw-page rkw-page--loading">
-        <div className="rkw-card rkw-card--narrow">
+      <div className="job-editor-page job-editor-page--wizard job-editor-page--kickoff">
+        <article className="job-editor-sheet job-editor-sheet--narrow" style={{ margin: '48px auto', textAlign: 'center' }}>
           <div className="spinner" aria-label="Loading" />
-          <p>Loading form…</p>
-        </div>
+          <p style={{ marginTop: 12, color: 'var(--text-muted)' }}>Loading form…</p>
+        </article>
       </div>
     )
   }
 
   if (loadErr) {
     return (
-      <div className="rkw-page">
-        <div className="rkw-card rkw-card--narrow">
-          <p className="rkw-alert-text">{loadErr}</p>
-          <Link to={base} className="rkw-btn rkw-btn-secondary">
+      <div className="job-editor-page job-editor-page--wizard job-editor-page--kickoff">
+        <article className="job-editor-sheet job-editor-sheet--narrow" style={{ margin: '48px auto' }}>
+          <p className="auth-error" style={{ marginBottom: 16 }}>
+            {loadErr}
+          </p>
+          <Link to={base} className="job-editor-btn-outline" style={{ display: 'inline-block', textDecoration: 'none' }}>
             Back to role kickoff
           </Link>
-        </div>
+        </article>
       </div>
     )
   }
 
   return (
-    <div className="rkw-page">
-      <div className="rkw-card">
-        <header className="rkw-hero">
-          <Link to={base} className="rkw-back">
-            &lt; Back to Role Kickoff
-          </Link>
-          <h1 className="rkw-title">{isEdit ? 'Update role kickoff' : 'New Role Kickoff'}</h1>
-          <p className="rkw-lead">
-            Align with your recruiter on the role, outcomes, and hiring process before the job exists. Department,
-            location, and currency follow your workspace settings.
-          </p>
+    <div className="job-editor-page job-editor-page--wizard job-editor-page--kickoff">
+      <nav className="job-editor-breadcrumb" aria-label="Breadcrumb">
+        <button type="button" className="job-editor-crumb-link" onClick={() => navigate(base)}>
+          Role kickoff
+        </button>
+        <span className="job-editor-crumb-arrow" aria-hidden>
+          →
+        </span>
+        <span className="job-editor-crumb-current">{isEdit ? 'Update request' : 'New request'}</span>
+      </nav>
 
-          <nav className="rkw-stepper" aria-label="Form sections">
-            {STEPS.map((s, i) => (
-              <button
-                key={s.id}
-                type="button"
-                className={`rkw-step${activeStep === i ? ' rkw-step--active' : ''}`}
-                onClick={() => scrollToStep(i)}
-              >
-                <span className="rkw-step-num">{i + 1}.</span>
-                <span className="rkw-step-label">{s.label}</span>
-              </button>
-            ))}
-          </nav>
-        </header>
-
-        <div className="rkw-grid">
-          <div className="rkw-col rkw-col--left">
-            <RkwSection
-              ref={refDetails}
-              id="rkw-sec-details"
-              icon={
-                <RkwSvg>
-                  <path d="M4 21V8l8-5 8 5v13" />
-                  <path d="M4 21h16" />
-                  <path d="M9 21v-4h6v4" />
-                  <path d="M9 13h6" />
-                </RkwSvg>
-              }
-              title="Role"
-              description="Title, org structure, and where this role sits."
-            >
-              <div className="rkw-field-stack">
-                <Field id="rkw-title" label="Job title">
-                  <input
-                    id="rkw-title"
-                    className="rkw-input"
-                    value={title}
-                    onChange={e => setTitle(e.target.value)}
-                    placeholder="e.g. Senior Backend Engineer"
-                    autoComplete="off"
-                  />
-                </Field>
-                <Field
-                  id="rkw-dept"
-                  label="Department"
-                  hint={
-                    departmentOptions.length
-                      ? 'Workspace departments. Values show in the list below.'
-                      : undefined
-                  }
-                >
-                  {departmentOptions.length > 0 ? (
-                    <div className="rkw-input-icon-wrap">
-                      <span className="rkw-input-icon" aria-hidden>
-                        <RkwSvg>
-                          <path d="M4 21V8l8-5 8 5v13" />
-                          <path d="M9 13h6" />
-                        </RkwSvg>
-                      </span>
-                      <select
-                        id="rkw-dept"
-                        className="rkw-select rkw-select--pad-icon"
-                        value={deptSelectValue}
-                        onChange={e => {
-                          const v = e.target.value
-                          if (v === '') setDepartment('')
-                          else if (v.startsWith(LEGACY_DEPT_PREFIX)) setDepartment(v.slice(LEGACY_DEPT_PREFIX.length))
-                          else setDepartment(v)
-                        }}
-                      >
-                        <option value="">Select department…</option>
-                        {departmentOptions.map(d => (
-                          <option key={d.id} value={d.name}>
-                            {d.name}
-                          </option>
-                        ))}
-                        {department.trim() && !departmentOptions.some(d => d.name === department) ? (
-                          <option value={`${LEGACY_DEPT_PREFIX}${department}`}>{department} (current)</option>
-                        ) : null}
-                      </select>
-                    </div>
-                  ) : (
-                    <>
-                      <input
-                        id="rkw-dept"
-                        className="rkw-input"
-                        value={department}
-                        onChange={e => setDepartment(e.target.value)}
-                        placeholder="Department name"
-                        autoComplete="off"
-                      />
-                      <p className="rkw-hint">
-                        No departments configured.{' '}
-                        <Link to={deptSettingsPath}>Organization settings</Link>.
-                      </p>
-                    </>
-                  )}
-                </Field>
-                <Field id="rkw-openings" label="Openings">
-                  <input
-                    id="rkw-openings"
-                    className="rkw-input"
-                    type="number"
-                    min={1}
-                    value={openPositions}
-                    onChange={e => setOpenPositions(e.target.value)}
-                  />
-                </Field>
-                <Field
-                  id="rkw-loc"
-                  label="Location"
-                  hint={
-                    locationOptions.length ? 'Enabled countries for your workspace. Pick from the list.' : undefined
-                  }
-                >
-                  {locationOptions.length > 0 ? (
-                    <div className="rkw-input-icon-wrap">
-                      <span className="rkw-input-icon" aria-hidden>
-                        <RkwSvg>
-                          <path d="M12 21s7-4.35 7-10a7 7 0 1 0-14 0c0 5.65 7 10 7 10z" />
-                          <circle cx="12" cy="11" r="2.25" />
-                        </RkwSvg>
-                      </span>
-                      <select
-                        id="rkw-loc"
-                        className="rkw-select rkw-select--pad-icon"
-                        value={locSelectValue}
-                        onChange={e => {
-                          const v = e.target.value
-                          if (v === '') setLocation('')
-                          else if (v.startsWith(LEGACY_LOC_PREFIX)) setLocation(v.slice(LEGACY_LOC_PREFIX.length))
-                          else setLocation(v)
-                        }}
-                      >
-                        <option value="">Select location…</option>
-                        {locationOptions.map(c => (
-                          <option key={c.code} value={c.name}>
-                            {c.name}
-                          </option>
-                        ))}
-                        {location.trim() && !locationOptions.some(c => c.name === location) ? (
-                          <option value={`${LEGACY_LOC_PREFIX}${location}`}>{location} (current)</option>
-                        ) : null}
-                      </select>
-                    </div>
-                  ) : (
-                    <>
-                      <input
-                        id="rkw-loc"
-                        className="rkw-input"
-                        value={location}
-                        onChange={e => setLocation(e.target.value)}
-                        placeholder="City, region, or remote"
-                        autoComplete="off"
-                      />
-                      <p className="rkw-hint">
-                        Country list unavailable. <Link to={deptSettingsPath}>Organization settings</Link>.
-                      </p>
-                    </>
-                  )}
-                </Field>
-              </div>
-            </RkwSection>
-
-            <RkwSection
-              ref={refObjectives}
-              id="rkw-sec-objectives"
-              icon={
-                <RkwSvg>
-                  <circle cx="12" cy="12" r="9" />
-                  <circle cx="12" cy="12" r="4" />
-                  <path d="M12 3v3M12 18v3M3 12h3M18 12h3" />
-                </RkwSvg>
-              }
-              title="Objective"
-              description="Why this hire exists and what success looks like."
-            >
-              <div className="rkw-field-stack">
-                <Field id="rkw-why" label="Why we are hiring">
-                  <textarea
-                    id="rkw-why"
-                    className="rkw-textarea"
-                    value={whyHiring}
-                    onChange={e => setWhyHiring(e.target.value)}
-                    rows={4}
-                    placeholder="Business need, gap, or outcome…"
-                  />
-                </Field>
-                <Field id="rkw-306090" label="30 / 60 / 90 day expectations">
-                  <textarea
-                    id="rkw-306090"
-                    className="rkw-textarea"
-                    value={expectation306090}
-                    onChange={e => setExpectation306090(e.target.value)}
-                    rows={4}
-                    placeholder="Milestones for the first quarter…"
-                  />
-                </Field>
-                <Field id="rkw-success" label="Definition of success">
-                  <textarea
-                    id="rkw-success"
-                    className="rkw-textarea"
-                    value={successDefinition}
-                    onChange={e => setSuccessDefinition(e.target.value)}
-                    rows={3}
-                    placeholder="How we will know this hire worked…"
-                  />
-                </Field>
-              </div>
-            </RkwSection>
-          </div>
-
-          <div className="rkw-col rkw-col--right">
-            <RkwSection
-              ref={refSkills}
-              id="rkw-sec-skills"
-              icon={
-                <RkwSvg>
-                  <rect x="3" y="7" width="18" height="13" rx="2" />
-                  <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                </RkwSvg>
-              }
-              title="Skills & experience"
-              description="Must-haves vs nice-to-haves; add tags with Space, comma, or Enter."
-            >
-              <div className="rkw-field-stack">
-                <SkillChipsField
-                  id="rkw-must"
-                  label="Must-have skills"
-                  hint="Paste comma-separated lists. Backspace removes the last tag."
-                  chips={skillsMustChips}
-                  onChange={setSkillsMustChips}
-                  placeholder="TypeScript, system design…"
-                />
-                <SkillChipsField
-                  id="rkw-nice"
-                  label="Nice-to-have skills"
-                  chips={skillsNiceChips}
-                  onChange={setSkillsNiceChips}
-                  placeholder="Optional…"
-                />
-                <Field id="rkw-exp" label="Experience">
-                  <textarea
-                    id="rkw-exp"
-                    className="rkw-textarea rkw-textarea--sm"
-                    value={experienceNote}
-                    onChange={e => setExperienceNote(e.target.value)}
-                    rows={2}
-                    placeholder="Years, seniority, domain…"
-                  />
-                </Field>
-              </div>
-            </RkwSection>
-
-            <RkwSection
-              icon={
-                <RkwSvg>
-                  <circle cx="8" cy="8" r="3" />
-                  <circle cx="16" cy="8" r="3" />
-                  <path d="M5 18c.5-2.5 3-4 7-4s6.5 1.5 7 4" />
-                </RkwSvg>
-              }
-              title="Compensation"
-              description="Indicative range; you can refine this with your recruiter."
-            >
-              <div className="rkw-comp-panel">
-                <div className="rkw-comp-panel-title">Salary range</div>
-                <div className="rkw-salary-grid">
-                  <Field id="rkw-smin" label="Minimum">
-                    <div className="rkw-input-symbol">
-                      <span className="rkw-input-symbol-char" aria-hidden>
-                        {salarySym}
-                      </span>
-                      <input
-                        id="rkw-smin"
-                        className="rkw-input rkw-input--symbol"
-                        type="number"
-                        value={salaryMin}
-                        onChange={e => setSalaryMin(e.target.value)}
-                        placeholder="—"
-                      />
-                    </div>
-                  </Field>
-                  <Field id="rkw-smax" label="Maximum">
-                    <div className="rkw-input-symbol">
-                      <span className="rkw-input-symbol-char" aria-hidden>
-                        {salarySym}
-                      </span>
-                      <input
-                        id="rkw-smax"
-                        className="rkw-input rkw-input--symbol"
-                        type="number"
-                        value={salaryMax}
-                        onChange={e => setSalaryMax(e.target.value)}
-                        placeholder="—"
-                      />
-                    </div>
-                  </Field>
-                  <Field id="rkw-cur" label="Currency">
-                    <select
-                      id="rkw-cur"
-                      className="rkw-select"
-                      value={normalizeCurrencyCode(salaryCurrency)}
-                      onChange={e => setSalaryCurrency(e.target.value)}
-                    >
-                      {currencyOptions.map(code => (
-                        <option key={code} value={code}>
-                          {code}
-                        </option>
-                      ))}
-                    </select>
-                  </Field>
-                </div>
-              </div>
-              <Field id="rkw-budget" label="Budget notes">
-                <textarea
-                  id="rkw-budget"
-                  className="rkw-textarea rkw-textarea--sm"
-                  value={budgetNotes}
-                  onChange={e => setBudgetNotes(e.target.value)}
-                  rows={3}
-                  placeholder="Optional: band, equity, approval status, constraints…"
-                />
-              </Field>
-            </RkwSection>
-
-            <div ref={refPipelineWrap} className="rkw-anchor-stack" id="rkw-sec-pipeline">
-            <RkwSection
-              icon={
-                <RkwSvg>
-                  <circle cx="5" cy="12" r="2.5" />
-                  <circle cx="12" cy="12" r="2.5" />
-                  <circle cx="19" cy="12" r="2.5" />
-                  <path d="M7.5 12h3M14.5 12h2.5" />
-                </RkwSvg>
-              }
-              title="Structured hiring pipeline"
-              description="Choose stages once, set order here. Scorecard attributes use each template’s defaults."
-            >
-              {stageTemplates.length === 0 ? (
-                <p className="rkw-inline-note">
-                  No stage templates. <Link to={stagesSettingsPath}>Configure stages</Link> first.
+      <div className="job-editor-split">
+        <div className="job-editor-workspace">
+          <article className="job-editor-sheet">
+            <header className="job-editor-sheet-head">
+              <div className="job-editor-sheet-titles">
+                <p className="job-editor-step-kicker">
+                  Step {stepIndex + 1} of {KICKOFF_STEPS.length}
                 </p>
-              ) : (
-                <div className="rkw-pipeline-panel">
-                  {selectedStages.length > 0 ? (
-                    <>
-                      <div className="rkw-pipeline-panel-h">Pipeline order</div>
-                      <ol className="rkw-pipeline-steps" aria-label="Ordered stages">
-                        {selectedStages.map((s, i) => {
-                          const tpl = templateById(s.stage_template_id)
-                          return (
-                            <li key={s.stage_template_id} className="rkw-pipeline-step">
-                              <span className="rkw-pipeline-step-idx">{i + 1}</span>
-                              <span className="rkw-pipeline-step-name">
-                                {tpl?.name ?? `Stage #${s.stage_template_id}`}
-                              </span>
-                              <div className="rkw-pipeline-step-actions">
-                                <button
-                                  type="button"
-                                  className="rkw-tool-btn"
-                                  disabled={i === 0}
-                                  aria-label="Move up"
-                                  onClick={() => moveStage(i, -1)}
-                                >
-                                  ↑
-                                </button>
-                                <button
-                                  type="button"
-                                  className="rkw-tool-btn"
-                                  disabled={i === selectedStages.length - 1}
-                                  aria-label="Move down"
-                                  onClick={() => moveStage(i, 1)}
-                                >
-                                  ↓
-                                </button>
-                                <button
-                                  type="button"
-                                  className="rkw-text-btn"
-                                  onClick={() => toggleStageTemplate(s.stage_template_id)}
-                                >
-                                  Remove
-                                </button>
-                              </div>
-                            </li>
-                          )
-                        })}
-                      </ol>
-                    </>
-                  ) : (
-                    <p className="rkw-hint rkw-hint--mb">Add one or more stages to define the interview flow.</p>
-                  )}
-                  {unselectedStageTemplates.length > 0 ? (
-                    <div className="rkw-pipeline-add">
-                      <div className="rkw-pipeline-add-h">Add stages</div>
-                      <div className="rkw-pipeline-add-list">
-                        {unselectedStageTemplates.map(tpl => (
-                          <button
-                            key={tpl.id}
-                            type="button"
-                            className="rkw-pipeline-add-btn"
-                            onClick={() => toggleStageTemplate(tpl.id)}
+                <h1 className="job-editor-page-title">{currentStep.label}</h1>
+                <p className="job-editor-page-sub">{currentStep.short}</p>
+              </div>
+              <div className="job-editor-sheet-head-actions">
+                <Link to={base} className="job-editor-btn-outline" style={{ textDecoration: 'none' }}>
+                  Cancel
+                </Link>
+                <button
+                  type="button"
+                  className="job-editor-btn-primary"
+                  disabled={saving}
+                  onClick={handleProceed}
+                >
+                  {saving ? 'Saving…' : isLastStep ? (isEdit ? 'Resubmit request' : 'Submit request') : 'Continue'}
+                </button>
+              </div>
+            </header>
+
+            <div className="job-editor-sheet-body job-editor-sheet-body--step">
+              {stepId === 'role_details' && (
+                <section className="job-step-pane job-basic-pane">
+                  <div className="job-basic-section job-basic-section--first">
+                    <h3 className="job-basic-section-title">Core details</h3>
+                    <p className="job-basic-section-lead">
+                      Title and org structure. Department and location follow your workspace settings.
+                    </p>
+                    <KickoffField id="rk-title" label="Job title" className="rk-field--title">
+                      <input
+                        id="rk-title"
+                        className="job-editor-input job-editor-input--title"
+                        value={title}
+                        onChange={e => setTitle(e.target.value)}
+                        placeholder="e.g. Senior Backend Engineer"
+                        autoComplete="off"
+                      />
+                    </KickoffField>
+                    <div className="rk-kickoff-role-grid">
+                      <KickoffField
+                        id="rk-dept"
+                        label="Department"
+                        className="rk-field--department"
+                        hint={
+                          departmentOptions.length
+                            ? 'Workspace list (Settings → Organization).'
+                            : undefined
+                        }
+                      >
+                        {departmentOptions.length > 0 ? (
+                          <select
+                            id="rk-dept"
+                            className="job-editor-select"
+                            value={deptSelectValue}
+                            onChange={e => {
+                              const v = e.target.value
+                              if (v === '') setDepartment('')
+                              else if (v.startsWith(LEGACY_DEPT_PREFIX))
+                                setDepartment(v.slice(LEGACY_DEPT_PREFIX.length))
+                              else setDepartment(v)
+                            }}
                           >
-                            + {tpl.name}
-                          </button>
-                        ))}
-                      </div>
+                            <option value="">Select department…</option>
+                            {departmentOptions.map(d => (
+                              <option key={d.id} value={d.name}>
+                                {d.name}
+                              </option>
+                            ))}
+                            {department.trim() && !departmentOptions.some(d => d.name === department) ? (
+                              <option value={`${LEGACY_DEPT_PREFIX}${department}`}>{department} (current)</option>
+                            ) : null}
+                          </select>
+                        ) : (
+                          <>
+                            <input
+                              id="rk-dept"
+                              className="job-editor-input"
+                              value={department}
+                              onChange={e => setDepartment(e.target.value)}
+                              placeholder="Department name"
+                              autoComplete="off"
+                            />
+                            <p className="job-editor-field-hint">
+                              No departments configured.{' '}
+                              <Link to={deptSettingsPath}>Organization settings</Link>.
+                            </p>
+                          </>
+                        )}
+                      </KickoffField>
+                      <KickoffField id="rk-openings" label="Openings" className="rk-field--openings">
+                        <input
+                          id="rk-openings"
+                          className="job-editor-input"
+                          type="number"
+                          min={1}
+                          value={openPositions}
+                          onChange={e => setOpenPositions(e.target.value)}
+                        />
+                      </KickoffField>
+                      <KickoffField
+                        id="rk-loc"
+                        label="Location"
+                        className="rk-field--location"
+                        hint={
+                          locationOptions.length
+                            ? 'Enabled countries (Settings → Organization).'
+                            : undefined
+                        }
+                      >
+                        {locationOptions.length > 0 ? (
+                          <select
+                            id="rk-loc"
+                            className="job-editor-select"
+                            value={locSelectValue}
+                            onChange={e => {
+                              const v = e.target.value
+                              if (v === '') setLocation('')
+                              else if (v.startsWith(LEGACY_LOC_PREFIX))
+                                setLocation(v.slice(LEGACY_LOC_PREFIX.length))
+                              else setLocation(v)
+                            }}
+                          >
+                            <option value="">Select location…</option>
+                            {locationOptions.map(c => (
+                              <option key={c.code} value={c.name}>
+                                {c.name}
+                              </option>
+                            ))}
+                            {location.trim() && !locationOptions.some(c => c.name === location) ? (
+                              <option value={`${LEGACY_LOC_PREFIX}${location}`}>{location} (current)</option>
+                            ) : null}
+                          </select>
+                        ) : (
+                          <>
+                            <input
+                              id="rk-loc"
+                              className="job-editor-input"
+                              value={location}
+                              onChange={e => setLocation(e.target.value)}
+                              placeholder="City, region, or remote"
+                              autoComplete="off"
+                            />
+                            <p className="job-editor-field-hint">
+                              Country list unavailable.{' '}
+                              <Link to={deptSettingsPath}>Organization settings</Link>.
+                            </p>
+                          </>
+                        )}
+                      </KickoffField>
                     </div>
-                  ) : selectedStages.length > 0 ? (
-                    <p className="rkw-hint rkw-hint--tight">All workspace stage templates are included.</p>
-                  ) : null}
-                </div>
+                  </div>
+                </section>
               )}
-            </RkwSection>
 
-            <RkwSection
-              icon={
-                <RkwSvg>
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                  <circle cx="12" cy="7" r="4" />
-                </RkwSvg>
-              }
-              title="Recruiter"
-              description="Who converts this request into a job when approved."
+              {stepId === 'objectives' && (
+                <section className="job-step-pane job-basic-pane">
+                  <div className="job-basic-section job-basic-section--first">
+                    <h3 className="job-basic-section-title">Hiring objectives</h3>
+                    <p className="job-basic-section-lead">
+                      Help your recruiter understand why this role exists and what success looks like in the first
+                      months.
+                    </p>
+                    <div className="rk-kickoff-stack">
+                      <KickoffField id="rk-why" label="Why we are hiring">
+                        <textarea
+                          id="rk-why"
+                          className="job-editor-input"
+                          value={whyHiring}
+                          onChange={e => setWhyHiring(e.target.value)}
+                          rows={4}
+                          placeholder="Business need, gap, or outcome…"
+                        />
+                      </KickoffField>
+                      <KickoffField id="rk-306090" label="30 / 60 / 90 day expectations">
+                        <textarea
+                          id="rk-306090"
+                          className="job-editor-input"
+                          value={expectation306090}
+                          onChange={e => setExpectation306090(e.target.value)}
+                          rows={4}
+                          placeholder="Milestones for the first quarter…"
+                        />
+                      </KickoffField>
+                      <KickoffField id="rk-success" label="Definition of success">
+                        <textarea
+                          id="rk-success"
+                          className="job-editor-input"
+                          value={successDefinition}
+                          onChange={e => setSuccessDefinition(e.target.value)}
+                          rows={3}
+                          placeholder="How we will know this hire worked…"
+                        />
+                      </KickoffField>
+                    </div>
+                  </div>
+                </section>
+              )}
+
+              {stepId === 'skills' && (
+                <section className="job-step-pane">
+                  <p className="job-editor-step-lead">
+                    Add skills with Space, comma, or Enter. Paste comma-separated lists to add many at once.
+                  </p>
+                  <div className="rk-kickoff-stack">
+                    <SkillChipsField
+                      id="rk-must"
+                      label="Must-have skills"
+                      hint="Paste comma-separated lists. Backspace removes the last tag."
+                      chips={skillsMustChips}
+                      onChange={setSkillsMustChips}
+                      placeholder="TypeScript, system design…"
+                    />
+                    <SkillChipsField
+                      id="rk-nice"
+                      label="Nice-to-have skills"
+                      chips={skillsNiceChips}
+                      onChange={setSkillsNiceChips}
+                      placeholder="Optional…"
+                    />
+                    <KickoffField id="rk-exp" label="Experience">
+                      <textarea
+                        id="rk-exp"
+                        className="job-editor-input"
+                        value={experienceNote}
+                        onChange={e => setExperienceNote(e.target.value)}
+                        rows={3}
+                        placeholder="Years, seniority, domain…"
+                      />
+                    </KickoffField>
+                  </div>
+                </section>
+              )}
+
+              {stepId === 'compensation' && (
+                <section className="job-step-pane job-compensation-pane">
+                  <div className="job-compensation-card">
+                    <div className="job-compensation-card-head">
+                      <h2 className="job-compensation-card-title">Salary range</h2>
+                      <p className="job-compensation-card-lead">
+                        Indicative band in {normalizeCurrencyCode(salaryCurrency)}. Workspace default:{' '}
+                        {accountDefaultCurrency}.
+                      </p>
+                    </div>
+                    <div className="job-compensation-grid job-editor-grid-2 rk-kickoff-salary-grid">
+                      <KickoffField id="rk-smin" label="Minimum" hint={`Shown with ${salarySym} prefix.`}>
+                        <div className="rk-salary-symbol-wrap">
+                          <span className="rk-salary-symbol" aria-hidden>
+                            {salarySym}
+                          </span>
+                          <input
+                            id="rk-smin"
+                            className="job-editor-input job-editor-input--salary rk-salary-input"
+                            type="number"
+                            value={salaryMin}
+                            onChange={e => setSalaryMin(e.target.value)}
+                            placeholder="—"
+                          />
+                        </div>
+                      </KickoffField>
+                      <KickoffField id="rk-smax" label="Maximum">
+                        <div className="rk-salary-symbol-wrap">
+                          <span className="rk-salary-symbol" aria-hidden>
+                            {salarySym}
+                          </span>
+                          <input
+                            id="rk-smax"
+                            className="job-editor-input job-editor-input--salary rk-salary-input"
+                            type="number"
+                            value={salaryMax}
+                            onChange={e => setSalaryMax(e.target.value)}
+                            placeholder="—"
+                          />
+                        </div>
+                      </KickoffField>
+                      <KickoffField id="rk-cur" label="Currency">
+                        <select
+                          id="rk-cur"
+                          className="job-editor-select job-compensation-select"
+                          value={normalizeCurrencyCode(salaryCurrency)}
+                          onChange={e => setSalaryCurrency(e.target.value)}
+                        >
+                          {currencyOptions.map(code => (
+                            <option key={code} value={code}>
+                              {code}
+                            </option>
+                          ))}
+                        </select>
+                      </KickoffField>
+                    </div>
+                    <div className="job-compensation-divider" aria-hidden />
+                    <KickoffField id="rk-budget" label="Budget notes">
+                      <textarea
+                        id="rk-budget"
+                        className="job-editor-input job-compensation-textarea"
+                        value={budgetNotes}
+                        onChange={e => setBudgetNotes(e.target.value)}
+                        rows={3}
+                        placeholder="Optional: band, equity, approval status, constraints…"
+                      />
+                    </KickoffField>
+                  </div>
+                </section>
+              )}
+
+              {stepId === 'pipeline' && (
+                <section className="job-step-pane">
+                  <p className="job-editor-step-lead">
+                    Choose interview stages from your workspace templates and set their order. Scorecard attributes use
+                    each template’s defaults.
+                  </p>
+                  {stageTemplates.length === 0 ? (
+                    <div className="job-editor-callout job-editor-callout--info">
+                      <p className="job-editor-callout-title">No stage templates</p>
+                      <p style={{ margin: 0, fontSize: 14 }}>
+                        <Link to={stagesSettingsPath}>Configure stages</Link> in Structured hiring before building a
+                        pipeline.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="rkw-pipeline-panel">
+                      {selectedStages.length > 0 ? (
+                        <>
+                          <div className="rkw-pipeline-panel-h">Pipeline order</div>
+                          <ol className="rkw-pipeline-steps" aria-label="Ordered stages">
+                            {selectedStages.map((s, i) => {
+                              const tpl = templateById(s.stage_template_id)
+                              return (
+                                <li key={s.stage_template_id} className="rkw-pipeline-step">
+                                  <span className="rkw-pipeline-step-idx">{i + 1}</span>
+                                  <span className="rkw-pipeline-step-name">
+                                    {tpl?.name ?? `Stage #${s.stage_template_id}`}
+                                  </span>
+                                  <div className="rkw-pipeline-step-actions">
+                                    <button
+                                      type="button"
+                                      className="rkw-tool-btn"
+                                      disabled={i === 0}
+                                      aria-label="Move up"
+                                      onClick={() => moveStage(i, -1)}
+                                    >
+                                      ↑
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="rkw-tool-btn"
+                                      disabled={i === selectedStages.length - 1}
+                                      aria-label="Move down"
+                                      onClick={() => moveStage(i, 1)}
+                                    >
+                                      ↓
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="rkw-text-btn"
+                                      onClick={() => toggleStageTemplate(s.stage_template_id)}
+                                    >
+                                      Remove
+                                    </button>
+                                  </div>
+                                </li>
+                              )
+                            })}
+                          </ol>
+                        </>
+                      ) : (
+                        <p className="job-editor-field-hint" style={{ marginBottom: 12 }}>
+                          Add one or more stages to define the interview flow.
+                        </p>
+                      )}
+                      {unselectedStageTemplates.length > 0 ? (
+                        <div className="rkw-pipeline-add">
+                          <div className="rkw-pipeline-panel-h">Add stages</div>
+                          <div className="rkw-pipeline-add-list">
+                            {unselectedStageTemplates.map(tpl => (
+                              <button
+                                key={tpl.id}
+                                type="button"
+                                className="rkw-pipeline-add-btn"
+                                onClick={() => toggleStageTemplate(tpl.id)}
+                              >
+                                + {tpl.name}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      ) : selectedStages.length > 0 ? (
+                        <p className="job-editor-field-hint">All workspace stage templates are included.</p>
+                      ) : null}
+                    </div>
+                  )}
+                </section>
+              )}
+
+              {stepId === 'recruiter' && (
+                <section className="job-step-pane job-basic-pane">
+                  <div className="job-basic-section job-basic-section--first">
+                    <h3 className="job-basic-section-title">Assigned recruiter</h3>
+                    <p className="job-basic-section-lead">
+                      Who reviews this kickoff, requests changes if needed, and converts it into a job when approved.
+                    </p>
+                    <KickoffField id="rk-rec" label="Recruiter">
+                      <select
+                        id="rk-rec"
+                        className="job-editor-select"
+                        value={assignedRecruiterId}
+                        onChange={e => setAssignedRecruiterId(e.target.value)}
+                        required
+                      >
+                        <option value="">Select recruiter…</option>
+                        {recruiters.map(r => (
+                          <option key={r.id} value={r.id}>
+                            {r.name} — {r.email}
+                          </option>
+                        ))}
+                      </select>
+                    </KickoffField>
+                    {recruiters.length === 0 ? (
+                      <div className="job-editor-callout job-editor-callout--info" style={{ marginTop: 16 }}>
+                        <p style={{ margin: 0, fontSize: 14 }}>
+                          No members with the <strong>recruiter</strong> workspace role. Add one in Team settings.
+                        </p>
+                      </div>
+                    ) : null}
+                  </div>
+                </section>
+              )}
+            </div>
+          </article>
+        </div>
+
+        <aside className="job-editor-rail" aria-label="Role kickoff steps">
+          <div className="job-editor-rail-inner">
+            <h2 className="job-rail-heading">Setup</h2>
+            <ol className="job-stepper job-stepper--connected" role="list">
+              {KICKOFF_STEPS.map((s, idx) => {
+                const done = idx < stepIndex
+                const active = idx === stepIndex
+                return (
+                  <li key={s.id} className="job-stepper-item">
+                    <button
+                      type="button"
+                      className={`job-stepper-btn ${active ? 'job-stepper-btn--active' : ''} ${done ? 'job-stepper-btn--done' : ''}`}
+                      onClick={() => {
+                        if (idx > stepIndex) {
+                          const err = validateStep(stepId)
+                          if (err) {
+                            toast.error('Validation', err)
+                            return
+                          }
+                        }
+                        goToStepIndex(idx)
+                      }}
+                    >
+                      <span className="job-stepper-index">{done ? '✓' : idx + 1}</span>
+                      <span className="job-stepper-text">
+                        <span className="job-stepper-label">{s.label}</span>
+                        <span className="job-stepper-short">{s.short}</span>
+                      </span>
+                    </button>
+                  </li>
+                )
+              })}
+            </ol>
+
+            <div className="job-rail-callout">
+              Six steps before submit: role basics, objectives, skills, compensation, pipeline, then recruiter
+              assignment.
+            </div>
+
+            <div className="job-rail-context">
+              <h3 className="job-rail-context-title">{currentStep.railTitle}</h3>
+              <p className="job-rail-context-body">{currentStep.railBody}</p>
+            </div>
+
+            <button
+              type="button"
+              className="job-rail-cta"
+              onClick={handleProceed}
+              disabled={saving}
             >
-              <Field id="rkw-rec" label="Assigned recruiter">
-                <select
-                  id="rkw-rec"
-                  className="rkw-select"
-                  value={assignedRecruiterId}
-                  onChange={e => setAssignedRecruiterId(e.target.value)}
-                  required
-                >
-                  <option value="">Select recruiter…</option>
-                  {recruiters.map(r => (
-                    <option key={r.id} value={r.id}>
-                      {r.name} — {r.email}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-              {recruiters.length === 0 ? (
-                <p className="rkw-inline-note rkw-inline-note--warn">
-                  No members with the <strong>recruiter</strong> role. Add one in Team.
-                </p>
-              ) : null}
-            </RkwSection>
+              {saving ? 'Saving…' : isLastStep ? (isEdit ? 'Resubmit request' : 'Submit request') : 'Continue'}
+            </button>
+
+            <div className="job-rail-nav">
+              <button
+                type="button"
+                className="job-rail-nav-btn job-rail-nav-btn--ghost"
+                onClick={() => goStep(-1)}
+                disabled={stepIndex <= 0}
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                className="job-rail-nav-btn job-rail-nav-btn--ghost job-rail-nav-btn--next"
+                onClick={() => goStep(1)}
+                disabled={stepIndex >= KICKOFF_STEPS.length - 1}
+              >
+                Next
+              </button>
             </div>
           </div>
-        </div>
+        </aside>
       </div>
-
-      <footer className="rkw-footer">
-        <div className="rkw-footer-inner">
-          <Link to={base} className="rkw-btn rkw-btn-secondary">
-            Cancel
-          </Link>
-          <button type="button" className="rkw-btn rkw-btn-primary" disabled={saving} onClick={() => void submit()}>
-            {saving ? 'Saving…' : isEdit ? 'Resubmit request' : 'Submit request'}
-          </button>
-        </div>
-      </footer>
     </div>
   )
 }
