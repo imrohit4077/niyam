@@ -54,6 +54,14 @@ class Settings(BaseSettings):
     # Redis
     REDIS_URL: str = "redis://localhost:6379/0"
 
+    # API rate limiting (global; Redis sliding window per user or IP)
+    RATE_LIMIT_ENABLED: bool = True
+    RATE_LIMIT_REQUESTS_PER_MINUTE: int = 100
+    RATE_LIMIT_WINDOW_SECONDS: int = 60
+    RATE_LIMIT_REDIS_URL: str = ""  # empty → REDIS_URL
+    # When Redis is unavailable: True = allow traffic (log error); False = 429
+    RATE_LIMIT_FAIL_OPEN: bool = True
+
     # Celery
     # Celery broker DB index. Default: Redis DB 2.
     CELERY_BROKER_URL: str = "redis://localhost:6379/2"

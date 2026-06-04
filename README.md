@@ -34,6 +34,7 @@
 - [Project Structure](#project-structure)
 - [Quick Start](#quick-start)
 - [Configuration](#configuration)
+- [API rate limiting](#api-rate-limiting)
 - [Common Commands](#common-commands)
 - [Deployment](#deployment)
 - [Contributing](#contributing)
@@ -236,7 +237,7 @@ Copy `.env.example` to `.env` and set at least:
 - `APP_ENV`, `DEBUG`
 - `SECRET_KEY`, `JWT_SECRET_KEY`
 - `DATABASE_URL` (or use `config/database.yml`)
-- `REDIS_URL`
+- `REDIS_URL` (required when rate limiting and Celery/audit buffer are enabled)
 - `FRONTEND_PUBLIC_URL`
 
 Settings load from **`<repository-root>/.env`** regardless of the process working directory (`config/settings.py`). Restart the API after changing `.env` (values are cached in process).
@@ -246,6 +247,55 @@ Optional integrations:
 - `GOOGLE_OAUTH_*` for Gmail/OAuth flows.
 - `AUDIT_LOG_*` for buffered audit behavior.
 - `ESIGN_*` for e-sign storage and artifact controls.
+- `RATE_LIMIT_*` for global API throttling (see below).
+
+---
+
+## API rate limiting
+
+All **`/api/*`** routes are protected by a **global Redis sliding-window limiter** (production-style, atomic per request).
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `RATE_LIMIT_ENABLED` | `true` | Master switch |
+| `RATE_LIMIT_REQUESTS_PER_MINUTE` | `100` | Max requests per window per subject |
+| `RATE_LIMIT_WINDOW_SECONDS` | `60` | Window length (seconds) |
+| `RATE_LIMIT_REDIS_URL` | *(empty → `REDIS_URL`)* | Dedicated Redis DB optional |
+| `RATE_LIMIT_FAIL_OPEN` | `true` | If Redis errors: allow traffic (`true`) or return 429 (`false`) |
+
+### How subjects are keyed
+
+- **Authenticated** requests (valid JWT access token): `user:{id}` from JWT `sub`.
+- **Unauthenticated** `/api/*` traffic (login, public apply, webhooks, etc.): `ip:{client_ip}` using `X-Forwarded-For` (first hop), then `X-Real-IP`, then the socket peer.
+
+### Exempt paths
+
+No limit on: `/health`, `/docs`, `/redoc`, `/openapi.json`, `/files/*`.
+
+### Responses
+
+- **Allowed:** response includes `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset` (Unix seconds).
+- **Blocked (429):** JSON envelope `{"success": false, "error": "Rate limit exceeded...", "code": 429}` plus `Retry-After` (seconds).
+
+### Programmatic use
+
+```python
+from app.helpers.rate_limit import rate_limit
+
+result = rate_limit("user:42", 100)
+if not result.allowed:
+    ...
+```
+
+Middleware runs automatically; use the helper only for custom endpoints or scripts.
+
+### Operations notes
+
+- Use a **shared Redis** when running multiple API workers so limits are global per user/IP.
+- For stricter auth endpoints, lower limits can be added later via separate subjects (e.g. `ip:…:login`); the default is one global bucket per user or IP across `/api/*`.
+- Set `RATE_LIMIT_FAIL_OPEN=false` in production if you prefer to reject traffic when Redis is down (fail closed).
+
+---
 
 ### Optional: S3-compatible file storage
 
@@ -309,7 +359,7 @@ pytest tests/ -v
 
 Recommended production sequence:
 
-1. Set production env values (`APP_ENV`, `DEBUG=false`, secrets, DB, Redis, CORS).
+1. Set production env values (`APP_ENV`, `DEBUG=false`, secrets, DB, Redis, CORS, `RATE_LIMIT_*`).
 2. Run migrations: `python manage.py db:migrate`.
 3. Build frontend: `cd web && npm ci && npm run build`.
 4. Run API with production ASGI workers.

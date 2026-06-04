@@ -25,6 +25,7 @@ from app.http.uploaded_files_routes import register_uploaded_files_routes
 from app.middleware.auth_middleware import AuthMiddleware
 from app.middleware.audit_log_middleware import AuditLogMiddleware
 from app.middleware.logging_middleware import LoggingMiddleware
+from app.middleware.rate_limit_middleware import RateLimitMiddleware
 
 
 @asynccontextmanager
@@ -60,7 +61,9 @@ def create_app() -> FastAPI:
     )
 
     # Custom middleware (order: last added = first to run on request)
+    # Inbound: Audit → Auth → RateLimit → Logging → routes
     app.add_middleware(LoggingMiddleware)
+    app.add_middleware(RateLimitMiddleware)
     app.add_middleware(AuthMiddleware)
     app.add_middleware(AuditLogMiddleware)
 
