@@ -15,8 +15,33 @@ from app.models.job import Job
 from app.models.pipeline_stage import PipelineStage
 from app.models.role_kickoff_request import RoleKickoffRequest
 from app.models.user import User
+from app.helpers.logger import get_logger
+from app.helpers.task_dispatch import dispatch_celery_task
 from app.services.base_service import BaseService
 from app.services.job_service import JobService
+
+logger = get_logger(__name__)
+
+
+def _enqueue_kickoff_notify(account_id: int, kickoff_id: int, event: str) -> None:
+    try:
+        from app.jobs.role_kickoff_notify_job import role_kickoff_notify
+
+        dispatch_celery_task(
+            role_kickoff_notify,
+            queue="mailers",
+            inline=lambda **kw: role_kickoff_notify(**kw),
+            log_context={"kickoff_id": kickoff_id, "event": event},
+            account_id=account_id,
+            kickoff_id=kickoff_id,
+            event=event,
+        )
+    except Exception:
+        logger.warning(
+            "Could not dispatch role kickoff notify",
+            exc_info=True,
+            extra={"kickoff_id": kickoff_id, "event": event},
+        )
 
 
 def _coerce_str_list(raw: Any) -> list[str]:
@@ -184,6 +209,7 @@ class RoleKickoffRequestService(BaseService):
             updated_at=now,
         )
         row.save(self.db)
+        _enqueue_kickoff_notify(account_id, row.id, "submitted")
         return self.success(self._hydrate(row))
 
     def list_for_creator(self, account_id: int, user_id: int) -> dict:
@@ -239,6 +265,7 @@ class RoleKickoffRequestService(BaseService):
         row.recruiter_feedback = None
         row.updated_at = datetime.now(timezone.utc)
         row.save(self.db)
+        _enqueue_kickoff_notify(account_id, row.id, "approved")
         return self.success(self._hydrate(row))
 
     def reject(self, account_id: int, kickoff_id: int, recruiter_user_id: int, feedback: str) -> dict:
@@ -253,6 +280,7 @@ class RoleKickoffRequestService(BaseService):
         row.recruiter_feedback = (feedback or "").strip() or None
         row.updated_at = datetime.now(timezone.utc)
         row.save(self.db)
+        _enqueue_kickoff_notify(account_id, row.id, "rejected")
         return self.success(self._hydrate(row))
 
     def request_changes(self, account_id: int, kickoff_id: int, recruiter_user_id: int, feedback: str) -> dict:
@@ -270,6 +298,7 @@ class RoleKickoffRequestService(BaseService):
         row.recruiter_feedback = msg
         row.updated_at = datetime.now(timezone.utc)
         row.save(self.db)
+        _enqueue_kickoff_notify(account_id, row.id, "changes_requested")
         return self.success(self._hydrate(row))
 
     def resubmit_after_changes(self, account_id: int, kickoff_id: int, hm_user_id: int, body: dict[str, Any]) -> dict:
@@ -340,9 +369,10 @@ class RoleKickoffRequestService(BaseService):
         row.recruiter_feedback = None
         row.updated_at = datetime.now(timezone.utc)
         row.save(self.db)
+        _enqueue_kickoff_notify(account_id, row.id, "resubmitted")
         return self.success(self._hydrate(row))
 
-    def convert_to_job(self, account_id: int, kickoff_id: int, recruiter_user_id: int) -> dict:
+    def _convert_precheck(self, account_id: int, kickoff_id: int, recruiter_user_id: int) -> dict:
         row = RoleKickoffRequest.find_by(self.db, id=kickoff_id, account_id=account_id)
         if not row:
             return self.failure("Kickoff request not found")
@@ -351,7 +381,50 @@ class RoleKickoffRequestService(BaseService):
         if row.status != "approved":
             return self.failure("Kickoff must be approved before creating a job")
         if row.converted_job_id:
+            job = Job.find_by(self.db, id=row.converted_job_id, account_id=account_id)
+            if job and not job.deleted_at:
+                data = job.to_dict()
+                data["role_kickoff_request_id"] = row.id
+                return self.success(data)
             return self.failure("Already converted")
+        return self.success({"row": row})
+
+    def enqueue_convert_to_job(self, account_id: int, kickoff_id: int, recruiter_user_id: int) -> dict:
+        pre = self._convert_precheck(account_id, kickoff_id, recruiter_user_id)
+        if not pre["ok"]:
+            return pre
+        if "row" not in pre["data"]:
+            return pre
+
+        from app.jobs.role_kickoff_convert_job import role_kickoff_convert
+
+        queued = dispatch_celery_task(
+            role_kickoff_convert,
+            queue="default",
+            inline=lambda **kw: role_kickoff_convert(**kw),
+            log_context={"account_id": account_id, "kickoff_id": kickoff_id},
+            account_id=account_id,
+            kickoff_id=kickoff_id,
+            recruiter_user_id=recruiter_user_id,
+        )
+        if queued:
+            return self.success({"queued": True, "kickoff_id": kickoff_id})
+        row = RoleKickoffRequest.find_by(self.db, id=kickoff_id, account_id=account_id)
+        if row and row.converted_job_id:
+            job = Job.find_by(self.db, id=row.converted_job_id, account_id=account_id)
+            if job:
+                data = job.to_dict()
+                data["role_kickoff_request_id"] = row.id
+                return self.success(data)
+        return self.failure("Job conversion did not complete")
+
+    def convert_to_job(self, account_id: int, kickoff_id: int, recruiter_user_id: int) -> dict:
+        pre = self._convert_precheck(account_id, kickoff_id, recruiter_user_id)
+        if not pre["ok"]:
+            return pre
+        if "row" not in pre["data"]:
+            return pre
+        row = pre["data"]["row"]
 
         description = _build_job_description(row)
         job_payload: dict[str, Any] = {
@@ -447,4 +520,69 @@ class RoleKickoffRequestService(BaseService):
         row.updated_at = now
         row.save(self.db)
         job_data["role_kickoff_request_id"] = row.id
+        _enqueue_kickoff_notify(account_id, row.id, "converted")
         return self.success(job_data)
+
+    def spawn_linked_position_jobs(self, account_id: int, kickoff_id: int, primary_job_id: int) -> int:
+        """
+        When open_positions > 1, create additional draft jobs (seat 2..N) linked to the primary requisition.
+        Idempotent: skips seats that already exist for this kickoff group.
+        """
+        row = RoleKickoffRequest.find_by(self.db, id=kickoff_id, account_id=account_id)
+        primary = Job.find_by(self.db, id=primary_job_id, account_id=account_id)
+        if not row or not primary or primary.deleted_at:
+            return 0
+        total = max(1, int(row.open_positions or 1))
+        if total <= 1:
+            return 0
+
+        description = _build_job_description(row)
+        js = JobService(self.db)
+        group_key = f"kickoff-{kickoff_id}"
+        created = 0
+
+        for seat in range(2, total + 1):
+            suffix = f" (seat {seat}/{total})"
+            title = f"{row.title}{suffix}"[:255]
+            existing_stmt = (
+                select(Job)
+                .where(
+                    Job.account_id == account_id,
+                    Job.deleted_at.is_(None),
+                    Job.title == title,
+                    Job.role_kickoff_request_id == kickoff_id,
+                )
+                .limit(1)
+            )
+            if self.db.execute(existing_stmt).scalars().first():
+                continue
+            jc = dict(primary.job_config) if isinstance(primary.job_config, dict) else {}
+            jc["kickoff_sibling_group"] = group_key
+            jc["kickoff_seat"] = seat
+            jc["kickoff_seats_total"] = total
+            jc["kickoff_primary_job_id"] = primary_job_id
+            payload: dict[str, Any] = {
+                "title": title,
+                "department": row.department,
+                "location": row.location,
+                "open_positions": 1,
+                "salary_min": float(row.salary_min) if row.salary_min is not None else None,
+                "salary_max": float(row.salary_max) if row.salary_max is not None else None,
+                "salary_currency": row.salary_currency or "USD",
+                "hiring_manager_user_id": row.created_by_user_id,
+                "recruiter_user_id": row.assigned_recruiter_user_id,
+                "status": "draft",
+                "description": description,
+                "role_kickoff_request_id": row.id,
+                "bonus_incentives": row.budget_notes,
+                "job_config": jc,
+            }
+            res = js.create_job(account_id, row.assigned_recruiter_user_id, payload)
+            if res.get("ok"):
+                created += 1
+            else:
+                logger.warning(
+                    "spawn_linked_position_jobs seat failed",
+                    extra={"kickoff_id": kickoff_id, "seat": seat, "error": res.get("error")},
+                )
+        return created

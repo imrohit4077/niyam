@@ -48,6 +48,21 @@ export const postingsApi = {
   create: (token: string, data: { job_id: number; board_id: number; [k: string]: unknown }) =>
     req<JobPosting>('/postings', token, { method: 'POST', body: JSON.stringify(data) }),
 
+  /** Queue the same job to multiple boards (202 when Celery accepts the task). */
+  bulkCreate: async (
+    token: string,
+    data: { job_id: number; board_ids: number[]; [k: string]: unknown },
+  ) => {
+    const res = await fetch(`${BASE}/postings/bulk`, {
+      method: 'POST',
+      headers: authHeaders(token),
+      body: JSON.stringify(data),
+    })
+    const json = await res.json()
+    if (!json.success) throw new Error(json.error || 'Request failed')
+    return json.data as { queued: boolean; job_id: number; board_count?: number }
+  },
+
   update: (token: string, id: number, data: Partial<JobPosting>) =>
     req<JobPosting>(`/postings/${id}`, token, { method: 'PUT', body: JSON.stringify(data) }),
 

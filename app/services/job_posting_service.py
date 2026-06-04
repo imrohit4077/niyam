@@ -8,6 +8,7 @@ from app.models.job import Job
 from app.models.job_board import JobBoard
 from app.models.job_posting import JobPosting
 from app.helpers.logger import get_logger
+from app.helpers.task_dispatch import dispatch_celery_task
 from app.services.base_service import BaseService
 
 logger = get_logger(__name__)
@@ -84,6 +85,42 @@ class JobPostingService(BaseService):
         posting.save(self.db)
         logger.info(f"JobPostingService.create_posting — id={posting.id} job={job_id} board={board_id}")
         return self.success(posting.to_dict())
+
+    def enqueue_bulk_create(
+        self,
+        account_id: int,
+        user_id: int,
+        job_id: int,
+        board_ids: list[int],
+        extra: dict | None = None,
+    ) -> dict:
+        if not board_ids:
+            return self.failure("board_ids is required")
+        job = Job.find_by(self.db, id=job_id, account_id=account_id)
+        if not job or job.deleted_at:
+            return self.failure("Job not found")
+        ids: list[int] = []
+        for raw in board_ids:
+            try:
+                ids.append(int(raw))
+            except (TypeError, ValueError):
+                return self.failure("board_ids must be integers")
+        from app.jobs.job_postings_bulk_create_job import job_postings_bulk_create
+
+        queued = dispatch_celery_task(
+            job_postings_bulk_create,
+            queue="low_priority",
+            inline=lambda **kw: job_postings_bulk_create(**kw),
+            log_context={"account_id": account_id, "job_id": job_id},
+            account_id=account_id,
+            user_id=user_id,
+            job_id=job_id,
+            board_ids=ids,
+            extra=extra,
+        )
+        if queued:
+            return self.success({"queued": True, "job_id": job_id, "board_count": len(ids)})
+        return self.success({"queued": False, "job_id": job_id, "message": "Postings processed inline"})
 
     def update_posting(self, account_id: int, posting_id: int, data: dict) -> dict:
         posting = JobPosting.find_by(self.db, id=posting_id, account_id=account_id)

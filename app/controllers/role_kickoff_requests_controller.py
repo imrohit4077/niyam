@@ -124,7 +124,9 @@ class RoleKickoffRequestsController(BaseController, Authenticatable):
         self.require_permission("kickoff", "process", account_id=account_id)
         self.require_permission("jobs", "create", account_id=account_id)
         kid = int(self.request.path_params["id"])
-        r = RoleKickoffRequestService(self.db).convert_to_job(account_id, kid, uid)
+        r = RoleKickoffRequestService(self.db).enqueue_convert_to_job(account_id, kid, uid)
         if not r["ok"]:
             return self.render_error(r["error"], 422)
+        if r["data"].get("queued"):
+            return self.render_json(r["data"], status=202)
         return self.render_json(r["data"], status=201)

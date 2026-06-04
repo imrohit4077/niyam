@@ -586,6 +586,11 @@ def draw_routes(app: "FastAPI") -> None:
 
     # Job postings CRUD
     resources(router, "/postings", JobPostingsController)
+    router.add_api_route(
+        "/postings/bulk",
+        _wrap(JobPostingsController, "bulk_create", lambda c: c.bulk_create()),
+        methods=["POST"],
+    )
 
     resources(router, "/hiring_plans", HiringPlansController)
 

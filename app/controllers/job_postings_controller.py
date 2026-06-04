@@ -77,6 +77,31 @@ class JobPostingsController(BaseController, Authenticatable):
         logger.info(f"JobPostingsController#create — posting created by user={user_id}")
         return self.render_json(result["data"], status=201)
 
+    async def bulk_create(self):
+        """Queue posting the same job to multiple boards (Celery; inline fallback if broker down)."""
+        account_id = self._account_id()
+        user_id = self._user_id()
+        data = await self._get_body_json()
+        jid = data.get("job_id")
+        board_ids = data.get("board_ids")
+        if jid is None:
+            return self.render_error("job_id is required", status=422)
+        if not isinstance(board_ids, list) or not board_ids:
+            return self.render_error("board_ids must be a non-empty array", status=422)
+        try:
+            job_id = int(jid)
+        except (TypeError, ValueError):
+            return self.render_error("job_id must be a number", status=422)
+        self.require_permission("jobs", "edit", account_id=account_id, job_id=job_id)
+        extra = {k: v for k, v in data.items() if k not in ("job_id", "board_ids")}
+        result = JobPostingService(self.db).enqueue_bulk_create(
+            account_id, user_id, job_id, board_ids, extra=extra or None
+        )
+        if not result["ok"]:
+            return self.render_error(result["error"], status=422)
+        status = 202 if result["data"].get("queued") else 200
+        return self.render_json(result["data"], status=status)
+
     async def update(self):
         account_id = self._account_id()
         posting_id = int(self.request.path_params["id"])

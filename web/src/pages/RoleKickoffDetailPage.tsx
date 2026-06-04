@@ -148,10 +148,28 @@ export default function RoleKickoffDetailPage() {
     if (!row) return
     setActing(true)
     try {
-      const job = await roleKickoffApi.createJob(token, row.id)
-      if (!job?.id) throw new Error('Missing job id')
+      const result = await roleKickoffApi.createJob(token, row.id)
+      if (result.queued) {
+        toast.success('Queued', 'Creating the job in the background…')
+        const deadline = Date.now() + 120_000
+        let jobId: number | null = null
+        while (Date.now() < deadline) {
+          await new Promise(r => setTimeout(r, 2000))
+          const fresh = await roleKickoffApi.get(token, row.id)
+          setRow(fresh)
+          if (fresh.converted_job_id) {
+            jobId = fresh.converted_job_id
+            break
+          }
+        }
+        if (!jobId) throw new Error('Job conversion timed out. Refresh and try again.')
+        toast.success('Job created', 'Opening the job editor…')
+        navigate(`/account/${accountId}/jobs/${jobId}/edit`)
+        return
+      }
+      if (!result.job?.id) throw new Error('Missing job id')
       toast.success('Job created', 'Opening the job editor…')
-      navigate(`/account/${accountId}/jobs/${job.id}/edit`)
+      navigate(`/account/${accountId}/jobs/${result.job.id}/edit`)
     } catch (e: unknown) {
       toast.error('Create job failed', e instanceof Error ? e.message : 'Failed')
     } finally {

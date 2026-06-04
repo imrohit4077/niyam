@@ -85,10 +85,28 @@ export const roleKickoffApi = {
       body: JSON.stringify({ feedback }),
     }),
 
-  createJob: (token: string, id: number) =>
-    req<{ id: number; title?: string; role_kickoff_request_id?: number }>(
-      `/role_kickoff_requests/${id}/create_job`,
-      token,
-      { method: 'POST' },
-    ),
+  createJob: async (
+    token: string,
+    id: number,
+  ): Promise<
+    | { queued: true; kickoff_id: number }
+    | { queued: false; job: { id: number; title?: string; role_kickoff_request_id?: number } }
+  > => {
+    const res = await fetch(`${BASE}/role_kickoff_requests/${id}/create_job`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    })
+    const json = (await res.json()) as {
+      success?: boolean
+      data?: { queued?: boolean; kickoff_id?: number; id?: number; title?: string; role_kickoff_request_id?: number }
+      error?: string
+    }
+    if (!json.success) throw new Error(json.error || 'Request failed')
+    const data = json.data ?? {}
+    if (res.status === 202 || data.queued) {
+      return { queued: true, kickoff_id: data.kickoff_id ?? id }
+    }
+    if (!data.id) throw new Error('Missing job id')
+    return { queued: false, job: data as { id: number; title?: string; role_kickoff_request_id?: number } }
+  },
 }
