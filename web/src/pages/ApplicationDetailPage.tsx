@@ -12,6 +12,7 @@ import LabelMultiSelect from '../components/LabelMultiSelect'
 import { customAttributesApi, type CustomAttributeDefinition } from '../api/customAttributes'
 import { labelsApi, type AccountLabelRow } from '../api/labels'
 import { accountMembersApi, type AccountMember } from '../api/accountMembers'
+import { Icon } from '../icons'
 
 const STAGES = ['applied', 'screening', 'interview', 'offer', 'hired', 'rejected', 'withdrawn'] as const
 
@@ -324,7 +325,7 @@ export default function ApplicationDetailPage() {
       <div className="app-cand-shell">
         <p className="app-cand-muted">Invalid application.</p>
         <Link to={backHref} className="app-cand-text-link">
-          ← Back to applications
+          <Icon name="arrowLeft" size={14} /> Back to applications
         </Link>
       </div>
     )
@@ -362,7 +363,7 @@ export default function ApplicationDetailPage() {
     <div className="app-cand-page">
       <section className="app-cand-hero">
         <Link to={backHref} className="app-cand-back">
-          ← Applications
+          <Icon name="arrowLeft" size={14} /> Applications
         </Link>
         <div className="app-cand-hero-main">
           <div className="app-cand-avatar" aria-hidden>

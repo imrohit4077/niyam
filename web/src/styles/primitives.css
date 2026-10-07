@@ -1,0 +1,553 @@
+/* ════════════════════════════════════════════════════════════════════
+   PRIMITIVES — one look for every button, field, card, table, tag and
+   dialog. Page stylesheets keep their layout (size, spacing); this layer
+   owns the visual language (color, border, radius, elevation, motion).
+════════════════════════════════════════════════════════════════════ */
+
+/* ── Icons ───────────────────────────────────────────────────────── */
+
+.nx-icon { flex-shrink: 0; display: inline-block; vertical-align: middle; }
+
+.nx-3d {
+  --nx3d-size: 40px;
+  --nx3d-tint: var(--brand-600);
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: var(--nx3d-size);
+  height: var(--nx3d-size);
+  line-height: 0;
+}
+.nx-3d-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  user-select: none;
+  filter: drop-shadow(0 calc(var(--nx3d-size) * 0.06) calc(var(--nx3d-size) * 0.1) color-mix(in srgb, var(--nx3d-tint) 32%, transparent));
+  animation: nx3d-in 0.5s var(--ease-out) both;
+}
+@keyframes nx3d-in {
+  from { opacity: 0; transform: scale(0.86) translateY(4%); }
+  to { opacity: 1; transform: none; }
+}
+.nx-3d-fallback {
+  width: 82%;
+  height: 82%;
+  display: grid;
+  place-items: center;
+  border-radius: 30%;
+  color: #fff;
+  background: linear-gradient(145deg, color-mix(in srgb, var(--nx3d-tint) 78%, white), var(--nx3d-tint));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 6px 14px -6px var(--nx3d-tint);
+}
+
+/* Tile: model sits on a soft tinted squircle */
+.nx-3d--tile {
+  border-radius: 30%;
+  background:
+    radial-gradient(100% 100% at 30% 0%, rgba(255, 255, 255, 0.95), transparent 60%),
+    linear-gradient(160deg, color-mix(in srgb, var(--nx3d-tint) 10%, white), color-mix(in srgb, var(--nx3d-tint) 20%, white));
+  box-shadow:
+    inset 0 1px 0 #fff,
+    inset 0 0 0 1px color-mix(in srgb, var(--nx3d-tint) 16%, transparent),
+    0 8px 20px -10px color-mix(in srgb, var(--nx3d-tint) 55%, transparent);
+}
+.nx-3d--tile .nx-3d-img { width: 84%; height: 84%; }
+.nx-3d--tile .nx-3d-fallback { width: 60%; height: 60%; }
+
+.nx-hero-scene { position: relative; width: 100%; height: 100%; min-height: 200px; }
+.nx-hero-scene canvas { display: block; touch-action: pan-y; }
+.nx-hero-scene--static { display: grid; place-items: center; }
+
+/* ── Buttons ─────────────────────────────────────────────────────── */
+
+/* Primary: brand gradient, inner highlight, colored glow */
+.btn-primary,
+:is(
+  .rk-btn-primary, .rk-sh-btn-primary, .rkw-btn-primary, .job-editor-btn-primary, .btn-pipeline-primary,
+  .btn-jobs-primary, .btn-app-cand-primary, .btn-public-sign-primary, .job-rail-nav-btn--primary,
+  .job-setup-flow-save-btn, .referrals-get-link-btn, .comm-channels-oauth-btn
+) {
+  color: #fff !important;
+  border: 1px solid rgba(42, 53, 168, 0.6) !important;
+  background: var(--brand-gradient) !important;
+  background-size: 140% 100% !important;
+  background-position: 0% 0% !important;
+  box-shadow: var(--shadow-brand), var(--shadow-inset-top) !important;
+  border-radius: var(--radius) !important;
+  font-family: var(--font-ui, var(--font));
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  text-shadow: 0 1px 1px rgba(20, 24, 80, 0.25);
+  transition: transform var(--transition), box-shadow var(--transition), background-position 0.4s var(--ease-out), filter var(--transition) !important;
+}
+.btn-primary:hover:not(:disabled),
+:is(
+  .rk-btn-primary, .rk-sh-btn-primary, .rkw-btn-primary, .job-editor-btn-primary, .btn-pipeline-primary,
+  .btn-jobs-primary, .btn-app-cand-primary, .btn-public-sign-primary, .job-rail-nav-btn--primary,
+  .job-setup-flow-save-btn, .referrals-get-link-btn, .comm-channels-oauth-btn
+):hover:not(:disabled) {
+  transform: translateY(-1px);
+  background-position: 60% 0% !important;
+  box-shadow: 0 1px 2px rgba(42, 53, 168, 0.3), 0 12px 26px -10px rgba(65, 87, 255, 0.75), var(--shadow-inset-top) !important;
+}
+.btn-primary:active:not(:disabled),
+:is(.rk-btn-primary, .job-editor-btn-primary, .btn-pipeline-primary, .btn-jobs-primary, .btn-app-cand-primary):active:not(:disabled) {
+  transform: translateY(0) scale(0.99);
+}
+.btn-primary:disabled,
+:is(.rk-btn-primary, .job-editor-btn-primary, .btn-pipeline-primary, .btn-jobs-primary, .btn-app-cand-primary, .rkw-btn-primary):disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none !important;
+  filter: saturate(0.6);
+}
+
+.btn-primary {
+  width: 100%;
+  height: 42px;
+  margin-top: 4px;
+  font-size: 14px;
+  cursor: pointer;
+}
+a.btn-primary--inline,
+button.btn-primary--inline {
+  width: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 0;
+  padding: 0 18px;
+  min-height: 40px;
+  height: auto;
+}
+
+/* Secondary / outline: white surface, hairline border, subtle lift */
+button.btn-secondary,
+a.btn-secondary,
+:is(
+  .rk-btn-secondary, .rkw-btn-secondary, .job-editor-btn-outline, .btn-pipeline-outline, .btn-app-cand-secondary,
+  .btn-kickoff-secondary, .btn-esign-docs-secondary, .referrals-btn-outline, .btn-confirm-cancel,
+  .job-rail-nav-btn--ghost, .btn-public-sign-ghost, .jobs-btn-filters, .btn-esign-docs-refresh, .btn-back
+) {
+  color: var(--text-primary) !important;
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius) !important;
+  box-shadow: var(--shadow-xs), var(--shadow-inset-top) !important;
+  font-family: var(--font-ui, var(--font));
+  font-weight: 600;
+  transition: background var(--transition), border-color var(--transition), box-shadow var(--transition), transform var(--transition), color var(--transition) !important;
+}
+button.btn-secondary:hover:not(:disabled),
+a.btn-secondary:hover,
+:is(
+  .rk-btn-secondary, .rkw-btn-secondary, .job-editor-btn-outline, .btn-pipeline-outline, .btn-app-cand-secondary,
+  .btn-kickoff-secondary, .btn-esign-docs-secondary, .referrals-btn-outline, .btn-confirm-cancel,
+  .job-rail-nav-btn--ghost, .btn-public-sign-ghost, .jobs-btn-filters, .btn-esign-docs-refresh, .btn-back
+):hover:not(:disabled) {
+  background: var(--surface-2) !important;
+  border-color: var(--border-strong) !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+.jobs-btn-filters--active {
+  color: var(--brand-700) !important;
+  background: var(--brand-50) !important;
+  border-color: var(--brand-200) !important;
+}
+
+button.btn-secondary,
+a.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 42px;
+  padding: 0 18px;
+  font-size: 14px;
+  cursor: pointer;
+}
+button.btn-secondary--inline,
+a.btn-secondary--inline { width: auto; min-height: 40px; margin-top: 0; flex-shrink: 0; }
+button.btn-secondary:disabled { opacity: 0.55; cursor: not-allowed; }
+
+/* Danger */
+:is(.btn-confirm-danger, .rk-btn-danger, .btn-kickoff-danger) {
+  color: #fff !important;
+  background: linear-gradient(180deg, #f06368, var(--error)) !important;
+  border: 1px solid #c9303a !important;
+  border-radius: var(--radius) !important;
+  box-shadow: 0 1px 2px rgba(201, 48, 58, 0.3), 0 8px 20px -10px rgba(229, 72, 77, 0.7), var(--shadow-inset-top) !important;
+}
+:is(.btn-confirm-danger, .rk-btn-danger, .btn-kickoff-danger):hover:not(:disabled) { filter: brightness(1.05); transform: translateY(-1px); }
+
+/* Compact row / table actions */
+.btn-row-action,
+.btn-action,
+.kanban-card-action-btn,
+.audit-log-details-btn {
+  border-radius: var(--radius-sm) !important;
+  border: 1px solid var(--border) !important;
+  background: var(--surface) !important;
+  color: var(--text-secondary) !important;
+  font-weight: 600;
+  box-shadow: var(--shadow-xs);
+  transition: background var(--transition), color var(--transition), border-color var(--transition) !important;
+}
+.btn-row-action:hover,
+.btn-action:hover,
+.kanban-card-action-btn:hover,
+.audit-log-details-btn:hover {
+  color: var(--brand-700) !important;
+  border-color: var(--brand-200) !important;
+  background: var(--brand-25) !important;
+}
+.btn-row-danger:hover { color: var(--error) !important; border-color: var(--error-border) !important; background: var(--error-bg) !important; }
+
+/* Quiet / text buttons */
+:is(.btn-link-quiet, .btn-text, .rkw-text-btn, .job-editor-text-btn, .esign-link-btn, .esign-pro-btn-quiet) {
+  color: var(--brand-600);
+  font-weight: 600;
+  transition: color var(--transition), background var(--transition);
+}
+:is(.btn-link-quiet, .btn-text, .rkw-text-btn, .job-editor-text-btn, .esign-link-btn):hover { color: var(--brand-800); }
+:is(.btn-link-quiet--danger, .btn-text-danger) { color: var(--error); }
+
+/* Icon buttons */
+.btn-icon-round {
+  border-radius: 10px !important;
+  border: 1px solid var(--border) !important;
+  background: var(--surface) !important;
+  color: var(--text-secondary) !important;
+  box-shadow: var(--shadow-xs);
+}
+.btn-icon-round:hover { color: var(--brand-700) !important; border-color: var(--brand-200) !important; background: var(--brand-25) !important; }
+.btn-icon-round--danger:hover { color: var(--error) !important; border-color: var(--error-border) !important; background: var(--error-bg) !important; }
+
+.btn-spinner {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #fff;
+  animation: spin 0.7s linear infinite;
+}
+
+/* ── Form fields ─────────────────────────────────────────────────── */
+
+.field { display: flex; flex-direction: column; gap: 7px; margin-bottom: 16px; }
+.field label { font-size: 12.5px; font-weight: 600; color: var(--text-secondary); }
+.field input,
+.field select,
+.field textarea {
+  height: 42px;
+  padding: 0 13px;
+  font-size: 14px;
+  border-radius: var(--radius);
+}
+.field textarea { height: auto; padding: 10px 13px; resize: vertical; line-height: 1.5; }
+
+/* Field with leading icon / trailing adornment */
+.field-control { position: relative; display: flex; align-items: center; }
+.field-control input { width: 100%; padding-left: 38px !important; }
+.field-control .field-icon { position: absolute; left: 13px; color: var(--text-muted); pointer-events: none; transition: color var(--transition); }
+.field-control:focus-within .field-icon { color: var(--brand-600); }
+.field-adornment-btn {
+  position: absolute;
+  right: 6px;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.field-adornment-btn:hover { background: var(--surface-3); color: var(--text-primary); }
+.field-control:has(.field-adornment-btn) input { padding-right: 42px; }
+
+/* One visual language for every text control in the app (layout stays page-owned) */
+:is(.app-shell, .auth-page, .public-apply-page, .public-sign-app)
+  :is(input:not([type='checkbox'], [type='radio'], [type='range'], [type='color'], [type='file'], [type='hidden'], [type='submit'], [type='button']), select:not([multiple]), textarea):not(
+    .header-search-input, .dashboard-job-select, .rkw-skill-chips-input, .rk-skill-chips-input, .job-skill-search-input
+  ) {
+  font-family: var(--font-ui, var(--font));
+  color: var(--text-primary);
+  background-color: var(--surface);
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-xs);
+  transition: border-color var(--transition), box-shadow var(--transition), background-color var(--transition);
+}
+:is(.app-shell, .auth-page, .public-apply-page, .public-sign-app)
+  :is(input:not([type='checkbox'], [type='radio'], [type='range'], [type='color'], [type='file'], [type='hidden'], [type='submit'], [type='button']), select:not([multiple]), textarea):not(
+    .header-search-input, .dashboard-job-select, .rkw-skill-chips-input, .rk-skill-chips-input, .job-skill-search-input
+  ):hover:not(:disabled, :focus) {
+  border-color: var(--n-400);
+}
+:is(.app-shell, .auth-page, .public-apply-page, .public-sign-app)
+  :is(input:not([type='checkbox'], [type='radio'], [type='range'], [type='color'], [type='file'], [type='hidden'], [type='submit'], [type='button']), select:not([multiple]), textarea):not(
+    .header-search-input, .dashboard-job-select, .rkw-skill-chips-input, .rk-skill-chips-input, .job-skill-search-input
+  ):focus {
+  outline: none;
+  border-color: var(--brand-500);
+  box-shadow: var(--ring);
+  background-color: #fff;
+}
+:is(.app-shell, .auth-page, .public-apply-page, .public-sign-app) :is(input, select, textarea):disabled {
+  background-color: var(--surface-3);
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+:is(.app-shell, .auth-page, .public-apply-page, .public-sign-app) :is(input, textarea)::placeholder { color: var(--text-faint); }
+.esign-docs-search input { border: 0 !important; box-shadow: none !important; background: transparent !important; }
+
+/* Custom select chevron */
+:is(.app-shell, .public-apply-page) select:not([multiple]):not(.dashboard-job-select) {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238088a4' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 11px center;
+  background-size: 15px;
+  padding-right: 34px !important;
+  cursor: pointer;
+}
+
+/* Checkboxes, radios, ranges pick up the brand */
+input[type='checkbox'],
+input[type='radio'],
+input[type='range'],
+progress { accent-color: var(--brand-600); }
+
+/* Inline hints and labels across feature forms */
+:is(.form-hint, .settings-field-hint, .job-editor-field-hint) { color: var(--text-muted); font-size: 12.5px; }
+
+/* ── Cards & panels ──────────────────────────────────────────────── */
+
+.panel,
+.list-table,
+:is(
+  .dashboard-panel, .dashboard-modern-panel, .job-editor-card, .settings-org-section, .referrals-panel,
+  .esign-pro-card, .rk-card, .rkw-card, .audit-card, .custom-fields-card, .labels-card, .stats-row
+) {
+  background: var(--surface);
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-sm);
+}
+.panel { transition: box-shadow var(--transition), border-color var(--transition); }
+.panel:hover { box-shadow: var(--shadow); }
+.panel-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-light);
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+}
+.panel-header-title {
+  font-family: var(--font-heading);
+  font-size: 14.5px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.01em !important;
+  text-transform: none !important;
+  color: var(--text-primary) !important;
+}
+.panel-header-icon { color: var(--brand-600); }
+.panel-row { border-bottom: 1px solid var(--border-light); }
+.panel-row:hover { background: var(--surface-hover); }
+.panel-row-label { color: var(--text-muted); font-weight: 500; }
+.panel-row-value { color: var(--text-primary); font-weight: 500; }
+
+/* ── Tables & lists ──────────────────────────────────────────────── */
+
+.list-table { overflow: hidden; }
+.list-table-head {
+  background: var(--surface-2) !important;
+  border-bottom: 1px solid var(--border) !important;
+}
+.list-table-head,
+.list-table-head .list-col {
+  font-size: 11.5px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.04em !important;
+  text-transform: uppercase;
+  color: var(--text-muted) !important;
+}
+.list-row { border-bottom: 1px solid var(--border-light) !important; transition: background var(--transition); }
+.list-row:hover { background: linear-gradient(90deg, var(--brand-25), var(--surface) 70%) !important; }
+.list-row:last-child { border-bottom: 0 !important; }
+.list-row-name { font-weight: 600; color: var(--text-primary); letter-spacing: -0.01em; }
+.list-row-sub { color: var(--text-muted); }
+
+.app-shell table:not(.ProseMirror table) th {
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background: var(--surface-2);
+}
+.app-shell table:not(.ProseMirror table) tbody tr { transition: background var(--transition); }
+.app-shell table:not(.ProseMirror table) tbody tr:hover { background: var(--surface-hover); }
+
+/* ── Tags, badges, pills ─────────────────────────────────────────── */
+
+.tag,
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.5;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 18%, transparent);
+}
+.status-badge::before { width: 6px; height: 6px; box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 18%, transparent); }
+.tag-violet { background: var(--tag-violet-bg); color: var(--tag-violet); }
+
+/* ── Modals & dialogs ────────────────────────────────────────────── */
+
+.modal-overlay,
+.confirm-overlay {
+  background: rgba(10, 15, 46, 0.42) !important;
+  backdrop-filter: blur(6px) saturate(120%);
+  -webkit-backdrop-filter: blur(6px) saturate(120%);
+  animation: overlay-in 0.2s ease both;
+}
+@keyframes overlay-in { from { opacity: 0; } to { opacity: 1; } }
+.modal,
+.confirm-dialog {
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-xl) !important;
+  box-shadow: 0 30px 80px -20px rgba(10, 15, 46, 0.45), var(--shadow-inset-top) !important;
+  animation: dialog-in 0.32s var(--ease-spring) both !important;
+}
+@keyframes dialog-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+.modal-header { padding: 20px 24px 14px !important; border-bottom: 1px solid var(--border-light) !important; }
+.modal-title,
+.confirm-title { font-family: var(--font-heading); font-weight: 700; letter-spacing: -0.02em; }
+.modal-close {
+  border-radius: 10px !important;
+  color: var(--text-muted);
+  transition: background var(--transition), color var(--transition);
+}
+.modal-close:hover { background: var(--surface-3) !important; color: var(--text-primary) !important; }
+.confirm-icon {
+  border-radius: 16px !important;
+  background: var(--error-bg) !important;
+  color: var(--error) !important;
+  box-shadow: inset 0 0 0 1px var(--error-border);
+}
+
+/* ── Tabs / segmented navigation ─────────────────────────────────── */
+
+.jobs-hub-subnav {
+  display: inline-flex !important;
+  gap: 2px !important;
+  padding: 4px !important;
+  margin-bottom: 22px !important;
+  border-radius: 12px !important;
+  background: var(--surface-3) !important;
+  border: 1px solid var(--border-light) !important;
+  box-shadow: inset 0 1px 2px rgba(18, 22, 43, 0.04) !important;
+}
+.jobs-hub-subnav-link {
+  height: 34px;
+  display: inline-flex !important;
+  align-items: center;
+  padding: 0 14px !important;
+  border: 0 !important;
+  border-radius: 9px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: var(--text-secondary) !important;
+  background: transparent !important;
+  transition: background var(--transition), color var(--transition), box-shadow var(--transition);
+}
+.jobs-hub-subnav-link:hover { color: var(--text-primary) !important; }
+.jobs-hub-subnav-link--active {
+  color: var(--brand-700) !important;
+  background: #fff !important;
+  box-shadow: var(--shadow-sm), inset 0 0 0 1px var(--border-light) !important;
+}
+
+/* ── Empty, loading & error states ───────────────────────────────── */
+
+.empty-view,
+.list-empty,
+.empty-state,
+.dashboard-empty {
+  color: var(--text-muted);
+}
+.empty-view-title { font-family: var(--font-heading); color: var(--text-primary); font-weight: 700; letter-spacing: -0.02em; }
+
+.nx-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+  padding: 44px 24px;
+}
+.nx-empty .nx-3d { margin-bottom: 10px; }
+.nx-empty-title { font-family: var(--font-heading); font-size: 16px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em; }
+.nx-empty-text { max-width: 380px; font-size: 13.5px; color: var(--text-muted); }
+.nx-empty-actions { margin-top: 12px; display: flex; gap: 10px; }
+
+.nx-skeleton {
+  border-radius: 8px;
+  background: linear-gradient(90deg, var(--n-100) 0%, var(--n-50) 40%, var(--n-100) 80%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+@keyframes shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+
+/* ── Reduced motion ──────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ── Alerts & loading rows ───────────────────────────────────────── */
+
+.nx-alert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px;
+  padding: 11px 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 500;
+}
+.nx-alert--error { color: var(--error); background: var(--error-bg); border: 1px solid var(--error-border); }
+.nx-alert--info { color: var(--brand-700); background: var(--brand-50); border: 1px solid var(--brand-100); }
+
+.nx-loading { display: flex; flex-direction: column; gap: 14px; padding: 20px; }
+.nx-loading-row { display: flex; align-items: center; gap: 14px; }
+.nx-loading-avatar { width: 36px; height: 36px; border-radius: 11px; flex-shrink: 0; }
+.nx-loading-lines { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+.panel-header-icon {
+  width: 28px;
+  height: 28px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 8px;
+  color: var(--brand-600);
+  background: var(--brand-50);
+  box-shadow: inset 0 0 0 1px var(--brand-100);
+}

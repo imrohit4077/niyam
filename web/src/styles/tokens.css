@@ -1,0 +1,176 @@
+/* ════════════════════════════════════════════════════════════════════
+   NIYAM DESIGN TOKENS
+   Palette is derived from the logo: deep indigo → royal blue → cyan.
+   Legacy names (--navy, --teal, --gray-*) are aliased at the bottom so the
+   existing stylesheet inherits the new system without per-rule edits.
+════════════════════════════════════════════════════════════════════ */
+:root {
+  /* Brand */
+  --brand-25: #f6f7ff;
+  --brand-50: #eef1ff;
+  --brand-100: #e1e6ff;
+  --brand-200: #c7cfff;
+  --brand-300: #a3afff;
+  --brand-400: #7686ff;
+  --brand-500: #5468ff;
+  --brand-600: #4157ff;
+  --brand-700: #3443d8;
+  --brand-800: #2a35a8;
+  --brand-900: #1f2780;
+  --accent-300: #8fe3fa;
+  --accent-400: #4fd3f5;
+  --accent-500: #2ec5f0;
+  --accent-600: #0ea5d0;
+  --violet-400: #9b82ff;
+  --violet-500: #7c5cff;
+  --coral-500: #ff6b81;
+  --amber-500: #ffb547;
+
+  --brand-gradient: linear-gradient(135deg, #3443d8 0%, #4157ff 42%, #2ec5f0 130%);
+  --brand-gradient-soft: linear-gradient(135deg, #eef1ff 0%, #f3f0ff 50%, #e8f8fe 100%);
+  --brand-glow: radial-gradient(60% 80% at 20% 0%, rgba(65, 87, 255, 0.16), transparent 70%),
+    radial-gradient(50% 70% at 100% 10%, rgba(46, 197, 240, 0.14), transparent 70%);
+
+  /* Ink — chrome (sidebar) */
+  --ink-950: #060920;
+  --ink-900: #0a0f2e;
+  --ink-850: #0f1538;
+  --ink-800: #151c46;
+  --ink-700: #222a5c;
+  --ink-600: #343d75;
+  --ink-text: #c9cff0;
+  --ink-text-muted: #8a92c4;
+
+  /* Neutrals — cool slate, tuned toward the brand hue */
+  --n-0: #ffffff;
+  --n-25: #fbfcfe;
+  --n-50: #f6f7fb;
+  --n-100: #eef0f6;
+  --n-150: #e8eaf2;
+  --n-200: #e2e5ee;
+  --n-300: #cdd2e0;
+  --n-400: #9aa2b9;
+  --n-500: #6c7491;
+  --n-600: #4e5572;
+  --n-700: #363c58;
+  --n-800: #21263e;
+  --n-900: #12162b;
+
+  /* Semantic surfaces & text */
+  --canvas: #f4f6fb;
+  --surface: #ffffff;
+  --surface-2: #f8f9fc;
+  --surface-3: #f1f3f9;
+  --surface-hover: #f5f6fb;
+  --border: #e3e6ef;
+  --border-light: #eef0f6;
+  --border-strong: #cfd4e3;
+  --text-primary: #12162b;
+  --text-secondary: #4e5572;
+  --text-muted: #8088a4;
+  --text-faint: #a8afc6;
+  --text-on-brand: #ffffff;
+  --text-link: var(--brand-600);
+
+  /* Status */
+  --success: #16a974;
+  --success-bg: #e9f9f2;
+  --success-border: #b6ecd6;
+  --warning: #e08a00;
+  --warning-bg: #fff6e6;
+  --warning-border: #ffe0a8;
+  --error: #e5484d;
+  --error-bg: #fff0f1;
+  --error-border: #ffcdd2;
+  --info-color: var(--brand-600);
+  --info-bg: var(--brand-50);
+  --info-border: var(--brand-200);
+
+  --tag-green-bg: #e9f9f2;
+  --tag-green: #0f8a5f;
+  --tag-blue-bg: var(--brand-50);
+  --tag-blue: var(--brand-700);
+  --tag-orange-bg: #fff4e3;
+  --tag-orange: #b86b00;
+  --tag-red-bg: #fff0f1;
+  --tag-red: #c9303a;
+  --tag-gray-bg: var(--n-100);
+  --tag-gray: var(--n-600);
+  --tag-violet-bg: #f2eeff;
+  --tag-violet: #5b3fd6;
+
+  /* Shape */
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius: 10px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 28px;
+  --radius-pill: 999px;
+
+  /* Elevation — layered, low-opacity, slightly blue-tinted */
+  --shadow-xs: 0 1px 2px rgba(18, 22, 43, 0.05);
+  --shadow-sm: 0 1px 2px rgba(18, 22, 43, 0.04), 0 2px 6px -1px rgba(18, 22, 43, 0.05);
+  --shadow: 0 1px 2px rgba(18, 22, 43, 0.04), 0 6px 16px -6px rgba(18, 22, 43, 0.1);
+  --shadow-md: 0 2px 4px rgba(18, 22, 43, 0.04), 0 14px 32px -10px rgba(18, 22, 43, 0.16);
+  --shadow-lg: 0 4px 10px rgba(18, 22, 43, 0.05), 0 28px 56px -16px rgba(18, 22, 43, 0.24);
+  --shadow-brand: 0 1px 2px rgba(42, 53, 168, 0.3), 0 8px 22px -8px rgba(65, 87, 255, 0.6);
+  --shadow-inset-top: inset 0 1px 0 rgba(255, 255, 255, 0.65);
+  --ring: 0 0 0 4px rgba(65, 87, 255, 0.16);
+  --ring-error: 0 0 0 4px rgba(229, 72, 77, 0.14);
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --transition: 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Typography (account appearance settings may override these at runtime) */
+  --font: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-ui: var(--font);
+  --font-body: var(--font);
+  --font-heading: 'Plus Jakarta Sans', 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-content: var(--font);
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  --app-root-font-size: 14px;
+  --app-line-height: 1.55;
+  --app-letter-spacing-em: -0.003em;
+  --app-font-scale-ratio: 1.25;
+  --app-weight-regular: 400;
+  --app-weight-medium: 500;
+  --app-weight-bold: 700;
+  --app-readable-contrast: 0;
+  --app-readable-mode: 0;
+
+  /* Layout */
+  --header-h: 60px;
+  --sidebar-w: 260px;
+  --sidebar-w-collapsed: 76px;
+  --page-pad-x: 32px;
+
+  /* ── Legacy aliases (existing stylesheet) ── */
+  --navy: var(--ink-900);
+  --navy-light: var(--ink-850);
+  --navy-mid: var(--ink-800);
+  --navy-border: var(--ink-700);
+  --teal: var(--brand-600);
+  --teal-hover: var(--brand-700);
+  --teal-light: rgba(65, 87, 255, 0.08);
+  --teal-glow: rgba(65, 87, 255, 0.16);
+  --blue: var(--brand-500);
+  --blue-dark: var(--brand-700);
+  --indigo: var(--violet-500);
+  --white: #ffffff;
+  --off-white: var(--canvas);
+  --gray-50: var(--n-50);
+  --gray-100: var(--n-100);
+  --gray-200: var(--n-200);
+  --gray-300: var(--n-300);
+  --gray-400: var(--n-400);
+  --gray-500: var(--n-500);
+  --gray-600: var(--n-600);
+  --gray-700: var(--n-700);
+  --gray-800: var(--n-800);
+  --text-nav: var(--ink-text-muted);
+  --text-nav-hover: #ffffff;
+}

@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
-import type { ReactNode } from 'react'
-import { NavLink, useLocation } from 'react-router-dom'
+import { Link, NavLink, useLocation } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { navItemVisible, type NavId } from '../permissions'
+import { Icon, Icon3D, type IconName } from '../icons'
 
 export type SidebarPage = NavId
 
@@ -10,7 +10,7 @@ interface NavItem {
   id: NavId
   label: string
   badge?: number
-  icon: string
+  icon: IconName
   group?: string
 }
 
@@ -21,27 +21,27 @@ const STRUCTURED_BRANCH_IDS: NavId[] = ['hiring-structure-attributes', 'hiring-s
 const JOBS_BRANCH_IDS: NavId[] = ['jobs-role-kickoff', 'jobs-all', 'jobs-mine']
 
 const NAV: NavItem[] = [
-  { id: 'profile', label: 'My Profile', icon: 'user', group: 'Overview' },
-  { id: 'jobs-role-kickoff', label: 'Role kickoff', icon: 'briefcase', group: 'Recruiting' },
-  { id: 'jobs-all', label: 'All jobs', icon: 'briefcase', group: 'Recruiting' },
-  { id: 'jobs-mine', label: 'My jobs', icon: 'briefcase', group: 'Recruiting' },
-  { id: 'hiring-plans', label: 'Hiring plans', icon: 'target', group: 'Recruiting' },
-  { id: 'pipeline', label: 'Pipeline', icon: 'columns', group: 'Recruiting' },
-  { id: 'job-boards', label: 'Job Boards', icon: 'globe', group: 'Recruiting' },
-  { id: 'postings', label: 'Postings', icon: 'send', group: 'Recruiting' },
-  { id: 'hiring-structure-attributes', label: 'Attributes', icon: 'layers', group: 'Structured hiring' },
-  { id: 'hiring-structure-stages', label: 'Stages', icon: 'layers', group: 'Structured hiring' },
-  { id: 'job-applications', label: 'Applications', icon: 'document', group: 'Candidates' },
-  { id: 'candidates', label: 'Candidates', icon: 'people', group: 'Candidates' },
-  { id: 'interviews', label: 'Interviews', icon: 'calendar', group: 'Candidates' },
+  { id: 'profile', label: 'Overview', icon: 'dashboard', group: 'Overview' },
+  { id: 'jobs-role-kickoff', label: 'Role kickoff', icon: 'kickoff', group: 'Recruiting' },
+  { id: 'jobs-all', label: 'All jobs', icon: 'jobs', group: 'Recruiting' },
+  { id: 'jobs-mine', label: 'My jobs', icon: 'jobs', group: 'Recruiting' },
+  { id: 'hiring-plans', label: 'Hiring plans', icon: 'plans', group: 'Recruiting' },
+  { id: 'pipeline', label: 'Pipeline', icon: 'pipeline', group: 'Recruiting' },
+  { id: 'job-boards', label: 'Job Boards', icon: 'boards', group: 'Recruiting' },
+  { id: 'postings', label: 'Postings', icon: 'postings', group: 'Recruiting' },
+  { id: 'hiring-structure-attributes', label: 'Attributes', icon: 'attributes', group: 'Structured hiring' },
+  { id: 'hiring-structure-stages', label: 'Stages', icon: 'stages', group: 'Structured hiring' },
+  { id: 'job-applications', label: 'Applications', icon: 'applications', group: 'Candidates' },
+  { id: 'candidates', label: 'Candidates', icon: 'candidates', group: 'Candidates' },
+  { id: 'interviews', label: 'Interviews', icon: 'interviews', group: 'Candidates' },
   { id: 'esign-documents', label: 'Signed documents', icon: 'signature', group: 'Candidates' },
-  { id: 'referrals', label: 'Referrals', icon: 'referral', group: 'Candidates' },
-  { id: 'settings-general', label: 'General', icon: 'gear', group: 'Settings' },
-  { id: 'settings-custom-fields', label: 'Custom fields', icon: 'fieldgrid', group: 'Settings' },
-  { id: 'settings-labels', label: 'Labels', icon: 'tag', group: 'Settings' },
+  { id: 'referrals', label: 'Referrals', icon: 'referrals', group: 'Candidates' },
+  { id: 'settings-general', label: 'General', icon: 'settings', group: 'Settings' },
+  { id: 'settings-custom-fields', label: 'Custom fields', icon: 'fields', group: 'Settings' },
+  { id: 'settings-labels', label: 'Labels', icon: 'labels', group: 'Settings' },
   { id: 'settings-communication-channels', label: 'Communication', icon: 'mail', group: 'Settings' },
-  { id: 'settings-audit-compliance', label: 'Audit & compliance', icon: 'shield', group: 'Settings' },
-  { id: 'settings-esign', label: 'E-sign', icon: 'document', group: 'Settings' },
+  { id: 'settings-audit-compliance', label: 'Audit & compliance', icon: 'audit', group: 'Settings' },
+  { id: 'settings-esign', label: 'E-sign', icon: 'esign', group: 'Settings' },
   { id: 'team', label: 'Team', icon: 'team', group: 'Workspace' },
 ]
 
@@ -68,108 +68,6 @@ const PATH_SEGMENTS: Record<NavId, string> = {
   'settings-communication-channels': 'settings/communication-channels',
   'settings-audit-compliance': 'settings/audit-compliance',
   'settings-esign': 'settings/esign',
-}
-
-/** 20×20 stroke icons — high contrast on dark sidebar */
-const ICONS: Record<string, ReactNode> = {
-  user: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden="true">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-    </svg>
-  ),
-  briefcase: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden="true">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M20 7h-4V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2H4a2 2 0 00-2 2v11a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z" />
-    </svg>
-  ),
-  document: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden="true">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-    </svg>
-  ),
-  people: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden="true">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-    </svg>
-  ),
-  calendar: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden="true">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-    </svg>
-  ),
-  team: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden="true">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-    </svg>
-  ),
-  gear: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden="true">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-    </svg>
-  ),
-  fieldgrid: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden="true">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-    </svg>
-  ),
-  chevron: (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-    </svg>
-  ),
-  globe: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden="true">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3.055 13H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
-  ),
-  send: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden="true">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-    </svg>
-  ),
-  layers: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden="true">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M4 7l8-4 8 4-8 4-8-4zm0 5l8 4 8-4M4 17l8 4 8-4" />
-    </svg>
-  ),
-  target: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden="true">
-      <circle cx="12" cy="12" r="9" />
-      <circle cx="12" cy="12" r="5" />
-      <circle cx="12" cy="12" r="2" fill="currentColor" stroke="none" />
-    </svg>
-  ),
-  columns: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden="true">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
-    </svg>
-  ),
-  signature: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden="true">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L7.5 20.5H3v-4.5L16.732 3.732z" />
-    </svg>
-  ),
-  referral: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden="true">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-    </svg>
-  ),
-  tag: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden="true">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-    </svg>
-  ),
-  mail: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden="true">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-    </svg>
-  ),
-  shield: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden="true">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 22s8-4 8-10V5l-8-4-8 4v7c0 6 8 10 8 10z" />
-    </svg>
-  ),
 }
 
 const SIDEBAR_COLLAPSED_KEY = 'niyam.sidebarCollapsed'
@@ -208,9 +106,12 @@ function readStructuredBranchOpen(): boolean {
 
 interface Props {
   accountId: string
+  /** Off-canvas state on small screens (controlled by the layout). */
+  mobileOpen?: boolean
+  onRequestClose?: () => void
 }
 
-export default function Sidebar({ accountId }: Props) {
+export default function Sidebar({ accountId, mobileOpen = false, onRequestClose }: Props) {
   const [collapsed, setCollapsed] = useState(readSidebarCollapsed)
   const [jobsBranchOpen, setJobsBranchOpen] = useState(readJobsBranchOpen)
   const [structuredBranchOpen, setStructuredBranchOpen] = useState(readStructuredBranchOpen)
@@ -234,6 +135,12 @@ export default function Sidebar({ accountId }: Props) {
   useEffect(() => {
     if (underJobsPath) setJobsBranchOpen(true)
   }, [underJobsPath])
+
+  // Close the mobile drawer whenever the route changes.
+  useEffect(() => {
+    onRequestClose?.()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname])
 
   useEffect(() => {
     if (underStructuredPath) setStructuredBranchOpen(true)
@@ -293,7 +200,7 @@ export default function Sidebar({ accountId }: Props) {
           `sidebar-item${branchChild ? ' sidebar-item--branch-child' : ''} ${isActive || esignActive || generalActive || customFieldsActive || labelsActive || commActive || auditActive || jobsKickoffActive || structuredLeafActive ? 'sidebar-item-active' : ''}`
         }
       >
-        {!branchChild ? <span className="sidebar-item-icon">{ICONS[item.icon]}</span> : null}
+        {!branchChild ? <span className="sidebar-item-icon"><Icon name={item.icon} size={18} /></span> : null}
         {!collapsed && (
           <>
             <span className="sidebar-item-label">{item.label}</span>
@@ -306,8 +213,22 @@ export default function Sidebar({ accountId }: Props) {
   }
 
   return (
-    <aside className={`sidebar ${collapsed ? 'sidebar-collapsed' : ''}`} aria-label="Main navigation">
+    <>
+    {mobileOpen ? <div className="sidebar-scrim" onClick={onRequestClose} aria-hidden /> : null}
+    <aside
+      className={`sidebar ${collapsed ? 'sidebar-collapsed' : ''}${mobileOpen ? ' sidebar--mobile-open' : ''}`}
+      aria-label="Main navigation"
+    >
       <div className="sidebar-top">
+        <Link to={`${base}/profile`} className="sidebar-brand" title="Niyam">
+          <Icon3D name="brand" size={34} />
+          {!collapsed ? (
+            <span className="sidebar-brand-text">
+              <span className="sidebar-brand-name">Niyam</span>
+              <span className="sidebar-brand-tag">Hiring OS</span>
+            </span>
+          ) : null}
+        </Link>
         <button
           type="button"
           className="sidebar-toggle"
@@ -325,7 +246,9 @@ export default function Sidebar({ accountId }: Props) {
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
-          <span className={`sidebar-toggle-icon ${collapsed ? 'rotated' : ''}`}>{ICONS.chevron}</span>
+          <span className={`sidebar-toggle-icon ${collapsed ? 'rotated' : ''}`}>
+            <Icon name="chevronsLeft" size={16} />
+          </span>
         </button>
       </div>
 
@@ -347,7 +270,7 @@ export default function Sidebar({ accountId }: Props) {
                         }
                         title="Structured hiring"
                       >
-                        <span className="sidebar-item-icon">{ICONS.layers}</span>
+                        <span className="sidebar-item-icon"><Icon name="attributes" size={18} /></span>
                       </NavLink>
                     </div>
                   ) : (
@@ -359,15 +282,13 @@ export default function Sidebar({ accountId }: Props) {
                         aria-expanded={structuredBranchOpen}
                         aria-controls="sidebar-structured-branch-children"
                       >
-                        <span className="sidebar-item-icon">{ICONS.layers}</span>
+                        <span className="sidebar-item-icon"><Icon name="attributes" size={18} /></span>
                         <span className="sidebar-item-label">Structured hiring</span>
                         <span
                           className={`sidebar-branch-chevron${structuredBranchOpen ? ' sidebar-branch-chevron--open' : ''}`}
                           aria-hidden
                         >
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 18l6-6-6-6" />
-                          </svg>
+                          <Icon name="chevronRight" size={14} strokeWidth={2} />
                         </span>
                       </button>
                       {structuredBranchOpen ? (
@@ -398,7 +319,7 @@ export default function Sidebar({ accountId }: Props) {
                               }
                               title="Jobs"
                             >
-                              <span className="sidebar-item-icon">{ICONS.briefcase}</span>
+                              <span className="sidebar-item-icon"><Icon name="jobs" size={18} /></span>
                             </NavLink>
                           </div>
                         ) : (
@@ -410,15 +331,13 @@ export default function Sidebar({ accountId }: Props) {
                               aria-expanded={jobsBranchOpen}
                               aria-controls="sidebar-jobs-branch-children"
                             >
-                              <span className="sidebar-item-icon">{ICONS.briefcase}</span>
+                              <span className="sidebar-item-icon"><Icon name="jobs" size={18} /></span>
                               <span className="sidebar-item-label">Jobs</span>
                               <span
                                 className={`sidebar-branch-chevron${jobsBranchOpen ? ' sidebar-branch-chevron--open' : ''}`}
                                 aria-hidden
                               >
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 18l6-6-6-6" />
-                                </svg>
+                                <Icon name="chevronRight" size={14} strokeWidth={2} />
                               </span>
                             </button>
                             {jobsBranchOpen ? (
@@ -441,6 +360,23 @@ export default function Sidebar({ accountId }: Props) {
           </div>
         ))}
       </nav>
+
+      {user?.account ? (
+        <div className="sidebar-workspace" title={collapsed ? user.account.name : undefined}>
+          <span className="sidebar-workspace-avatar" aria-hidden>
+            {user.account.name.slice(0, 1).toUpperCase()}
+          </span>
+          {!collapsed ? (
+            <span className="sidebar-workspace-text">
+              <span className="sidebar-workspace-name">{user.account.name}</span>
+              <span className="sidebar-workspace-plan">
+                {user.account.plan ? `${user.account.plan} plan` : 'Workspace'}
+              </span>
+            </span>
+          ) : null}
+        </div>
+      ) : null}
     </aside>
+    </>
   )
 }

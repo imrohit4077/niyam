@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate, useOutletContext, useParams } from 'react-router-dom'
+import { Icon, Icon3D } from '../icons'
+import { EmptyState, LoadingState } from '../components/EmptyState'
+import PageHeader from '../components/PageHeader'
 import { hiringAttributesApi, hiringStageTemplatesApi, type HiringAttributeRow, type HiringStageTemplateRow } from '../api/hiringStructure'
 import { roleKickoffApi, type RoleKickoffRequestRow } from '../api/roleKickoff'
 import type { DashboardOutletContext } from '../layouts/DashboardOutletContext'
@@ -179,9 +182,10 @@ export default function RoleKickoffDetailPage() {
 
   if (loading) {
     return (
-      <div className="role-kickoff-page" style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>
-        <div className="spinner" style={{ margin: '0 auto 12px' }} aria-label="Loading" />
-        Loading…
+      <div className="role-kickoff-page">
+        <div className="list-table">
+          <LoadingState rows={4} />
+        </div>
       </div>
     )
   }
@@ -189,8 +193,16 @@ export default function RoleKickoffDetailPage() {
   if (err || !row) {
     return (
       <div className="role-kickoff-page">
-        <p style={{ color: 'var(--error)' }}>{err || 'Not found'}</p>
-        <Link to={base}>Back to role kickoff</Link>
+        <EmptyState
+          icon="kickoff"
+          title="Kickoff not found"
+          text={err || 'This request may have been removed.'}
+          actions={
+            <Link to={base} className="btn-secondary btn-secondary--inline">
+              <Icon name="arrowLeft" size={15} /> Back to role kickoff
+            </Link>
+          }
+        />
       </div>
     )
   }
@@ -199,59 +211,68 @@ export default function RoleKickoffDetailPage() {
 
   return (
     <div className="role-kickoff-page">
-      <header className="role-kickoff-page-header">
-        <div>
-          <h1 className="role-kickoff-page-title">{row.title}</h1>
-          <p style={{ margin: '8px 0 0', fontSize: 14, color: 'var(--text-secondary)' }}>
+      <PageHeader
+        icon="kickoff"
+        eyebrow="Role kickoff"
+        title={row.title}
+        subtitle={
+          <span className="rk-detail-meta">
             <span className={`tag ${statusTagClass(st)}`}>{statusLabel(st)}</span>
             {row.converted_job_id ? (
-              <span style={{ marginLeft: 10 }}>
-                Job #{row.converted_job_id}{' '}
-                <Link to={`/account/${accountId}/jobs/${row.converted_job_id}/edit`}>(open)</Link>
-              </span>
+              <Link to={`/account/${accountId}/jobs/${row.converted_job_id}/edit`} className="dashboard-link">
+                Job #{row.converted_job_id} <Icon name="arrowUpRight" size={13} />
+              </Link>
             ) : null}
-          </p>
-        </div>
-        <Link to={base} className="btn-kickoff-secondary" style={{ textDecoration: 'none', lineHeight: '40px' }}>
-          Back to list
-        </Link>
-      </header>
+          </span>
+        }
+        actions={
+          <Link to={base} className="btn-kickoff-secondary rk-detail-back">
+            <Icon name="arrowLeft" size={15} /> Back to list
+          </Link>
+        }
+      />
 
       {row.recruiter_feedback ? (
-        <div
-          style={{
-            marginBottom: 20,
-            padding: 14,
-            background: 'var(--info-bg)',
-            border: '1px solid var(--info-border)',
-            borderRadius: 8,
-            fontSize: 14,
-          }}
-        >
-          <strong>Recruiter feedback</strong>
-          <div style={{ marginTop: 8, whiteSpace: 'pre-wrap' }}>{row.recruiter_feedback}</div>
+        <div className="rk-detail-feedback">
+          <Icon name="mail" size={16} />
+          <div>
+            <strong>Recruiter feedback</strong>
+            <div className="rk-detail-feedback-body">{row.recruiter_feedback}</div>
+          </div>
         </div>
       ) : null}
 
       {row.selected_stages && row.selected_stages.length > 0 ? (
         <section className="rk-card" style={{ marginBottom: 24 }}>
-          <header className="rk-card-head">
-            <h2 className="rk-card-title">Structured pipeline</h2>
-            <p className="rk-card-desc">Stages and focus attributes carried into the job when converted.</p>
+          <header className="rk-card-head rk-card-head--icon">
+            <Icon3D name="stages" size={40} tile />
+            <div>
+              <h2 className="rk-card-title">Structured pipeline</h2>
+              <p className="rk-card-desc">Stages and focus attributes carried into the job when converted.</p>
+            </div>
           </header>
           <div className="rk-card-body" style={{ paddingTop: 8 }}>
-            <ol style={{ margin: 0, paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
-              {row.selected_stages.map(s => {
+            <ol className="rk-timeline">
+              {row.selected_stages.map((s, i) => {
                 const tpl = stageTplMap.get(s.stage_template_id)
                 const names = (s.attribute_ids ?? []).map(aid => attrMap.get(aid)?.name ?? `#${aid}`)
                 return (
-                  <li key={s.stage_template_id} style={{ fontSize: 14, lineHeight: 1.45 }}>
-                    <strong>{tpl?.name ?? `Stage template #${s.stage_template_id}`}</strong>
-                    {names.length ? (
-                      <div style={{ color: 'var(--text-secondary)', marginTop: 4 }}>Focus: {names.join(', ')}</div>
-                    ) : (
-                      <div style={{ color: 'var(--text-muted)', marginTop: 4 }}>No focus attributes selected.</div>
-                    )}
+                  <li key={s.stage_template_id} className="rk-timeline-item">
+                    <span className="rk-timeline-dot">{i + 1}</span>
+                    <div className="rk-timeline-body">
+                      <strong>{tpl?.name ?? `Stage template #${s.stage_template_id}`}</strong>
+                      {names.length ? (
+                        <div className="rk-timeline-chips">
+                          {names.map(n => (
+                            <span key={n} className="tag tag-violet">
+                              {n}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="rk-timeline-empty">No focus attributes selected.</div>
+                      )}
+                    </div>
                   </li>
                 )
               })}

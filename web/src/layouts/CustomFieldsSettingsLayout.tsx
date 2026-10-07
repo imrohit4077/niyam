@@ -1,4 +1,5 @@
 import { NavLink, Outlet, useParams } from 'react-router-dom'
+import { Icon } from '../icons'
 
 const NAV = [
   {
@@ -16,30 +17,7 @@ const NAV = [
 ] as const
 
 function NavIcon({ name }: { name: (typeof NAV)[number]['icon'] }) {
-  const a = {
-    width: 20,
-    height: 20,
-    viewBox: '0 0 24 24' as const,
-    fill: 'none' as const,
-    stroke: 'currentColor',
-    strokeWidth: 1.6,
-    strokeLinecap: 'round' as const,
-    strokeLinejoin: 'round' as const,
-    'aria-hidden': true as const,
-  }
-  if (name === 'job') {
-    return (
-      <svg {...a}>
-        <path d="M20 7h-4V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2H4a2 2 0 00-2 2v11a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2zm-10-2h4v2h-4V5z" />
-      </svg>
-    )
-  }
-  return (
-    <svg {...a}>
-      <path d="M12 12a4 4 0 100-8 4 4 0 000 8z" />
-      <path d="M4 20a8 8 0 0116 0" />
-    </svg>
-  )
+  return <Icon name={name === 'job' ? 'jobs' : 'candidates'} size={18} />
 }
 
 export default function CustomFieldsSettingsLayout() {

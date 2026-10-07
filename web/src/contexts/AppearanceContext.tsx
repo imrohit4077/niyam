@@ -11,10 +11,11 @@ import { useAuth } from '../auth/AuthContext'
 import { getAppearanceSettings, type AppearanceSettings } from '../api/appearance'
 
 export const FONT_PRESET_OPTIONS = [
+  { id: 'inter', label: 'Inter (default)' },
+  { id: 'plus_jakarta_sans', label: 'Plus Jakarta Sans' },
   { id: 'iosevka_charon_mono', label: 'Iosevka Charon Mono' },
   { id: 'jetbrains_mono', label: 'JetBrains Mono' },
   { id: 'source_code_pro', label: 'Source Code Pro' },
-  { id: 'inter', label: 'Inter' },
   { id: 'roboto', label: 'Roboto' },
   { id: 'open_sans', label: 'Open Sans' },
   { id: 'lato', label: 'Lato' },

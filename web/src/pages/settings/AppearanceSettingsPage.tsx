@@ -14,6 +14,7 @@ const FONT_SCALE_OPTIONS = [
 const WEIGHT_OPTIONS = [300, 400, 500, 600, 700, 800] as const
 const FONT_PRESET_CSS = {
   iosevka_charon_mono: "'Iosevka Charon Mono', ui-monospace, 'Cascadia Code', monospace",
+  plus_jakarta_sans: "'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
   jetbrains_mono: "'JetBrains Mono', ui-monospace, 'Cascadia Code', monospace",
   source_code_pro: "'Source Code Pro', ui-monospace, 'Cascadia Code', monospace",
   inter: "'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
@@ -30,7 +31,7 @@ type FontPresetId = keyof typeof FONT_PRESET_CSS
 
 function toFontPresetId(raw: string): FontPresetId {
   if (raw in FONT_PRESET_CSS) return raw as FontPresetId
-  return 'iosevka_charon_mono'
+  return 'inter'
 }
 
 export default function AppearanceSettingsPage() {
@@ -41,14 +42,14 @@ export default function AppearanceSettingsPage() {
   const { appearance, refreshAppearance } = useAppearance()
   const token = getToken()
 
-  const [uiPreset, setUiPreset] = useState<FontPresetId>('iosevka_charon_mono')
-  const [headingPreset, setHeadingPreset] = useState<FontPresetId>('iosevka_charon_mono')
-  const [bodyPreset, setBodyPreset] = useState<FontPresetId>('iosevka_charon_mono')
-  const [monoPreset, setMonoPreset] = useState<FontPresetId>('iosevka_charon_mono')
-  const [contentPreset, setContentPreset] = useState<FontPresetId>('iosevka_charon_mono')
-  const [sizePx, setSizePx] = useState(15)
+  const [uiPreset, setUiPreset] = useState<FontPresetId>('inter')
+  const [headingPreset, setHeadingPreset] = useState<FontPresetId>('plus_jakarta_sans')
+  const [bodyPreset, setBodyPreset] = useState<FontPresetId>('inter')
+  const [monoPreset, setMonoPreset] = useState<FontPresetId>('jetbrains_mono')
+  const [contentPreset, setContentPreset] = useState<FontPresetId>('inter')
+  const [sizePx, setSizePx] = useState(14)
   const [scalePreset, setScalePreset] = useState<'compact' | 'comfortable' | 'spacious'>('comfortable')
-  const [lineHeight, setLineHeight] = useState(1.6)
+  const [lineHeight, setLineHeight] = useState(1.55)
   const [letterSpacingEm, setLetterSpacingEm] = useState(0)
   const [weightRegular, setWeightRegular] = useState(400)
   const [weightMedium, setWeightMedium] = useState(500)

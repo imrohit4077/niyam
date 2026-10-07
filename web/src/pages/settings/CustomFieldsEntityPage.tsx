@@ -2,6 +2,7 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useAuth } from '../../auth/AuthContext'
 import { useToast } from '../../contexts/ToastContext'
+import { EmptyState } from '../../components/EmptyState'
 import {
   customAttributesApi,
   type CustomAttributeDefinition,
@@ -205,10 +206,16 @@ export default function CustomFieldsEntityPage({ entityType }: { entityType: Cus
         </div>
       ) : rows.length === 0 ? (
         <div className="esign-templates-empty esign-templates-empty--compact">
-          <p>No attributes yet for this scope.</p>
-          <button type="button" className="btn-primary btn-primary--inline" onClick={openCreate}>
-            Create your first attribute
-          </button>
+          <EmptyState
+            icon="fields"
+            title="No custom fields yet"
+            text="Add typed fields to capture the extra data your team needs."
+            actions={
+              <button type="button" className="btn-primary btn-primary--inline" onClick={openCreate}>
+                Create your first field
+              </button>
+            }
+          />
         </div>
       ) : (
         <section className="esign-pro-card">

@@ -13,6 +13,8 @@ import {
 } from '../api/referrals'
 import { jobsApi, type Job } from '../api/jobs'
 import type { Application } from '../api/applications'
+import { Icon } from '../icons'
+import { EmptyState, LoadingState } from '../components/EmptyState'
 import './ReferralsHubPage.css'
 
 type TabId = 'open_jobs' | 'my' | 'leaderboard' | 'admin_upcoming' | 'admin_past' | 'admin_claimed'
@@ -124,21 +126,19 @@ export default function ReferralsHubPage() {
 
   return (
     <div className="referrals-hub">
-      <header className="page-header">
-        <h1 className="page-title">Referrals</h1>
-        <p className="page-header-lead">
-          {isAdmin
-            ? 'Employees use Open roles to copy links. As admin, use the Team views to monitor generated links, pipeline, closed applications, and claimed bonuses.'
-            : 'Browse open roles and copy your personal referral link for each job, then track candidates and leaderboard activity.'}
-        </p>
-      </header>
+      <p className="referrals-intro">
+        <Icon name="info" size={15} />
+        {isAdmin
+          ? 'Employees use Open roles to copy links. As admin, use the Team views to monitor generated links, pipeline, closed applications, and claimed bonuses.'
+          : 'Browse open roles and copy your personal referral link for each job, then track candidates and leaderboard activity.'}
+      </p>
 
-      <div className="referrals-tabs" role="tablist">
+      <div className="referrals-tabs jobs-hub-subnav" role="tablist">
         <button
           type="button"
           role="tab"
           aria-selected={tab === 'open_jobs'}
-          className={tab === 'open_jobs' ? 'referrals-tab referrals-tab--active' : 'referrals-tab'}
+          className={tab === 'open_jobs' ? 'referrals-tab jobs-hub-subnav-link jobs-hub-subnav-link--active' : 'referrals-tab jobs-hub-subnav-link'}
           onClick={() => setTab('open_jobs')}
         >
           Open roles
@@ -147,7 +147,7 @@ export default function ReferralsHubPage() {
           type="button"
           role="tab"
           aria-selected={tab === 'my'}
-          className={tab === 'my' ? 'referrals-tab referrals-tab--active' : 'referrals-tab'}
+          className={tab === 'my' ? 'referrals-tab jobs-hub-subnav-link jobs-hub-subnav-link--active' : 'referrals-tab jobs-hub-subnav-link'}
           onClick={() => setTab('my')}
         >
           My referrals
@@ -156,7 +156,7 @@ export default function ReferralsHubPage() {
           type="button"
           role="tab"
           aria-selected={tab === 'leaderboard'}
-          className={tab === 'leaderboard' ? 'referrals-tab referrals-tab--active' : 'referrals-tab'}
+          className={tab === 'leaderboard' ? 'referrals-tab jobs-hub-subnav-link jobs-hub-subnav-link--active' : 'referrals-tab jobs-hub-subnav-link'}
           onClick={() => setTab('leaderboard')}
         >
           Leaderboard
@@ -167,7 +167,7 @@ export default function ReferralsHubPage() {
               type="button"
               role="tab"
               aria-selected={tab === 'admin_upcoming'}
-              className={tab === 'admin_upcoming' ? 'referrals-tab referrals-tab--active' : 'referrals-tab'}
+              className={tab === 'admin_upcoming' ? 'referrals-tab jobs-hub-subnav-link jobs-hub-subnav-link--active' : 'referrals-tab jobs-hub-subnav-link'}
               onClick={() => setTab('admin_upcoming')}
             >
               Team · Upcoming
@@ -176,7 +176,7 @@ export default function ReferralsHubPage() {
               type="button"
               role="tab"
               aria-selected={tab === 'admin_past'}
-              className={tab === 'admin_past' ? 'referrals-tab referrals-tab--active' : 'referrals-tab'}
+              className={tab === 'admin_past' ? 'referrals-tab jobs-hub-subnav-link jobs-hub-subnav-link--active' : 'referrals-tab jobs-hub-subnav-link'}
               onClick={() => setTab('admin_past')}
             >
               Team · Past
@@ -185,7 +185,7 @@ export default function ReferralsHubPage() {
               type="button"
               role="tab"
               aria-selected={tab === 'admin_claimed'}
-              className={tab === 'admin_claimed' ? 'referrals-tab referrals-tab--active' : 'referrals-tab'}
+              className={tab === 'admin_claimed' ? 'referrals-tab jobs-hub-subnav-link jobs-hub-subnav-link--active' : 'referrals-tab jobs-hub-subnav-link'}
               onClick={() => setTab('admin_claimed')}
             >
               Team · Claimed
@@ -195,7 +195,9 @@ export default function ReferralsHubPage() {
       </div>
 
       {loading ? (
-        <p className="text-muted">Loading…</p>
+        <div className="referrals-panel">
+          <LoadingState rows={3} />
+        </div>
       ) : (
         <>
           {tab === 'open_jobs' && (
@@ -205,7 +207,7 @@ export default function ReferralsHubPage() {
                 attributed as your referral. Bonus rules are set per job in the job editor (Employee referrals step).
               </p>
               {openJobs.length === 0 ? (
-                <p className="text-muted">There are no open jobs right now. Check back when recruiting publishes a role.</p>
+                <EmptyState icon="jobs" title="No open roles right now" text="Check back when recruiting publishes a role — every open job gets a unique referral link for you." />
               ) : (
                 <table className="referrals-table">
                   <thead>
@@ -260,9 +262,15 @@ export default function ReferralsHubPage() {
           {tab === 'my' && (
             <div className="referrals-panel">
               {myRows.length === 0 ? (
-                <p className="text-muted">
-                  You haven’t referred anyone yet. Use the <strong>Open roles</strong> tab to copy your link for each job.
-                </p>
+                <EmptyState
+                  icon="referrals"
+                  title="No referrals yet"
+                  text={
+                    <>
+                      Use the <strong>Open roles</strong> tab to copy your link for each job.
+                    </>
+                  }
+                />
               ) : (
                 <table className="referrals-table">
                   <thead>
@@ -297,7 +305,7 @@ export default function ReferralsHubPage() {
           {tab === 'leaderboard' && (
             <div className="referrals-panel">
               {board.length === 0 ? (
-                <p className="text-muted">No referral activity yet.</p>
+                <EmptyState icon="trophy" title="Leaderboard is empty" text="Top referrers show up here once referrals start coming in." />
               ) : (
                 <table className="referrals-table">
                   <thead>

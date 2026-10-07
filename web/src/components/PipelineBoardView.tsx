@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useId } from 'react'
 import { useNavigate, useOutletContext, useSearchParams } from 'react-router-dom'
+import { Icon, Icon3D } from '../icons'
+import { EmptyState } from './EmptyState'
 import type { DashboardOutletContext } from '../layouts/DashboardOutletContext'
 import {
   DndContext,
@@ -59,9 +61,7 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
         <div className="modal-header">
           <span className="modal-title">{title}</span>
           <button type="button" className="modal-close" onClick={onClose} aria-label="Close">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-              <path d="M4 4l8 8M12 4l-8 8" />
-            </svg>
+            <Icon name="x" size={18} />
           </button>
         </div>
         <div className="modal-body">{children}</div>
@@ -217,9 +217,7 @@ function KanbanCard({ app, accountId }: { app: Application; accountId: string })
           aria-label={`Drag to move ${app.candidate_name || app.candidate_email}`}
           title="Drag to move"
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-            <path d="M8 6a2 2 0 11-4 0 2 2 0 014 0zm0 6a2 2 0 11-4 0 2 2 0 014 0zm0 6a2 2 0 11-4 0 2 2 0 014 0zm6-12a2 2 0 11-4 0 2 2 0 014 0zm0 6a2 2 0 11-4 0 2 2 0 014 0zm0 6a2 2 0 11-4 0 2 2 0 014 0z" />
-          </svg>
+          <Icon name="drag" size={14} />
         </button>
         <div
           className="kanban-card-main"
@@ -284,9 +282,7 @@ function KanbanCard({ app, accountId }: { app: Application; accountId: string })
             </div>
           </div>
           <span className="kanban-card-go" aria-hidden>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <path d="M9 18l6-6-6-6" />
-            </svg>
+            <Icon name="chevronRight" size={18} />
           </span>
         </div>
       </div>
@@ -910,6 +906,7 @@ export default function PipelineBoardView() {
 
       <div className={`pipeline-shell pipeline-shell--dashboard ${typeof jobId === 'number' ? 'pipeline-shell--has-job' : ''}`}>
         <header className="pipeline-head pipeline-head--dashboard">
+          <Icon3D name="pipeline" size={56} tile className="pipeline-head-icon" />
           <div className="pipeline-head-left">
             <span className="pipeline-head-kicker">Recruiting</span>
             <div className="pipeline-head-title-row">
@@ -1045,18 +1042,13 @@ export default function PipelineBoardView() {
                 <div className="pipeline-panel-actions">
                   {typeof jobId === 'number' && (
                     <button type="button" className="btn-pipeline-primary" onClick={() => setManageOpen(true)}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-                        <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
-                      </svg>
+                      <Icon name="edit" size={16} />
                       Edit stages
                     </button>
                   )}
                   {typeof jobId === 'number' && !loading && (
                     <button type="button" className="btn-pipeline-outline" onClick={() => loadJobData(jobId)} disabled={loading}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                        <path d="M21 12a9 9 0 11-2.64-6.36" strokeLinecap="round" />
-                        <path d="M21 3v7h-7" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
+                      <Icon name="refresh" size={16} />
                       Refresh
                     </button>
                   )}
@@ -1068,9 +1060,7 @@ export default function PipelineBoardView() {
               <div className="pipeline-filter-sheet-head">
                 <div className="pipeline-filter-head-left">
                   <span className="pipeline-filter-sheet-title">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                      <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
+                    <Icon name="funnel" size={16} />
                     Filters
                   </span>
                   <div className="pipeline-filter-pseudo-tabs" aria-hidden>
@@ -1091,9 +1081,7 @@ export default function PipelineBoardView() {
                     Search
                   </label>
                   <div className="pipeline-search">
-                    <svg className="pipeline-search-icon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-                      <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
-                    </svg>
+                    <Icon name="search" size={17} className="pipeline-search-icon" />
                     <input
                       id="pipe-q"
                       type="search"
@@ -1315,24 +1303,55 @@ export default function PipelineBoardView() {
           )}
             </div>
 
+          </div>
+
+            {typeof jobId === 'number' && (
+              <aside className="pipeline-activity-rail" aria-label="Recent activity">
+                <div className="pipeline-activity-rail-inner">
+                  <h3 className="pipeline-activity-title">Recent activity</h3>
+                  {recentActivity.length === 0 ? (
+                    <p className="pipeline-activity-empty">
+                      Stage moves and updates will appear here from each candidate&apos;s history.
+                    </p>
+                  ) : (
+                    <ul className="pipeline-activity-list">
+                      {recentActivity.map(row => (
+                        <li key={row.id} className="pipeline-activity-item">
+                          <div className="pipeline-activity-avatar" aria-hidden>
+                            {candidateInitials(row.title, row.title.includes('@') ? row.title : `${row.title}@x.dev`)}
+                          </div>
+                          <div className="pipeline-activity-body">
+                            <div className="pipeline-activity-name">{row.title}</div>
+                            <div className="pipeline-activity-detail">{row.sub}</div>
+                            <time className="pipeline-activity-time" dateTime={row.at}>
+                              {formatRelativeTime(row.at)}
+                            </time>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </aside>
+            )}
+        </div>
+
       {typeof jobId !== 'number' && (
         <div className="pipeline-placeholder pipeline-placeholder-rich">
-          <div className="pipeline-placeholder-icon" aria-hidden>
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.25">
-              <rect x="3" y="4" width="6" height="16" rx="1" />
-              <rect x="11" y="4" width="6" height="16" rx="1" />
-              <rect x="19" y="8" width="2" height="8" rx="0.5" />
-            </svg>
-          </div>
-          <h3 className="pipeline-placeholder-title">Choose a job</h3>
-          <p>Select a position above to load its pipeline, stages, and candidates.</p>
+          <EmptyState
+            icon="pipeline"
+            size={96}
+            title="Choose a job to open its board"
+            text="Select a position above to load its pipeline, stages and candidates."
+          />
         </div>
       )}
 
       {typeof jobId === 'number' && loading && (
-        <div className="list-loading">
-          <div className="spinner" style={{ width: 28, height: 28 }} />
-          Loading pipeline…
+        <div className="pipeline-loading-board" aria-label="Loading pipeline">
+          {Array.from({ length: 4 }, (_, i) => (
+            <div key={i} className="nx-skeleton pipeline-loading-col" />
+          ))}
         </div>
       )}
 
@@ -1340,10 +1359,16 @@ export default function PipelineBoardView() {
 
       {typeof jobId === 'number' && !loading && !err && stages.length === 0 && (
         <div className="pipeline-placeholder pipeline-placeholder-rich">
-          <h3 className="pipeline-placeholder-title">Build your pipeline</h3>
-          <p>
-            No stages for this job yet. Open <strong>Edit stages</strong> to add columns such as Screening, Interview, and Offer.
-          </p>
+          <EmptyState
+            icon="stages"
+            size={88}
+            title="Build your pipeline"
+            text={
+              <>
+                No stages for this job yet. Open <strong>Edit stages</strong> to add columns such as Screening, Interview and Offer.
+              </>
+            }
+          />
         </div>
       )}
 
@@ -1386,9 +1411,7 @@ export default function PipelineBoardView() {
             {activeApp ? (
               <div className="kanban-card kanban-card-overlay">
                 <div className="kanban-drag-handle kanban-drag-handle-static" aria-hidden>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M8 6a2 2 0 11-4 0 2 2 0 014 0zm0 6a2 2 0 11-4 0 2 2 0 014 0zm0 6a2 2 0 11-4 0 2 2 0 014 0zm6-12a2 2 0 11-4 0 2 2 0 014 0zm0 6a2 2 0 11-4 0 2 2 0 014 0zm0 6a2 2 0 11-4 0 2 2 0 014 0z" />
-                  </svg>
+                  <Icon name="drag" size={14} />
                 </div>
                 <div className="kanban-card-main kanban-card-main--static">
                   <div className="kanban-card-avatar" aria-hidden>
@@ -1405,38 +1428,6 @@ export default function PipelineBoardView() {
         </DndContext>
         </div>
       )}
-          </div>
-
-            {typeof jobId === 'number' && (
-              <aside className="pipeline-activity-rail" aria-label="Recent activity">
-                <div className="pipeline-activity-rail-inner">
-                  <h3 className="pipeline-activity-title">Recent activity</h3>
-                  {recentActivity.length === 0 ? (
-                    <p className="pipeline-activity-empty">
-                      Stage moves and updates will appear here from each candidate&apos;s history.
-                    </p>
-                  ) : (
-                    <ul className="pipeline-activity-list">
-                      {recentActivity.map(row => (
-                        <li key={row.id} className="pipeline-activity-item">
-                          <div className="pipeline-activity-avatar" aria-hidden>
-                            {candidateInitials(row.title, row.title.includes('@') ? row.title : `${row.title}@x.dev`)}
-                          </div>
-                          <div className="pipeline-activity-body">
-                            <div className="pipeline-activity-name">{row.title}</div>
-                            <div className="pipeline-activity-detail">{row.sub}</div>
-                            <time className="pipeline-activity-time" dateTime={row.at}>
-                              {formatRelativeTime(row.at)}
-                            </time>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              </aside>
-            )}
-        </div>
       </div>
     </>
   )

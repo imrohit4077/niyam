@@ -285,6 +285,13 @@ Config: `config/database.yml` (per-env). `APP_ENV` (default `development`) selec
 - **API calls:** All in `web/src/api/` — use fetch with Bearer token from localStorage/context
 - **Rich text:** TipTap editor for job descriptions and e-sign template bodies
 - **Drag-and-drop:** `@dnd-kit` for pipeline stage kanban reordering
+- **Icons:** import from `web/src/icons` only — never inline `<svg>` icons in pages.
+  - `<Icon name="jobs" />` — line glyph for dense UI (nav, buttons, tables). Glyphs live in `icons/glyphs.tsx`.
+  - `<Icon3D name="jobs" tile />` — glossy 3D render (page headers, KPIs, empty states). Models are procedural three.js in `icons/three/models.ts`, rendered once by a shared offscreen renderer and cached; bump `MODEL_VERSION` in `icons/three/meta.ts` after changing a model.
+  - `<Hero3D />` — lazy React Three Fiber scene for hero areas (login, overview).
+  - Dev catalogue of every icon: `/account/:id/dev/icons` (development builds only).
+- **Styling layers** (imported in `App.tsx`, in order): `styles/tokens.css` (design tokens; legacy `--navy/--teal/--gray-*` are aliases) → `App.css` (legacy per-page rules) → `styles/shell.css` (sidebar, header, login) → `styles/primitives.css` (buttons, fields, cards, tables, tags, modals) → `styles/sections.css` (per-feature polish). Use tokens, not raw hex.
+- **Shared UI:** `components/PageHeader.tsx` (3D icon + title + actions), `components/EmptyState.tsx` (`EmptyState`, `LoadingState`). Per-route titles/icons live in `constants/routeMeta.ts`.
 
 Key frontend routes (URL → page):
 ```

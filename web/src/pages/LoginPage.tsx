@@ -1,14 +1,20 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
-import Header from '../components/Header'
-import Footer from '../components/Footer'
 import { useToast } from '../contexts/ToastContext'
 import { useAuth } from '../auth/AuthContext'
+import { Hero3D, Icon, Icon3D } from '../icons'
+
+const HIGHLIGHTS = [
+  { icon: 'pipeline', text: 'Structured pipelines with drag-and-drop stages' },
+  { icon: 'interviews', text: 'Scorecards, interview kits and feedback in one place' },
+  { icon: 'signature', text: 'Offers out the door with built-in e-signature' },
+] as const
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const toast = useToast()
   const { signIn, loading, error, user } = useAuth()
   const navigate = useNavigate()
@@ -33,19 +39,51 @@ export default function LoginPage() {
 
   return (
     <div className="auth-page">
-      <Header variant="auth" />
+      <section className="auth-showcase" aria-hidden>
+        <div className="auth-showcase-brand">
+          <Icon3D name="brand" size={40} />
+          <span className="auth-showcase-name">Niyam</span>
+        </div>
 
-      <div className="auth-body">
+        <Hero3D
+          className="auth-showcase-scene"
+          centerScale={1.35}
+          satellites={[
+            { name: 'jobs', position: [-0.78, 0.62, -0.4], scale: 0.55 },
+            { name: 'candidates', position: [0.8, 0.7, -0.6], scale: 0.55 },
+            { name: 'interviews', position: [-0.74, -0.6, 0.2], scale: 0.5 },
+            { name: 'trophy', position: [0.76, -0.56, 0.1], scale: 0.52 },
+          ]}
+        />
+
+        <div className="auth-showcase-copy">
+          <h2>Hire with structure, not spreadsheets.</h2>
+          <ul className="auth-highlights">
+            {HIGHLIGHTS.map(h => (
+              <li key={h.icon}>
+                <span className="auth-highlight-icon">
+                  <Icon name={h.icon} size={16} />
+                </span>
+                {h.text}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      <section className="auth-panel">
         <div className="auth-card">
-          <div className="auth-card-header">
-            <h1>Sign in to Niyam</h1>
-            <p>Enter your credentials to access your workspace</p>
+          <div className="auth-card-head">
+            <Icon3D name="brand" size={56} className="auth-card-logo" />
+            <h1>Welcome back</h1>
+            <p>Sign in to your Niyam workspace</p>
           </div>
 
-          <div className="auth-card-body">
-            <form onSubmit={handleSubmit} noValidate>
-              <div className="field">
-                <label htmlFor="email">Email address</label>
+          <form onSubmit={handleSubmit} noValidate className="auth-form">
+            <div className="field">
+              <label htmlFor="email">Work email</label>
+              <div className="field-control">
+                <Icon name="mail" size={16} className="field-icon" />
                 <input
                   id="email"
                   type="email"
@@ -57,12 +95,15 @@ export default function LoginPage() {
                   disabled={loading}
                 />
               </div>
+            </div>
 
-              <div className="field">
-                <label htmlFor="password">Password</label>
+            <div className="field">
+              <label htmlFor="password">Password</label>
+              <div className="field-control">
+                <Icon name="lock" size={16} className="field-icon" />
                 <input
                   id="password"
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   autoComplete="current-password"
                   required
                   placeholder="Enter your password"
@@ -70,35 +111,44 @@ export default function LoginPage() {
                   onChange={e => setPassword(e.target.value)}
                   disabled={loading}
                 />
+                <button
+                  type="button"
+                  className="field-adornment-btn"
+                  onClick={() => setShowPassword(v => !v)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  <Icon name="eye" size={16} />
+                </button>
               </div>
-
-              {error && (
-                <div className="auth-error" role="alert">
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-                    <circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.2" />
-                    <path d="M7 4.5v3M7 9.5v.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-                  </svg>
-                  {error}
-                </div>
-              )}
-
-              <button
-                type="submit"
-                className="btn-primary"
-                disabled={loading || !email || !password}
-              >
-                {loading ? 'Signing in...' : 'Sign in'}
-              </button>
-            </form>
-
-            <div className="auth-hint">
-              Demo account: <code>admin@example.com</code> / <code>password123</code>
             </div>
+
+            {error && (
+              <div className="auth-error" role="alert">
+                <Icon name="alert" size={15} />
+                {error}
+              </div>
+            )}
+
+            <button type="submit" className="btn-primary auth-submit" disabled={loading || !email || !password}>
+              {loading ? (
+                <>
+                  <span className="btn-spinner" aria-hidden /> Signing in…
+                </>
+              ) : (
+                <>
+                  Sign in <Icon name="arrowRight" size={16} strokeWidth={2} />
+                </>
+              )}
+            </button>
+          </form>
+
+          <div className="auth-hint">
+            <Icon name="sparkle" size={14} />
+            Demo account: <code>admin@example.com</code> / <code>password123</code>
           </div>
         </div>
-      </div>
-
-      <Footer />
+        <p className="auth-legal">© {new Date().getFullYear()} Niyam · Hiring OS</p>
+      </section>
     </div>
   )
 }

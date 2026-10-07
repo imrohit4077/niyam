@@ -1,4 +1,4 @@
-# Niyam — database configuration (YAML per environment).
+# Niyam — database configuration (copy to database.yml).
 # Copy to database.yml and set adapter, host, database, username, password per environment.
 # Environment is selected by APP_ENV (development, test, production).
 #
@@ -14,7 +14,7 @@ default: &default
 
 development:
   <<: *default
-  database: myapp_development_1
+  database: myapp_development
   username: postgres
   password: postgres
   host: localhost

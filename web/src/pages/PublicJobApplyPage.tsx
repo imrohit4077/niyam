@@ -2,13 +2,13 @@ import { useEffect, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { publicApplyApi, type PublicJobApplyPayload } from '../api/publicApply'
 import CustomAttributeFields from '../components/CustomAttributeFields'
-import NiyamLogo from '../components/NiyamLogo'
+import { Icon3D } from '../icons'
 import './PublicJobApplyPage.css'
 
 function ApplyPageBrand() {
   return (
     <span className="public-apply-brand">
-      <NiyamLogo width={28} height={28} alt="" />
+      <Icon3D name="brand" size={30} />
       Niyam
     </span>
   )

@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate, useOutletContext, useParams } from 'react-router-dom'
+import { Icon } from '../icons'
+import { EmptyState, LoadingState } from '../components/EmptyState'
 import { roleKickoffApi, type RoleKickoffRequestRow } from '../api/roleKickoff'
 import type { DashboardOutletContext } from '../layouts/DashboardOutletContext'
 import { can } from '../permissions'
@@ -78,7 +80,7 @@ export default function RoleKickoffHubPage() {
   if (!showMy && !showQueue) {
     return (
       <div className="role-kickoff-page">
-        <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>You do not have access to role kickoff.</p>
+        <EmptyState icon="lock" title="No access" text="You do not have access to role kickoff." />
       </div>
     )
   }
@@ -86,30 +88,33 @@ export default function RoleKickoffHubPage() {
   return (
     <div className="role-kickoff-page">
       <header className="role-kickoff-page-header">
-        <h1 className="role-kickoff-page-title">Role kickoff</h1>
+        <h2 className="role-kickoff-page-title">Requests</h2>
         {showMy ? (
           <button type="button" className="btn-jobs-primary" onClick={() => navigate(`${base}/new`)}>
-            + Create role kickoff request
+            <Icon name="plus" size={16} strokeWidth={2.2} /> New kickoff request
           </button>
         ) : null}
       </header>
 
       {err ? (
-        <div className="panel-row-value" style={{ color: 'var(--error)', marginBottom: 16 }}>
+        <div className="nx-alert nx-alert--error" role="alert">
+          <Icon name="alert" size={16} />
           {err}
         </div>
       ) : null}
 
       {loading ? (
-        <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>
-          <div className="spinner" style={{ margin: '0 auto 12px' }} aria-label="Loading" />
-          Loading…
+        <div className="list-table">
+          <LoadingState rows={3} />
         </div>
       ) : null}
 
       {!loading && showQueue ? (
         <>
-          <h2 className="role-kickoff-section-title">Assigned to you (recruiter queue)</h2>
+          <h3 className="role-kickoff-section-title">
+            <Icon name="inbox" size={15} /> Assigned to you
+            <span className="role-kickoff-section-count">{queueRows.length}</span>
+          </h3>
           <div className="list-table">
             <div className="list-table-head">
               <div className="list-col list-col-main">Hiring manager</div>
@@ -118,11 +123,7 @@ export default function RoleKickoffHubPage() {
               <div className="list-col">Status</div>
             </div>
             {queueRows.length === 0 ? (
-              <div className="list-row">
-                <div className="list-col" style={{ gridColumn: '1 / -1', padding: '24px', color: 'var(--text-muted)' }}>
-                  No requests in your queue.
-                </div>
-              </div>
+              <EmptyState icon="inbox" size={56} title="Your queue is clear" text="Kickoff requests assigned to you as recruiter will land here." />
             ) : (
               queueRows.map(row => (
                 <Link key={row.id} to={`${base}/${row.id}`} className="list-row">
@@ -144,7 +145,10 @@ export default function RoleKickoffHubPage() {
 
       {!loading && showMy ? (
         <>
-          <h2 className="role-kickoff-section-title">Your requests</h2>
+          <h3 className="role-kickoff-section-title">
+            <Icon name="kickoff" size={15} /> Your requests
+            <span className="role-kickoff-section-count">{myRows.length}</span>
+          </h3>
           <div className="list-table">
             <div className="list-table-head">
               <div className="list-col list-col-main">Job title</div>
@@ -153,11 +157,12 @@ export default function RoleKickoffHubPage() {
               <div className="list-col">Status</div>
             </div>
             {myRows.length === 0 ? (
-              <div className="list-row">
-                <div className="list-col" style={{ gridColumn: '1 / -1', padding: '24px', color: 'var(--text-muted)' }}>
-                  You have not submitted a role kickoff yet.
-                </div>
-              </div>
+              <EmptyState
+                icon="kickoff"
+                size={56}
+                title="No kickoff requests yet"
+                text="Start a kickoff to align with your recruiter on scope, budget and pipeline before the role opens."
+              />
             ) : (
               myRows.map(row => (
                 <Link key={row.id} to={`${base}/${row.id}`} className="list-row">

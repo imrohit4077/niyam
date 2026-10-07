@@ -16,6 +16,8 @@ import CustomAttributeFields from './CustomAttributeFields'
 import { customAttributesApi, type CustomAttributeDefinition } from '../api/customAttributes'
 import { getOrganizationSettings, type OrganizationSettings } from '../api/accountOrganization'
 import { fetchCountriesCatalog, type CountryRow } from '../api/reference'
+import { Icon, type IconName, type Model3DName } from '../icons'
+import { EmptyState, LoadingState } from './EmptyState'
 
 function normalizeOrgSettings(row: OrganizationSettings): OrganizationSettings {
   return {
@@ -28,27 +30,30 @@ function normalizeOrgSettings(row: OrganizationSettings): OrganizationSettings {
 
 // ── Shared UI primitives ───────────────────────────────────────────
 
-function PanelIcon({ type }: { type: 'user' | 'building' | 'shield' | 'clock' | 'briefcase' | 'document' | 'people' | 'calendar' | 'team' | 'gear' }) {
-  const paths: Record<string, string> = {
-    user:      'M12 12a5 5 0 100-10 5 5 0 000 10zm-7 8a7 7 0 0114 0H5z',
-    building:  'M3 21V7l9-4 9 4v14H3zm6-2h6v-4H9v4zm0-6h2V9H9v4zm4 0h2V9h-2v4z',
-    shield:    'M12 2L4 5v6c0 5.25 3.5 10.15 8 11.35C16.5 21.15 20 16.25 20 11V5l-8-3z',
-    clock:     'M12 2a10 10 0 100 20A10 10 0 0012 2zm1 11H7v-2h4V7h2v6z',
-    briefcase: 'M20 7h-4V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2H4a2 2 0 00-2 2v11a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2zm-10-2h4v2h-4V5zm10 14H4V9h16v10z',
-    document:  'M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm-1 1.5L18.5 9H13V3.5zM6 20V4h5v7h7v9H6z',
-    people:    'M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z',
-    calendar:  'M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2zm0 16H5V9h14v11zM7 11h2v2H7zm4 0h2v2h-2zm4 0h2v2h-2z',
-    team:      'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z',
-    gear:      'M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.49.49 0 00-.59-.22l-2.39.96a7.02 7.02 0 00-1.62-.94l-.36-2.54A.484.484 0 0014 2h-4a.484.484 0 00-.48.41l-.36 2.54a7.4 7.4 0 00-1.62.94l-2.39-.96a.48.48 0 00-.59.22L2.74 8.87a.47.47 0 00.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.47.47 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.36 1.04.67 1.62.94l.36 2.54c.05.24.27.41.48.41h4c.24 0 .44-.17.47-.41l.36-2.54a7.4 7.4 0 001.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.47.47 0 00-.12-.61l-2.01-1.58zM12 15.6a3.6 3.6 0 110-7.2 3.6 3.6 0 010 7.2z',
-  }
+type PanelIconType = 'user' | 'building' | 'shield' | 'clock' | 'briefcase' | 'document' | 'people' | 'calendar' | 'team' | 'gear'
+
+const PANEL_ICONS: Record<PanelIconType, IconName> = {
+  user: 'profile',
+  building: 'building',
+  shield: 'shieldCheck',
+  clock: 'clock',
+  briefcase: 'jobs',
+  document: 'applications',
+  people: 'candidates',
+  calendar: 'interviews',
+  team: 'team',
+  gear: 'settings',
+}
+
+function PanelIcon({ type }: { type: PanelIconType }) {
   return (
-    <svg className="panel-header-icon" width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d={paths[type]} />
-    </svg>
+    <span className="panel-header-icon">
+      <Icon name={PANEL_ICONS[type]} size={15} />
+    </span>
   )
 }
 
-function Panel({ icon, title, children }: { icon: Parameters<typeof PanelIcon>[0]['type']; title: string; children: React.ReactNode }) {
+function Panel({ icon, title, children }: { icon: PanelIconType; title: string; children: React.ReactNode }) {
   return (
     <div className="panel">
       <div className="panel-header"><PanelIcon type={icon} /><span className="panel-header-title">{title}</span></div>
@@ -73,34 +78,31 @@ function ListHeader({ title, count, onAction, actionLabel = '+ New' }: { title: 
         <span className="list-header-title">{title}</span>
         <span className="list-header-count">{count}</span>
       </div>
-      {onAction && <button className="btn-action" onClick={onAction}>{actionLabel}</button>}
+      {onAction && (
+        <button type="button" className="btn-primary btn-primary--inline list-header-action" onClick={onAction}>
+          <Icon name="plus" size={16} strokeWidth={2.2} />
+          {actionLabel.replace(/^\+\s*/, '')}
+        </button>
+      )}
     </div>
   )
 }
 
 function LoadingRow() {
-  return (
-    <div style={{ padding: '32px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
-      <div className="spinner" style={{ margin: '0 auto 8px', width: 24, height: 24 }} />
-      Loading...
-    </div>
-  )
+  return <LoadingState />
 }
 
 function ErrorRow({ msg }: { msg: string }) {
-  return <div style={{ padding: '16px 20px', color: 'var(--error)', fontSize: 13, background: 'var(--error-bg)', borderBottom: '1px solid var(--error-border)' }}>{msg}</div>
-}
-
-function EmptyRow({ text }: { text: string }) {
   return (
-    <div style={{ padding: '48px 24px', textAlign: 'center' }}>
-      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--gray-300)" strokeWidth="1.5" style={{ marginBottom: 12 }}>
-        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" />
-        <path d="M14 2v6h6M12 18v-6M9 15h6" />
-      </svg>
-      <div style={{ fontSize: 14, color: 'var(--text-muted)' }}>{text}</div>
+    <div className="nx-alert nx-alert--error" role="alert">
+      <Icon name="alert" size={16} />
+      {msg}
     </div>
   )
+}
+
+function EmptyRow({ text, icon = 'inbox', title = 'Nothing here yet' }: { text: string; icon?: Model3DName; title?: string }) {
+  return <EmptyState icon={icon} title={title} text={text} />
 }
 
 const STAGE_COLORS: Record<string, string> = {
@@ -229,9 +231,7 @@ function ConfirmDialog({ title, message, onConfirm, onCancel }: {
     <div className="confirm-overlay" onClick={onCancel}>
       <div className="confirm-dialog" onClick={e => e.stopPropagation()}>
         <div className="confirm-icon">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-          </svg>
+          <Icon name="alert" size={24} />
         </div>
         <div className="confirm-title">{title}</div>
         <div className="confirm-message">{message}</div>
@@ -253,9 +253,7 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
         <div className="modal-header">
           <span className="modal-title">{title}</span>
           <button className="modal-close" onClick={onClose} aria-label="Close">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-              <path d="M4 4l8 8M12 4l-8 8" />
-            </svg>
+            <Icon name="x" size={18} />
           </button>
         </div>
         <div className="modal-body">{children}</div>
@@ -314,101 +312,47 @@ export function ProfileView() {
 // ── Jobs view ──────────────────────────────────────────────────────
 
 function JobIconPencil() {
-  return (
-    <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden>
-      <path
-        d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  )
+  return <Icon name="edit" size={17} />
 }
 function JobIconExternal() {
-  return (
-    <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden>
-      <path d="M18 13v6a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
+  return <Icon name="external" size={17} />
 }
 function JobIconCopy() {
-  return (
-    <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden>
-      <rect x={9} y={9} width={13} height={13} rx={2} />
-      <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
+  return <Icon name="copy" size={17} />
 }
 function JobIconTrash() {
-  return (
-    <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden>
-      <path d="M4 7h16M10 11v6M14 11v6M6 7l1-3h10l1 3M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
+  return <Icon name="trash" size={17} />
 }
 
 type JobsViewMode = 'list' | 'grid' | 'table'
 const JOBS_VIEW_STORAGE_KEY = 'niyam_jobs_view_mode'
 
 function JobIconBriefcaseMini() {
-  return (
-    <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.65} aria-hidden>
-      <path
-        d="M20 7h-4V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2H4a2 2 0 00-2 2v11a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2zm-10-2h4v2h-4V5z"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  )
+  return <Icon name="jobs" size={17} />
 }
 function JobIconBuildingMini() {
-  return (
-    <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.65} aria-hidden>
-      <path d="M3 21V7l9-4 9 4v14H3zm6-2h6v-4H9v4zm0-6h2V9H9v4zm4 0h2V9h-2v4z" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
+  return <Icon name="building" size={15} />
 }
 function JobIconPinMini() {
-  return (
-    <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.65} aria-hidden>
-      <path d="M12 21s7-4.5 7-11a7 7 0 10-14 0c0 6.5 7 11 7 11z" strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx={12} cy={10} r={2} />
-    </svg>
-  )
+  return <Icon name="location" size={15} />
 }
 function JobIconFilterSliders() {
-  return (
-    <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.65} aria-hidden>
-      <path d="M4 6h16M8 12h8M10 18h4" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
+  return <Icon name="sliders" size={16} />
 }
 function JobIconList() {
-  return (
-    <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.65} aria-hidden>
-      <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
+  return <Icon name="list" size={16} />
 }
 function JobIconGrid() {
-  return (
-    <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.65} aria-hidden>
-      <path d="M10 3H3v7h7V3zM21 3h-7v7h7V3zM21 14h-7v7h7v-7zM10 14H3v7h7v-7z" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
+  return <Icon name="grid" size={16} />
 }
 function JobIconTable() {
-  return (
-    <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.65} aria-hidden>
-      <path d="M3 5h18v2H3V5zm0 6h18v2H3v-2zm0 6h18v2H3v-2z" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
+  return <Icon name="table" size={16} />
 }
 
 function JobStatusBadge({ status }: { status: string }) {
   const cls = STAGE_COLORS[status] ?? 'tag-gray'
-  const label = status.replace(/_/g, ' ').toUpperCase()
-  return <span className={`job-status-badge tag ${cls}`}>{label}</span>
+  const label = status.replace(/_/g, ' ')
+  return <span className={`job-status-badge tag ${cls}`}>{label.charAt(0).toUpperCase() + label.slice(1)}</span>
 }
 
 function JobsJobActions({
@@ -693,18 +637,18 @@ export function JobsView(props: { jobsScope?: 'all' | 'mine' }) {
       <div className="jobs-page">
         <header className="jobs-page-header">
           <div className="jobs-page-header-row">
-            <h1 className="jobs-page-title">
-              {jobsScope === 'mine' ? 'My jobs' : 'Jobs'}{' '}
+            <h2 className="jobs-page-title">
+              {jobsScope === 'mine' ? 'My jobs' : 'All jobs'}
               <span className="jobs-page-count-pill" aria-live="polite">
-                ({visibleJobs.length})
+                {visibleJobs.length}
               </span>
-            </h1>
+            </h2>
             <button
               type="button"
               className="btn-jobs-primary"
               onClick={() => navigate(`/account/${accountId}/jobs/new`)}
             >
-              + New Job
+              <Icon name="plus" size={16} strokeWidth={2.2} /> New job
             </button>
           </div>
         </header>
@@ -712,10 +656,7 @@ export function JobsView(props: { jobsScope?: 'all' | 'mine' }) {
         <div className="jobs-toolbar" role="search" aria-label="Search and view options">
           <div className="jobs-toolbar-search-wrap">
             <span className="jobs-filter-icon" aria-hidden>
-              <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
-                <circle cx={11} cy={11} r={7} />
-                <path d="M20 20l-3-3" strokeLinecap="round" />
-              </svg>
+              <Icon name="search" size={17} />
             </span>
             <input
               type="search"
@@ -732,9 +673,7 @@ export function JobsView(props: { jobsScope?: 'all' | 'mine' }) {
                 onClick={() => setFilterQ('')}
                 aria-label="Clear search"
               >
-                <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
-                  <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" />
-                </svg>
+                <Icon name="x" size={16} />
               </button>
             ) : null}
           </div>
@@ -845,6 +784,8 @@ export function JobsView(props: { jobsScope?: 'all' | 'mine' }) {
         {!loading && !err && visibleJobs.length === 0 ? (
           <div className="jobs-panel-shell jobs-panel-shell--empty">
             <EmptyRow
+              icon="jobs"
+              title={debouncedQ || statusFilter || departmentFilter || locationFilter ? 'No matching jobs' : 'No jobs yet'}
               text={
                 debouncedQ || statusFilter || departmentFilter || locationFilter
                   ? 'No jobs match your filters. Try clearing filters or create a new job.'
@@ -1179,7 +1120,7 @@ export function JobBoardsView() {
         </div>
         {loading && <LoadingRow />}
         {err && <ErrorRow msg={err} />}
-        {!loading && !err && boards.length === 0 && <EmptyRow text="No boards yet. Add your first job board." />}
+        {!loading && !err && boards.length === 0 && <EmptyRow icon="boards" title="No job boards yet" text="Add your first job board to start publishing roles." />}
         {boards.map(b => (
           <div key={b.id} className="list-row">
             <div className="list-col list-col-main">
@@ -1435,7 +1376,7 @@ export function PostingsView() {
         </div>
         {loading && <LoadingRow />}
         {err && <ErrorRow msg={err} />}
-        {!loading && !err && postings.length === 0 && <EmptyRow text="No postings yet. Post your first job to a board." />}
+        {!loading && !err && postings.length === 0 && <EmptyRow icon="postings" title="No postings yet" text="Post your first job to a board to start attracting applicants." />}
         {postings.map(p => (
           <div key={p.id} className="list-row">
             <div className="list-col list-col-main"><div className="list-row-name">{jobs.find(j => j.id === p.job_id)?.title ?? `Job #${p.job_id}`}</div></div>
@@ -1672,7 +1613,7 @@ export function ApplicationsView() {
         </div>
         {loading && <LoadingRow />}
         {err && <ErrorRow msg={err} />}
-        {!loading && !err && apps.length === 0 && <EmptyRow text="No applications yet. Add your first application." />}
+        {!loading && !err && apps.length === 0 && <EmptyRow icon="applications" title="No applications yet" text="Applications from every job and channel will appear here." />}
         {apps.map(a => (
           <div key={a.id} className="list-row">
             <div className="list-col list-col-main">
@@ -1773,7 +1714,7 @@ export function CandidatesView() {
         </div>
         {loading && <LoadingRow />}
         {err && <ErrorRow msg={err} />}
-        {!loading && !err && apps.length === 0 && <EmptyRow text="No candidates yet." />}
+        {!loading && !err && apps.length === 0 && <EmptyRow icon="candidates" title="No candidates yet" text="Your talent pool grows as people apply or get referred." />}
         {apps.map(a => (
           <div key={a.id} className="list-row">
             <div className="list-col list-col-main">
@@ -2176,7 +2117,7 @@ export function InterviewsView() {
         </div>
         {loading && <LoadingRow />}
         {!loading && assignments.length === 0 && (
-          <EmptyRow text="No interview rounds yet. When candidates reach an interview stage, assignments appear here — claim an open slot or wait to be assigned." />
+          <EmptyRow icon="interviews" title="No interviews yet" text="When candidates reach an interview stage, assignments appear here — claim an open slot or wait to be assigned." />
         )}
         {assignments.map(row => (
           <div key={row.id} className="list-row">
@@ -2246,12 +2187,13 @@ export function InterviewsView() {
 
 export function TeamView() {
   return (
-    <div className="empty-view">
-      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--gray-300)" strokeWidth="1.5" style={{ marginBottom: 16 }}>
-        <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" />
-      </svg>
-      <div className="empty-view-title">Team Members</div>
-      <div className="empty-view-sub">Invite teammates to collaborate on your workspace. Manage roles and permissions from here.</div>
+    <div className="panel team-empty">
+      <EmptyState
+        icon="team"
+        size={112}
+        title="Bring your hiring team together"
+        text="Invite teammates to collaborate on your workspace. Manage roles and permissions from here."
+      />
     </div>
   )
 }

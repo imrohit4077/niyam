@@ -13,6 +13,8 @@
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
+    "@react-three/drei": "^10.7.9",
+    "@react-three/fiber": "^9.8.1",
     "@tiptap/extension-link": "^3.20.4",
     "@tiptap/extension-placeholder": "^3.20.4",
     "@tiptap/extension-youtube": "^3.20.4",
@@ -23,13 +25,15 @@
     "react": "^19.2.4",
     "react-chartjs-2": "^5.3.1",
     "react-dom": "^19.2.4",
-    "react-router-dom": "^7.13.1"
+    "react-router-dom": "^7.13.1",
+    "three": "^0.186.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
     "@types/node": "^24.12.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "@types/three": "^0.186.0",
     "@vitejs/plugin-react": "^6.0.0",
     "eslint": "^9.39.4",
     "eslint-plugin-react-hooks": "^7.0.1",

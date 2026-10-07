@@ -1,7 +1,7 @@
 .public-apply-page {
   min-height: 100vh;
-  background: linear-gradient(165deg, #f0f4f8 0%, #e8eef5 40%, #f8fafc 100%);
-  color: #0f1923;
+  background: var(--brand-glow), var(--canvas);
+  color: var(--ink-900);
 }
 
 .public-apply-header {
@@ -10,7 +10,7 @@
   justify-content: space-between;
   padding: 16px 24px;
   background: rgba(255, 255, 255, 0.85);
-  border-bottom: 1px solid rgba(15, 25, 35, 0.08);
+  border-bottom: 1px solid rgba(18, 22, 43, 0.08);
   backdrop-filter: blur(8px);
 }
 
@@ -21,7 +21,7 @@
   font-weight: 700;
   font-size: 15px;
   letter-spacing: -0.02em;
-  color: #0d9488;
+  color: var(--brand-600);
 }
 
 .public-apply-brand img {
@@ -31,12 +31,12 @@
 .public-apply-header-link {
   font-size: 13px;
   font-weight: 500;
-  color: #475569;
+  color: var(--n-600);
   text-decoration: none;
 }
 
 .public-apply-header-link:hover {
-  color: #0d9488;
+  color: var(--brand-600);
 }
 
 .public-apply-main {
@@ -55,15 +55,15 @@
 .public-apply-loading {
   padding: 80px 24px;
   text-align: center;
-  color: #64748b;
+  color: var(--n-500);
 }
 
 .public-apply-card {
   background: #fff;
   border-radius: 12px;
   padding: 24px 26px;
-  border: 1px solid rgba(15, 25, 35, 0.08);
-  box-shadow: 0 1px 3px rgba(15, 25, 35, 0.06);
+  border: 1px solid rgba(18, 22, 43, 0.08);
+  box-shadow: 0 1px 3px rgba(18, 22, 43, 0.06);
 }
 
 .public-apply-success .public-apply-title {
@@ -75,7 +75,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: #64748b;
+  color: var(--n-500);
   margin: 0 0 6px;
 }
 
@@ -95,13 +95,13 @@
   padding: 0;
   margin: 0 0 18px;
   font-size: 14px;
-  color: #475569;
+  color: var(--n-600);
 }
 
 .public-apply-meta li {
   padding-left: 10px;
   margin-left: 10px;
-  border-left: 1px solid #e2e8f0;
+  border-left: 1px solid var(--n-200);
 }
 
 .public-apply-meta li:first-child {
@@ -112,7 +112,7 @@
 
 .public-apply-meta-salary {
   font-weight: 600;
-  color: #0d9488;
+  color: var(--brand-600);
 }
 
 .public-apply-skills {
@@ -125,7 +125,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #94a3b8;
+  color: var(--n-400);
   margin-bottom: 8px;
 }
 
@@ -139,32 +139,32 @@
   font-size: 12px;
   padding: 4px 10px;
   border-radius: 999px;
-  background: #f1f5f9;
-  color: #475569;
+  background: var(--n-100);
+  color: var(--n-600);
 }
 
 .public-apply-tag-req {
-  background: #eff6ff;
-  color: #2563eb;
+  background: var(--brand-50);
+  color: var(--brand-600);
 }
 
 .public-apply-referral-note {
   font-size: 13px;
-  color: #475569;
+  color: var(--n-600);
   margin: 0 0 12px;
   line-height: 1.5;
 }
 
 .public-apply-referral-note code {
   font-size: 12px;
-  background: #f1f5f9;
+  background: var(--n-100);
   padding: 1px 6px;
   border-radius: 4px;
 }
 
 .public-apply-bonus {
   font-size: 14px;
-  color: #334155;
+  color: var(--n-700);
   margin: 0 0 16px;
   line-height: 1.5;
 }
@@ -172,7 +172,7 @@
 .public-apply-description {
   font-size: 15px;
   line-height: 1.65;
-  color: #334155;
+  color: var(--n-700);
 }
 
 .public-apply-description.rte-content p {
@@ -192,7 +192,7 @@
 
 .public-apply-muted {
   font-size: 14px;
-  color: #64748b;
+  color: var(--n-500);
   margin: 0 0 16px;
   line-height: 1.45;
 }
@@ -213,14 +213,14 @@
   gap: 6px;
   font-size: 13px;
   font-weight: 500;
-  color: #334155;
+  color: var(--n-700);
 }
 
 .public-apply-field input,
 .public-apply-field textarea {
   font: inherit;
   padding: 10px 12px;
-  border: 1px solid rgba(15, 25, 35, 0.12);
+  border: 1px solid rgba(18, 22, 43, 0.12);
   border-radius: 8px;
   background: #fff;
 }
@@ -228,8 +228,8 @@
 .public-apply-field input:focus,
 .public-apply-field textarea:focus {
   outline: none;
-  border-color: #0d9488;
-  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
+  border-color: var(--brand-600);
+  box-shadow: 0 0 0 3px rgba(65, 87, 255, 0.15);
 }
 
 .public-apply-submit {
@@ -238,14 +238,14 @@
   font-size: 15px;
   font-weight: 600;
   color: #fff;
-  background: #0d9488;
+  background: var(--brand-600);
   border: none;
   border-radius: 8px;
   cursor: pointer;
 }
 
 .public-apply-submit:hover:not(:disabled) {
-  background: #0f766e;
+  background: var(--brand-700);
 }
 
 .public-apply-submit:disabled {

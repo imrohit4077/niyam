@@ -1,3 +1,4 @@
+import { lazy } from 'react'
 import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation, useParams } from 'react-router-dom'
 import { ToastProvider } from './contexts/ToastContext'
 import { AppearanceProvider } from './contexts/AppearanceContext'
@@ -59,7 +60,14 @@ import {
   EsignManageOutlet,
 } from './components/PermissionGates'
 import { can, navItemVisible } from './permissions'
+import './styles/tokens.css'
 import './App.css'
+import './styles/shell.css'
+import './styles/primitives.css'
+import './styles/sections.css'
+
+/** Dev-only icon catalogue; compiled out of production builds. */
+const IconGalleryPage = import.meta.env.DEV ? lazy(() => import('./pages/dev/IconGalleryPage')) : null
 
 function Splash() {
   return (
@@ -142,6 +150,7 @@ function AppRoutes() {
           <Route element={<DashboardLayout />}>
             <Route index element={<Navigate to="profile" replace />} />
             <Route path="profile" element={<HomeDashboardPage />} />
+            {IconGalleryPage ? <Route path="dev/icons" element={<IconGalleryPage />} /> : null}
             <Route element={<GateOutlet test={u => can(u, 'hiring_structure', 'view')} />}>
               <Route path="structured-hiring">
                 <Route index element={<Navigate to="attributes" replace />} />

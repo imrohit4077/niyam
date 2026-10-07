@@ -8,6 +8,7 @@ import {
   type CreateChannelBody,
   type UpdateChannelBody,
 } from '../../api/communicationChannels'
+import { Icon } from '../../icons'
 
 type Provider = 'gmail' | 'outlook' | 'smtp'
 type AuthType = 'app_password' | 'oauth2'
@@ -306,7 +307,7 @@ export default function CommunicationChannelsEmailPage() {
       <div className="comm-channels-email-inner">
         <nav className="comm-channels-email-back">
           <Link to={hubPath} className="comm-channels-back-link">
-            ← Communication channels
+            <Icon name="arrowLeft" size={14} /> Communication channels
           </Link>
         </nav>
 

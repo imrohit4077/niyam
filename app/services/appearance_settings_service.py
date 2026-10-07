@@ -9,6 +9,7 @@ from app.services.base_service import BaseService
 # Preset id -> safe CSS font-family stack (first family must match a loaded Google Font when applicable)
 FONT_PRESETS: dict[str, str] = {
     "iosevka_charon_mono": "'Iosevka Charon Mono', ui-monospace, 'Cascadia Code', monospace",
+    "plus_jakarta_sans": "'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
     "jetbrains_mono": "'JetBrains Mono', ui-monospace, 'Cascadia Code', monospace",
     "source_code_pro": "'Source Code Pro', ui-monospace, 'Cascadia Code', monospace",
     "inter": "'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
@@ -22,11 +23,13 @@ FONT_PRESETS: dict[str, str] = {
     "merriweather": "'Merriweather', Georgia, 'Times New Roman', serif",
 }
 
-DEFAULT_FONT_PRESET = "iosevka_charon_mono"
-DEFAULT_FONT_SIZE_PX = 15
+DEFAULT_FONT_PRESET = "inter"
+DEFAULT_HEADING_FONT_PRESET = "plus_jakarta_sans"
+DEFAULT_MONO_FONT_PRESET = "jetbrains_mono"
+DEFAULT_FONT_SIZE_PX = 14
 MIN_FONT_SIZE = 12
 MAX_FONT_SIZE = 22
-DEFAULT_LINE_HEIGHT = 1.6
+DEFAULT_LINE_HEIGHT = 1.55
 DEFAULT_LETTER_SPACING_EM = 0.0
 DEFAULT_FONT_SCALE_PRESET = "comfortable"
 DEFAULT_WEIGHT_REGULAR = 400
@@ -56,9 +59,9 @@ def _to_float(raw: Any, fallback: float) -> float:
 
 def merged_appearance(account_settings: dict | None) -> dict[str, Any]:
     preset = DEFAULT_FONT_PRESET
-    heading_preset = DEFAULT_FONT_PRESET
+    heading_preset = DEFAULT_HEADING_FONT_PRESET
     body_preset = DEFAULT_FONT_PRESET
-    mono_preset = DEFAULT_FONT_PRESET
+    mono_preset = DEFAULT_MONO_FONT_PRESET
     ui_preset = DEFAULT_FONT_PRESET
     content_preset = DEFAULT_FONT_PRESET
     size = DEFAULT_FONT_SIZE_PX

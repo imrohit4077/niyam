@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate, useOutletContext, useParams } from 'react-router-dom'
+import { Icon, Icon3D } from '../icons'
 import type { DashboardOutletContext } from '../layouts/DashboardOutletContext'
 import { hiringAttributesApi, hiringStageTemplatesApi, type HiringAttributeRow } from '../api/hiringStructure'
 import { useToast } from '../contexts/ToastContext'
@@ -81,9 +82,10 @@ export default function HiringStageEditorPage() {
     return (
       <div className="role-kickoff-page role-kickoff-page--form rk-sh-page">
         <header className="rk-sh-page-head">
+          <Icon3D name="lock" size={56} tile className="rk-sh-page-icon" />
           <div className="rk-sh-page-head-main">
             <Link to={`${base}/stages`} className="rk-sh-back">
-              ← All stages
+              <Icon name="arrowLeft" size={14} /> All stages
             </Link>
             <p className="rk-sh-eyebrow">Structured hiring</p>
             <h1 className="rk-sh-title">No access</h1>
@@ -109,9 +111,10 @@ export default function HiringStageEditorPage() {
   return (
     <div className="role-kickoff-page role-kickoff-page--form rk-sh-page">
       <header className="rk-sh-page-head">
+        <Icon3D name="stages" size={56} tile className="rk-sh-page-icon" />
         <div className="rk-sh-page-head-main">
           <Link to={`${base}/stages`} className="rk-sh-back">
-            ← All stages
+            <Icon name="arrowLeft" size={14} /> All stages
           </Link>
           <p className="rk-sh-eyebrow">{isNew ? 'New template' : 'Edit template'}</p>
           <h1 className="rk-sh-title">{isNew ? 'Create stage' : 'Edit stage'}</h1>

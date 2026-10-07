@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useOutletContext } from 'react-router-dom'
+import { Icon } from '../icons'
+import { EmptyState, LoadingState } from '../components/EmptyState'
 import { esignApi, type EsignRequestRow } from '../api/esign'
 import type { DashboardOutletContext } from '../layouts/DashboardOutletContext'
 
@@ -57,23 +59,23 @@ export default function EsignDocumentsPage() {
   return (
     <div className="esign-docs-page">
       <header className="esign-docs-hero">
-        <div>
-          <h1 className="esign-docs-title">Signed documents</h1>
+        <div className="esign-docs-hero-copy">
+          <span className="esign-docs-hero-icon">
+            <Icon name="info" size={16} />
+          </span>
           <p className="esign-docs-lead">
             Every generated e-sign request for your workspace—merged in the backend with a permanent record and signing
             link. Open a row to copy the candidate signing URL or jump to their application.
           </p>
         </div>
         <Link to={`/account/${accountId}/settings/esign`} className="btn-esign-docs-secondary">
-          E-sign templates &amp; rules
+          <Icon name="esign" size={15} /> Templates &amp; rules
         </Link>
       </header>
 
       <div className="esign-docs-toolbar">
         <div className="esign-docs-search">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-            <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
-          </svg>
+          <Icon name="search" size={17} />
           <input
             type="search"
             placeholder="Search candidate, job, template…"
@@ -93,24 +95,25 @@ export default function EsignDocumentsPage() {
           </select>
         </div>
         <button type="button" className="btn-esign-docs-refresh" onClick={() => void load()} disabled={loading}>
-          Refresh
+          <Icon name="refresh" size={15} /> Refresh
         </button>
       </div>
 
       {loading && (
-        <div className="esign-docs-loading">
-          <div className="spinner" style={{ width: 28, height: 28 }} />
-          Loading documents…
+        <div className="esign-docs-table-wrap">
+          <LoadingState rows={4} label="Loading documents" />
         </div>
       )}
       {!loading && err && <div className="esign-docs-error">{err}</div>}
 
       {!loading && !err && rows.length === 0 && (
-        <div className="esign-docs-empty">
-          <p>No documents match your filters.</p>
-          <p className="esign-docs-empty-hint">
-            Generate documents from a candidate record, or move them into a pipeline stage that has e-sign rules.
-          </p>
+        <div className="esign-docs-table-wrap">
+          <EmptyState
+            icon="signature"
+            size={88}
+            title="No documents match your filters"
+            text="Generate documents from a candidate record, or move them into a pipeline stage that has e-sign rules."
+          />
         </div>
       )}
 

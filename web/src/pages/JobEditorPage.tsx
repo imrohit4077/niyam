@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { Link, useNavigate, useOutletContext, useParams, useLocation, useSearchParams } from 'react-router-dom'
+import { Icon, Icon3D } from '../icons'
+import { stepIcon } from '../constants/stepIcons'
 import { jobsApi, type Job, type JobAnalytics, type JobAttachment, type JobConfig, type JobReferralSettings } from '../api/jobs'
 import { referralsApi } from '../api/referrals'
 import { accountMembersApi, type AccountMember } from '../api/accountMembers'
@@ -1948,7 +1950,7 @@ export default function JobEditorPage() {
         <div className="job-editor-sheet job-editor-sheet--narrow">
           <div className="auth-error job-editor-inline-alert">Invalid job link.</div>
           <button type="button" className="job-editor-text-btn" onClick={() => navigate(jobsBase)}>
-            ← Back to jobs
+            <Icon name="arrowLeft" size={14} /> Back to jobs
           </button>
         </div>
       </div>
@@ -2022,6 +2024,7 @@ export default function JobEditorPage() {
         <div className="job-editor-workspace">
           <article className="job-editor-sheet">
             <header className="job-editor-sheet-head">
+              <Icon3D key={stepId} name={stepIcon(stepId)} size={56} tile className="job-editor-step-icon" />
               <div className="job-editor-sheet-titles">
                 {stepId === 'skills' ? (
                   <>
@@ -2971,7 +2974,7 @@ export default function JobEditorPage() {
                       className={`job-stepper-btn ${active ? 'job-stepper-btn--active' : ''} ${done ? 'job-stepper-btn--done' : ''}`}
                       onClick={() => goToStepIndex(idx)}
                     >
-                      <span className="job-stepper-index">{done ? '✓' : idx + 1}</span>
+                      <span className="job-stepper-index">{done ? <Icon name="check" size={13} strokeWidth={2.6} /> : idx + 1}</span>
                       <span className="job-stepper-text">
                         <span className="job-stepper-label">{s.label}</span>
                         <span className="job-stepper-short">{s.short}</span>

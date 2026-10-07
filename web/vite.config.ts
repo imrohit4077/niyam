@@ -2,6 +2,9 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { resolve } from 'path'
 
+// Dev API target; override with VITE_API_PROXY to point at another local backend.
+const apiTarget = process.env.VITE_API_PROXY ?? 'http://localhost:8000'
+
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
@@ -14,11 +17,11 @@ export default defineConfig({
     strictPort: true,
     proxy: {
       '/api': {
-        target: 'http://localhost:8000',
+        target: apiTarget,
         changeOrigin: true,
       },
       '/files': {
-        target: 'http://localhost:8000',
+        target: apiTarget,
         changeOrigin: true,
       },
     },

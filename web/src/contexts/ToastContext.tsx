@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
+import { Icon } from '../icons'
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info'
 
@@ -24,30 +25,10 @@ interface ToastContextValue {
 const ToastContext = createContext<ToastContextValue | null>(null)
 
 const ICONS: Record<ToastType, ReactNode> = {
-  success: (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-      <circle cx="10" cy="10" r="10" fill="currentColor" opacity="0.15" />
-      <path d="M6 10.5L8.5 13L14 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  ),
-  error: (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-      <circle cx="10" cy="10" r="10" fill="currentColor" opacity="0.15" />
-      <path d="M7 7L13 13M13 7L7 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  ),
-  warning: (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-      <circle cx="10" cy="10" r="10" fill="currentColor" opacity="0.15" />
-      <path d="M10 6V11M10 13.5V14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  ),
-  info: (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-      <circle cx="10" cy="10" r="10" fill="currentColor" opacity="0.15" />
-      <path d="M10 9V14M10 6.5V7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  ),
+  success: <Icon name="checkCircle" size={18} strokeWidth={2} />,
+  error: <Icon name="alert" size={18} strokeWidth={2} />,
+  warning: <Icon name="alert" size={18} strokeWidth={2} />,
+  info: <Icon name="info" size={18} strokeWidth={2} />,
 }
 
 function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: (id: string) => void }) {
@@ -81,9 +62,7 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: (id: string) =
         {toast.message && <span className="toast-message">{toast.message}</span>}
       </div>
       <button className="toast-close" onClick={dismiss} aria-label="Dismiss">
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-          <path d="M4 4L10 10M10 4L4 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-        </svg>
+        <Icon name="x" size={14} strokeWidth={2} />
       </button>
     </div>
   )

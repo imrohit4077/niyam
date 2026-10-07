@@ -1,53 +1,12 @@
-import { useMemo } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { Outlet, useParams, useLocation, useNavigate } from 'react-router-dom'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
 import Sidebar from '../components/Sidebar'
+import PageHeader from '../components/PageHeader'
 import { useAuth } from '../auth/AuthContext'
+import { routeMeta } from '../constants/routeMeta'
 import type { DashboardOutletContext } from './DashboardOutletContext'
-
-function deriveTitle(pathname: string): string {
-  if (pathname.includes('/jobs/new')) return 'New job'
-  if (/\/jobs\/\d+\/edit/.test(pathname)) return 'Edit job'
-  if (pathname.includes('/jobs/all')) return 'Jobs'
-  if (pathname.includes('/jobs/mine')) return 'My jobs'
-  if (pathname.includes('/jobs/role-kickoff')) return 'Role kickoff'
-  if (pathname.includes('/structured-hiring/attributes')) return 'Attributes'
-  if (pathname.includes('/structured-hiring/stages')) return 'Stages'
-  if (pathname.includes('/hiring-plans')) return 'Hiring plans'
-  if (pathname.includes('/pipeline')) return 'Pipeline'
-  if (pathname.includes('/job-boards')) return 'Job Boards'
-  if (pathname.includes('/postings')) return 'Postings'
-  if (/\/job-applications\/\d+/.test(pathname)) return 'Candidate'
-  if (pathname.includes('/job-applications')) return 'Applications'
-  if (pathname.includes('/esign-documents')) return 'Signed documents'
-  if (pathname.includes('/candidates')) return 'Candidates'
-  if (pathname.includes('/interviews')) return 'Interviews'
-  if (pathname.includes('/team')) return 'Team'
-  if (pathname.includes('/settings/esign/templates/new')) return 'New template'
-  if (/\/settings\/esign\/templates\/\d+\/edit/.test(pathname)) return 'Edit template'
-  if (pathname.match(/\/settings\/esign\/templates\/?$/)) return 'Templates'
-  if (pathname.includes('/settings/esign/rules')) return 'Automation'
-  if (pathname.includes('/settings/esign/advanced')) return 'E-sign advanced'
-  if (pathname.includes('/settings/esign/overview')) return 'E-sign overview'
-  if (pathname.includes('/settings/esign')) return 'E-sign'
-  if (pathname.includes('/settings/general/organization')) return 'Organization'
-  if (pathname.includes('/settings/general/departments')) return 'Departments'
-  if (pathname.includes('/settings/general/job-locations')) return 'Job locations'
-  if (pathname.includes('/settings/general/workspace')) return 'Workspace'
-  if (pathname.includes('/settings/general/appearance')) return 'Typography'
-  if (pathname.includes('/settings/custom-fields/candidates')) return 'Candidate fields'
-  if (pathname.includes('/settings/custom-fields/jobs')) return 'Job fields'
-  if (pathname.includes('/settings/custom-fields')) return 'Custom fields'
-  if (pathname.includes('/settings/labels')) return 'Labels'
-  if (pathname.includes('/settings/audit-compliance/delivery-failures')) return 'Audit delivery failures'
-  if (pathname.includes('/settings/audit-compliance/audit-logs')) return 'Audit logs'
-  if (pathname.includes('/settings/audit-compliance/overview')) return 'Audit & compliance'
-  if (pathname.includes('/settings/audit-compliance')) return 'Audit & compliance'
-  if (pathname.includes('/settings')) return 'Settings'
-  if (pathname.includes('/profile')) return 'My Profile'
-  return 'Niyam'
-}
 
 export default function DashboardLayout() {
   const { accountId } = useParams<{ accountId: string }>()
@@ -61,10 +20,14 @@ export default function DashboardLayout() {
     navigate('/login', { replace: true })
   }
 
-  const title = useMemo(() => deriveTitle(pathname), [pathname])
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
+  const closeMobileNav = useCallback(() => setMobileNavOpen(false), [])
+  const meta = useMemo(() => routeMeta(pathname), [pathname])
 
-  /** Jobs hub / job editor wizard render their own titles — skip duplicate main header. */
+  /** Overview, pipeline, jobs hub, job editor wizard and structured hiring render their own headings. */
   const hideMainHeader =
+    /^\/account\/\d+\/profile\/?$/.test(pathname) ||
+    /^\/account\/\d+\/pipeline\/?$/.test(pathname) ||
     /^\/account\/\d+\/jobs\/(all|mine)\/?$/.test(pathname) ||
     /^\/account\/\d+\/jobs\/role-kickoff/.test(pathname) ||
     /^\/account\/\d+\/jobs\/new\/?$/.test(pathname) ||
@@ -99,50 +62,16 @@ export default function DashboardLayout() {
 
   return (
     <div className="app-shell">
-      <Header user={user} variant="app" accountHomePath={home} onSignOut={handleSignOut} />
+      <Sidebar accountId={accountId} mobileOpen={mobileNavOpen} onRequestClose={closeMobileNav} />
 
-      <div className="app-body">
-        <Sidebar accountId={accountId} />
+      <div className="app-frame">
+        <Header user={user} accountHomePath={home} onSignOut={handleSignOut} onToggleNav={() => setMobileNavOpen(true)} />
 
-        <main className="main-content">
-          {!hideMainHeader ? (
-            <div className="main-header">
-              <div className="main-header-left">
-                <h1 className="main-title">{title}</h1>
-                {pathname.includes('/profile') && (
-                  <div className="main-header-meta">
-                    <span className={`status-badge status-${user.status}`}>{user.status}</span>
-                    {user.role && <span className="tag tag-blue">{user.role.name}</span>}
-                    {user.account?.plan && <span className="tag tag-orange">{user.account.plan}</span>}
-                  </div>
-                )}
-              </div>
-              {pathname.includes('/profile') && (
-                <div className="main-header-user">
-                  <div className="main-header-avatar">
-                    {user.avatar ? (
-                      <img src={user.avatar} alt={user.name} />
-                    ) : (
-                      user.name
-                        .split(' ')
-                        .map(w => w[0])
-                        .join('')
-                        .slice(0, 2)
-                        .toUpperCase()
-                    )}
-                  </div>
-                  <div>
-                    <div className="main-header-name">{user.name}</div>
-                    <div className="main-header-email">{user.email}</div>
-                  </div>
-                </div>
-              )}
-            </div>
-          ) : null}
-
+        <main className="main-content" id="main">
           <div
             className={`main-body${hideMainHeader ? ' main-body--flush-top' : ''}${jobEditorWizard ? ' main-body--job-editor-wizard' : ''}`}
           >
+            {!hideMainHeader ? <PageHeader icon={meta.icon} title={meta.title} subtitle={meta.subtitle} /> : null}
             <Outlet context={ctx} />
           </div>
 

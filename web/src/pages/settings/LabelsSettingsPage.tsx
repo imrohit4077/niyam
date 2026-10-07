@@ -2,6 +2,7 @@ import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import { useAuth } from '../../auth/AuthContext'
 import { useToast } from '../../contexts/ToastContext'
 import { labelsApi, type AccountLabelRow } from '../../api/labels'
+import { EmptyState, LoadingState } from '../../components/EmptyState'
 
 export default function LabelsSettingsPage() {
   const { getToken } = useAuth()
@@ -149,10 +150,10 @@ export default function LabelsSettingsPage() {
       </div>
 
       {loading ? (
-        <p className="settings-muted">Loading…</p>
+        <LoadingState rows={3} />
       ) : rows.length === 0 ? (
         <div className="settings-labels-empty">
-          <p>No labels yet. Create one to organize jobs and candidates consistently.</p>
+          <EmptyState icon="labels" title="No labels yet" text="Create one to organize jobs and candidates consistently." />
         </div>
       ) : (
         <div className="settings-labels-table-wrap">

@@ -1,6 +1,7 @@
 import { NavLink, Outlet, useLocation, useParams } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { navItemVisible } from '../permissions'
+import { Icon } from '../icons'
 
 export default function SettingsLayout() {
   const { accountId } = useParams<{ accountId: string }>()
@@ -32,6 +33,7 @@ export default function SettingsLayout() {
             className={({ isActive }) => `settings-subnav-link ${isActive ? 'settings-subnav-link--active' : ''}`}
             end={false}
           >
+            <Icon name="settings" size={15} />
             General
           </NavLink>
         ) : null}
@@ -41,6 +43,7 @@ export default function SettingsLayout() {
             className={({ isActive }) => `settings-subnav-link ${isActive ? 'settings-subnav-link--active' : ''}`}
             end={false}
           >
+            <Icon name="fields" size={15} />
             Custom fields
           </NavLink>
         ) : null}
@@ -50,6 +53,7 @@ export default function SettingsLayout() {
             className={({ isActive }) => `settings-subnav-link ${isActive ? 'settings-subnav-link--active' : ''}`}
             end
           >
+            <Icon name="labels" size={15} />
             Labels
           </NavLink>
         ) : null}
@@ -59,6 +63,7 @@ export default function SettingsLayout() {
             className={({ isActive }) => `settings-subnav-link ${isActive ? 'settings-subnav-link--active' : ''}`}
             end={false}
           >
+            <Icon name="mail" size={15} />
             Communication channels
           </NavLink>
         ) : null}
@@ -68,6 +73,7 @@ export default function SettingsLayout() {
             className={({ isActive }) => `settings-subnav-link ${isActive ? 'settings-subnav-link--active' : ''}`}
             end
           >
+            <Icon name="audit" size={15} />
             Audit & compliance
           </NavLink>
         ) : null}
@@ -77,6 +83,7 @@ export default function SettingsLayout() {
             className={({ isActive }) => `settings-subnav-link ${isActive ? 'settings-subnav-link--active' : ''}`}
             end={false}
           >
+            <Icon name="esign" size={15} />
             E-sign
           </NavLink>
         ) : null}

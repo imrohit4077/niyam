@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { NavLink, Outlet, useParams } from 'react-router-dom'
+import { Icon } from '../icons'
 import { useAuth } from '../auth/AuthContext'
 import { canAny } from '../permissions'
 
@@ -79,65 +80,30 @@ export default function GeneralSettingsLayout() {
 }
 
 function IconOrg() {
-  return (
-    <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6}>
-      <path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
+  return <Icon name="building" size={18} />
 }
 
 function IconDepartments() {
-  return (
-    <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6}>
-      <path d="M4 6h7v12H4zM13 10h7v8h-7z" strokeLinejoin="round" />
-      <path d="M9 6V4h6v2" strokeLinecap="round" />
-    </svg>
-  )
+  return <Icon name="folder" size={18} />
 }
 
 function IconFlow() {
-  return (
-    <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6}>
-      <path d="M5 5h6v4H5zM13 15h6v4h-6zM8 9v3h8v3" strokeLinejoin="round" strokeLinecap="round" />
-    </svg>
-  )
+  return <Icon name="stages" size={18} />
 }
 
 function IconGlobe() {
-  return (
-    <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6}>
-      <circle cx={12} cy={12} r={9} />
-      <path d="M3 12h18M12 3a15 15 0 000 18M12 3a15 15 0 010 18" strokeLinecap="round" />
-    </svg>
-  )
+  return <Icon name="location" size={18} />
 }
 
 function IconWorkspace() {
-  return (
-    <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6}>
-      <rect x={3} y={3} width={7} height={9} rx={1} />
-      <rect x={14} y={3} width={7} height={5} rx={1} />
-      <rect x={14} y={12} width={7} height={9} rx={1} />
-      <rect x={3} y={16} width={7} height={5} rx={1} />
-    </svg>
-  )
+  return <Icon name="workspace" size={18} />
 }
 
 function IconTypography() {
-  return (
-    <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6}>
-      <path d="M4 7V5h16v2M9 20h6M12 5v15" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
+  return <Icon name="typography" size={18} />
 }
 
 function IconReferral() {
-  return (
-    <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6}>
-      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" strokeLinecap="round" />
-      <circle cx="9" cy="7" r="4" />
-      <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" strokeLinecap="round" />
-    </svg>
-  )
+  return <Icon name="referrals" size={18} />
 }
 

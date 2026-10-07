@@ -1,4 +1,5 @@
 import { NavLink, Outlet, useParams } from 'react-router-dom'
+import { Icon } from '../icons'
 
 const NAV = [
   {
@@ -71,27 +72,13 @@ export default function AuditComplianceSettingsLayout() {
 }
 
 function IconBook() {
-  return (
-    <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6}>
-      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" strokeLinecap="round" />
-      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" strokeLinejoin="round" />
-    </svg>
-  )
+  return <Icon name="audit" size={18} />
 }
 
 function IconList() {
-  return (
-    <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6}>
-      <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" strokeLinecap="round" />
-    </svg>
-  )
+  return <Icon name="list" size={18} />
 }
 
 function IconAlert() {
-  return (
-    <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6}>
-      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" strokeLinejoin="round" />
-      <path d="M12 9v4M12 17h.01" strokeLinecap="round" />
-    </svg>
-  )
+  return <Icon name="alert" size={18} />
 }

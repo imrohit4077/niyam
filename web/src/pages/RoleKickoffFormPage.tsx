@@ -9,6 +9,8 @@ import {
   type ReactNode,
 } from 'react'
 import { Link, useNavigate, useOutletContext, useParams, useSearchParams } from 'react-router-dom'
+import { Icon, Icon3D } from '../icons'
+import { stepIcon } from '../constants/stepIcons'
 import { accountMembersApi } from '../api/accountMembers'
 import { getOrganizationSettings, type OrganizationSettings } from '../api/accountOrganization'
 import { fetchCountriesCatalog, type CountryRow } from '../api/reference'
@@ -630,6 +632,7 @@ export default function RoleKickoffFormPage() {
         <div className="job-editor-workspace">
           <article className="job-editor-sheet">
             <header className="job-editor-sheet-head">
+              <Icon3D key={currentStep.id} name={stepIcon(currentStep.id)} size={56} tile className="job-editor-step-icon" />
               <div className="job-editor-sheet-titles">
                 <p className="job-editor-step-kicker">
                   Step {stepIndex + 1} of {KICKOFF_STEPS.length}
@@ -1085,7 +1088,7 @@ export default function RoleKickoffFormPage() {
                         goToStepIndex(idx)
                       }}
                     >
-                      <span className="job-stepper-index">{done ? '✓' : idx + 1}</span>
+                      <span className="job-stepper-index">{done ? <Icon name="check" size={13} strokeWidth={2.6} /> : idx + 1}</span>
                       <span className="job-stepper-text">
                         <span className="job-stepper-label">{s.label}</span>
                         <span className="job-stepper-short">{s.short}</span>
