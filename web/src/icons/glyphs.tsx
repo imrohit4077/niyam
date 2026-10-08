@@ -428,6 +428,74 @@ export const GLYPHS = {
   drag: (
     <path d="M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01" strokeWidth="2.6" />
   ),
+  undo: (
+    <>
+      <path d="M9 14L4 9l5-5" />
+      <path d="M4 9h10.5a5.5 5.5 0 010 11H11" />
+    </>
+  ),
+  redo: (
+    <>
+      <path d="M15 14l5-5-5-5" />
+      <path d="M20 9H9.5a5.5 5.5 0 000 11H13" />
+    </>
+  ),
+  text: <path d="M5 7V5h14v2M12 5v14M9 19h6" />,
+  image: (
+    <>
+      <rect x="3.5" y="4.5" width="17" height="15" rx="2.5" />
+      <circle cx="9" cy="10" r="1.6" />
+      <path d="M20.5 16l-4.5-4.5-6.5 6.5" />
+    </>
+  ),
+  section: (
+    <>
+      <rect x="3.5" y="4.5" width="17" height="15" rx="2.5" />
+      <path d="M7.5 9h9M7.5 12.5h9M7.5 16h5" />
+    </>
+  ),
+  button: (
+    <>
+      <rect x="3" y="7.5" width="18" height="9" rx="4.5" />
+      <path d="M9 12h6" />
+    </>
+  ),
+  divider: (
+    <>
+      <path d="M3.5 12h17" />
+      <path d="M7 6.5h10M7 17.5h10" opacity="0.4" />
+    </>
+  ),
+  spacer: (
+    <>
+      <path d="M4 4h16M4 20h16" />
+      <path d="M12 7.5v9M9.5 10L12 7.5 14.5 10M9.5 14l2.5 2.5 2.5-2.5" />
+    </>
+  ),
+  zoomIn: (
+    <>
+      <circle cx="11" cy="11" r="7" />
+      <path d="M20.5 20.5l-4.6-4.6M11 8v6M8 11h6" />
+    </>
+  ),
+  zoomOut: (
+    <>
+      <circle cx="11" cy="11" r="7" />
+      <path d="M20.5 20.5l-4.6-4.6M8 11h6" />
+    </>
+  ),
+  alignLeft: <path d="M4 6h16M4 10h10M4 14h16M4 18h10" />,
+  alignCenter: <path d="M4 6h16M7 10h10M4 14h16M7 18h10" />,
+  alignRight: <path d="M4 6h16M10 10h10M4 14h16M10 18h10" />,
+  layers: (
+    <>
+      <path d="M12 3.5l8.5 4.3-8.5 4.3-8.5-4.3L12 3.5z" />
+      <path d="M3.5 12.2l8.5 4.3 8.5-4.3M3.5 16.4l8.5 4.3 8.5-4.3" />
+    </>
+  ),
+  braces: (
+    <path d="M8 4H7a2 2 0 00-2 2v3.5a2 2 0 01-2 2.5 2 2 0 012 2.5V18a2 2 0 002 2h1M16 4h1a2 2 0 012 2v3.5a2 2 0 002 2.5 2 2 0 00-2 2.5V18a2 2 0 01-2 2h-1" />
+  ),
 } satisfies Record<string, ReactNode>
 
 export type IconName = keyof typeof GLYPHS

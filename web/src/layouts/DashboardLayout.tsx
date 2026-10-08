@@ -24,10 +24,11 @@ export default function DashboardLayout() {
   const closeMobileNav = useCallback(() => setMobileNavOpen(false), [])
   const meta = useMemo(() => routeMeta(pathname), [pathname])
 
-  /** Overview, pipeline, jobs hub, job editor wizard and structured hiring render their own headings. */
+  /** Overview, pipeline, jobs hub, job editor wizard, template studio and structured hiring render their own headings. */
   const hideMainHeader =
     /^\/account\/\d+\/profile\/?$/.test(pathname) ||
     /^\/account\/\d+\/pipeline\/?$/.test(pathname) ||
+    /^\/account\/\d+\/settings\/esign\/templates\/(new|\d+\/edit)/.test(pathname) ||
     /^\/account\/\d+\/jobs\/(all|mine)\/?$/.test(pathname) ||
     /^\/account\/\d+\/jobs\/role-kickoff/.test(pathname) ||
     /^\/account\/\d+\/jobs\/new\/?$/.test(pathname) ||

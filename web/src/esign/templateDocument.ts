@@ -97,9 +97,9 @@ export function createBlock(type: BlockType): TemplateBlock {
         label: 'Acknowledge receipt',
         href: '#',
         align: 'center',
-        bgColor: '#0284c7',
+        bgColor: '#4157ff',
         textColor: '#ffffff',
-        borderRadius: 8,
+        borderRadius: 10,
       }
     case 'divider':
       return { id, type: 'divider', style: 'solid' }
@@ -146,7 +146,7 @@ function hydrateBlock(b: TemplateBlock): TemplateBlock {
     case 'button':
       return {
         ...b,
-        bgColor: b.bgColor ?? '#0284c7',
+        bgColor: b.bgColor ?? '#4157ff',
         textColor: b.textColor ?? '#ffffff',
         borderRadius: b.borderRadius ?? 8,
       }

@@ -47,6 +47,7 @@ export default function LoginPage() {
 
         <Hero3D
           className="auth-showcase-scene"
+          posterSize={200}
           centerScale={1.35}
           satellites={[
             { name: 'jobs', position: [-0.78, 0.62, -0.4], scale: 0.55 },

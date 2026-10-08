@@ -19,7 +19,11 @@ type Props = {
   satellites?: HeroSatellite[]
   /** How strongly the scene leans toward the pointer (0 disables). */
   parallax?: number
+  /** Gentle drift only — no tumbling. Use inside dense, data-heavy pages. */
+  calm?: boolean
   className?: string
+  /** Fires once the first frame with models has been drawn. */
+  onReady?: () => void
 }
 
 function Studio() {
@@ -40,14 +44,28 @@ function Model({ name, scale = 1, position = [0, 0, 0] }: { name: Model3DName; s
   )
 }
 
-function Satellite({ sat, index, speed }: { sat: HeroSatellite; index: number; speed: number }) {
+/** Signals readiness after a couple of real frames (shaders compiled, models drawn). */
+function ReadySignal({ onReady }: { onReady?: () => void }) {
+  const frames = useRef(0)
+  useFrame(() => {
+    frames.current += 1
+    if (frames.current === 2) onReady?.()
+  })
+  return null
+}
+
+function Satellite({ sat, index, speed, calm }: { sat: HeroSatellite; index: number; speed: number; calm: boolean }) {
   const viewport = useThree(s => s.viewport)
   const scale = sat.scale ?? 0.45
   const [nx, ny, z] = sat.position
   const halfW = Math.max(viewport.width / 2 - scale * 1.25, 0)
   const halfH = Math.max(viewport.height / 2 - scale * 1.25, 0)
   return (
-    <Float speed={(1.8 + (index % 3) * 0.45) * speed} rotationIntensity={0.8 * speed} floatIntensity={1.1 * speed}>
+    <Float
+      speed={(calm ? 0.9 + (index % 3) * 0.2 : 1.8 + (index % 3) * 0.45) * speed}
+      rotationIntensity={(calm ? 0.12 : 0.8) * speed}
+      floatIntensity={(calm ? 0.35 : 1.1) * speed}
+    >
       <Model name={sat.name} scale={scale} position={[nx * halfW, ny * halfH, z]} />
     </Float>
   )
@@ -79,7 +97,15 @@ function usePrefersReducedMotion() {
  * Live, softly floating 3D composition (brand mark + orbiting ATS objects).
  * Renders only while on screen, and holds still for reduced-motion users.
  */
-export default function HeroScene({ center = 'brand', centerScale = 1.25, satellites = [], parallax = 1, className }: Props) {
+export default function HeroScene({
+  center = 'brand',
+  centerScale = 1.25,
+  satellites = [],
+  parallax = 1,
+  calm = false,
+  className,
+  onReady,
+}: Props) {
   const wrap = useRef<HTMLDivElement>(null)
   const [visible, setVisible] = useState(true)
   const reduced = usePrefersReducedMotion()
@@ -107,12 +133,13 @@ export default function HeroScene({ center = 'brand', centerScale = 1.25, satell
         frameloop={reduced ? 'demand' : visible ? 'always' : 'never'}
       >
         <Studio />
-        <Rig parallax={reduced ? 0 : parallax}>
-          <Float speed={1.4 * speed} rotationIntensity={0.35 * speed} floatIntensity={0.6 * speed}>
+        <ReadySignal onReady={onReady} />
+        <Rig parallax={reduced || calm ? 0 : parallax}>
+          <Float speed={(calm ? 0.8 : 1.4) * speed} rotationIntensity={(calm ? 0.06 : 0.35) * speed} floatIntensity={(calm ? 0.25 : 0.6) * speed}>
             <Model name={center} scale={centerScale} />
           </Float>
           {satellites.map((s, i) => (
-            <Satellite key={`${s.name}-${i}`} sat={s} index={i} speed={speed} />
+            <Satellite key={`${s.name}-${i}`} sat={s} index={i} speed={speed} calm={calm} />
           ))}
         </Rig>
         <ContactShadows position={[0, -1.75, 0]} opacity={0.28} scale={9} blur={2.6} far={3.5} frames={1} color="#1d2150" />

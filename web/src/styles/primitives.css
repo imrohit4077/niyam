@@ -56,9 +56,19 @@
 .nx-3d--tile .nx-3d-img { width: 84%; height: 84%; }
 .nx-3d--tile .nx-3d-fallback { width: 60%; height: 60%; }
 
-.nx-hero-scene { position: relative; width: 100%; height: 100%; min-height: 200px; }
+.nx-hero-wrap { position: relative; min-height: 200px; }
+/* Canvas is absolutely positioned: it sizes from the wrapper and can never push it larger. */
+.nx-hero-wrap .nx-hero-scene { position: absolute; inset: 0; opacity: 0; transition: opacity 0.7s var(--ease-out); }
+.nx-hero-wrap.is-ready .nx-hero-scene { opacity: 1; }
 .nx-hero-scene canvas { display: block; touch-action: pan-y; }
-.nx-hero-scene--static { display: grid; place-items: center; }
+.nx-hero-poster {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  transition: opacity 0.5s var(--ease-out), transform 0.7s var(--ease-out);
+}
+.nx-hero-wrap.is-ready .nx-hero-poster { opacity: 0; transform: scale(0.96); }
 
 /* ── Buttons ─────────────────────────────────────────────────────── */
 

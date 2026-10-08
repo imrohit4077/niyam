@@ -26,6 +26,7 @@ export default function SettingsLayout() {
     <div
       className={`settings-layout${isEsignSection || isGeneralNested || isCustomFieldsSection || isLabelsSection || isCommunicationChannelsSection || isAuditComplianceSection ? ' settings-layout--wide' : ''}${isEsignTemplateEditor ? ' settings-layout--esign-editor' : ''}`}
     >
+      {isEsignTemplateEditor ? null : (
       <nav className="settings-subnav" aria-label="Settings sections">
         {showGeneral ? (
           <NavLink
@@ -88,6 +89,7 @@ export default function SettingsLayout() {
           </NavLink>
         ) : null}
       </nav>
+      )}
       <div className="settings-outlet">
         <Outlet />
       </div>
